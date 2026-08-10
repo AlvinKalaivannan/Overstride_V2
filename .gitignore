@@ -50,6 +50,12 @@ models/
 .env.*
 !.env.example
 
+# Kaggle API credentials. Never commit -- they authenticate as the account owner.
+# `access_token` is the current scheme (opaque KGAT_ token); kaggle.json is legacy.
+kaggle.json
+access_token
+.kaggle/
+
 # ---------------------------------------------------------------------------
 # Python
 # ---------------------------------------------------------------------------

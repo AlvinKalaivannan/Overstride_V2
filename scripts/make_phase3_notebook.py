@@ -40,14 +40,16 @@ def main() -> int:
     if len(parts) < 3:
         raise SystemExit("no `# %% CELL` markers found -- check the source file")
 
-    cells = [{"cell_type": "markdown", "metadata": {},
+    cells = [{"cell_type": "markdown", "id": "intro", "metadata": {},
               "source": INTRO.splitlines(keepends=True)}]
     # parts = [preamble, title1, code1, title2, code2, ...]
     for title, code in zip(parts[1::2], parts[2::2]):
-        cells.append({"cell_type": "markdown", "metadata": {},
+        n = len(cells)
+        cells.append({"cell_type": "markdown", "id": f"md{n}", "metadata": {},
                       "source": [f"### {title.strip()}"]})
         src = code.strip("\n")
-        cells.append({"cell_type": "code", "execution_count": None,
+        cells.append({"cell_type": "code", "id": f"code{n}",
+                      "execution_count": None,
                       "metadata": {}, "outputs": [],
                       "source": src.splitlines(keepends=True)})
 

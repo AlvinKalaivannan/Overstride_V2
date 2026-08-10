@@ -30,12 +30,38 @@ WHAT PHASE 2 NEEDS BACK
 """
 
 # %% CELL 1 -- environment
+# Deliberately non-fatal. Kaggle halts the whole notebook on the first exception,
+# so a missing nvidia-smi must report rather than raise -- otherwise a machine
+# configuration problem looks identical to a code bug.
+import shutil
 import subprocess
 import sys
 
-print(subprocess.run(["nvidia-smi", "--query-gpu=name,memory.total",
-                      "--format=csv"], capture_output=True, text=True).stdout)
 print("python", sys.version.split()[0])
+
+if shutil.which("nvidia-smi"):
+    print(subprocess.run(["nvidia-smi", "--query-gpu=name,memory.total",
+                          "--format=csv"], capture_output=True, text=True).stdout)
+else:
+    print("nvidia-smi NOT on PATH")
+
+try:
+    import torch
+    print("torch", torch.__version__, "| cuda available:", torch.cuda.is_available(),
+          "| device count:", torch.cuda.device_count())
+    HAS_GPU = torch.cuda.is_available()
+except Exception as exc:  # noqa: BLE001
+    print("torch unavailable:", exc)
+    HAS_GPU = False
+
+if not HAS_GPU:
+    print("\n*** NO GPU ALLOCATED ***\n"
+          "enable_gpu was set in the kernel metadata, so the likely causes are:\n"
+          "  - the Kaggle account is not phone-verified (GPU and Internet both\n"
+          "    require it, and are silently withheld otherwise)\n"
+          "  - the weekly GPU quota (~30 h) is exhausted\n"
+          "Inference will fall back to CPU: slower, but the angle error this phase\n"
+          "measures is identical either way.")
 
 # %% CELL 2 -- fetch repo, dataset and the three checkpoints
 # CC BY-NC-SA 4.0, non-commercial research only -- already recorded in CLAUDE.md.
