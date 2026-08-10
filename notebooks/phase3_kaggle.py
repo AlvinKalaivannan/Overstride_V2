@@ -1,24 +1,32 @@
-"""Phase 3 on Kaggle -- video/2D -> 3D kinematics, and the error phase 2 needs.
+"""Phase 3 on Kaggle -- monocular 3D kinematics error, in the form phase 2 needs.
 
-This file is written as ordered CELLS. Paste each block between the `# %% CELL`
-markers into its own Kaggle notebook cell, or run `jupytext --to notebook` on it.
+Written as ordered CELLS (`# %% CELL n`). Run `python scripts/make_phase3_notebook.py`
+to emit notebooks/phase3_kaggle.ipynb for direct upload to Kaggle.
 
 BEFORE RUNNING
-  - Kaggle notebook -> Settings -> Accelerator: GPU T4 x2 (or P100)
-  - Kaggle notebook -> Settings -> Internet: ON  (needed to fetch the repo,
-    dataset and checkpoints)
-  - No Ferber data here. CLAUDE.md forbids the archive leaving the laptop, and
-    nothing in this phase needs it.
+  Kaggle -> Settings -> Accelerator: GPU T4 x2 or P100
+  Kaggle -> Settings -> Internet: ON   (repo, dataset and checkpoints are fetched)
+  No Ferber data here. CLAUDE.md keeps the archive on the laptop; nothing in this
+  phase needs it.
 
-WHAT THIS PRODUCES
-  results/phase3_angle_errors.json -- sagittal joint-angle error by joint and by
-  NEAR/FAR limb, plus the systematic/random split. Download it and run
-  scripts/phase3_report.py locally.
+WHAT THIS MEASURES, AND WHAT IT DOES NOT
+  AthleticsPose does not release the original videos (anonymisation). What ships
+  is 2D marker detections plus 3D ground truth, so this evaluates the
+  **2D -> 3D lifting** stage using 2D from a real detector (`det_ft`). Detector
+  error is therefore included; raw video decoding and person detection are not.
+  That is the dominant error source for monocular 3D pose, but the result is a
+  LOWER BOUND on a full in-the-wild pipeline and must be reported as one.
 
-DESIGN NOTE
-  Cells 2-4 INSPECT the data before anything computes. The AthleticsPose array
-  layout has not been verified from here, and writing a rigid pipeline against an
-  unverified schema is how phase 0's traps got made. Look first.
+  Second, and more important: the released predictor denormalises each clip using
+  a scale derived from GROUND TRUTH 3D. A deployed system has no such scale. The
+  errors below are therefore optimistic, and phase 4 cannot assume this scale is
+  available.
+
+WHAT PHASE 2 NEEDS BACK
+  Sagittal hip/knee angle error, split NEAR vs FAR limb, plus the
+  systematic/random split. Phase 2 found the signal survives 30 fps alone and
+  20 deg of far-limb error alone, but dies at 30 fps + 16 deg. The operating
+  point decides whether phase 4 is worth starting.
 """
 
 # %% CELL 1 -- environment
@@ -27,16 +35,10 @@ import sys
 
 print(subprocess.run(["nvidia-smi", "--query-gpu=name,memory.total",
                       "--format=csv"], capture_output=True, text=True).stdout)
-print("python", sys.version)
+print("python", sys.version.split()[0])
 
-# %% CELL 2 -- fetch repo, dataset and checkpoints
-# AthleticsPose: CC BY-NC-SA 4.0, non-commercial research only (CLAUDE.md
-# already records this constraint). Dataset + 3 checkpoints ship together:
-#   - trained on AthleticsPose      (sport fine-tuned)
-#   - trained on Human3.6M          (generic baseline)
-#   - trained on AthletePose3D      (other sport dataset)
-# The generic-vs-fine-tuned contrast is the point: it brackets the realistic
-# operating point rather than assuming one.
+# %% CELL 2 -- fetch repo, dataset and the three checkpoints
+# CC BY-NC-SA 4.0, non-commercial research only -- already recorded in CLAUDE.md.
 import os
 from pathlib import Path
 
@@ -46,88 +48,133 @@ if not (WORK / "AthleticsPose").exists():
     subprocess.run(["git", "clone", "--depth", "1",
                     "https://github.com/SZucchini/AthleticsPose.git"], check=True)
 os.chdir(WORK / "AthleticsPose")
-subprocess.run(["bash", "-lc",
-                'curl -L -o data.zip '
-                '"https://github.com/SZucchini/AthleticsPose/releases/latest/'
-                'download/data.zip" && unzip -q -o data.zip'], check=True)
-print(subprocess.run(["bash", "-lc", "find . -maxdepth 3 -name '*.pth' -o "
-                      "-maxdepth 3 -name '*.ckpt' | head -20"],
+
+# `make setup` builds the uv venv and downloads data + checkpoints. Kaggle
+# already has torch, so fall back to plain pip if uv/CUDA pinning fights it.
+subprocess.run(["bash", "-lc", "pip install -q uv"], check=False)
+r = subprocess.run(["bash", "-lc", "make download || "
+                    'curl -L -o data.zip "https://github.com/SZucchini/'
+                    'AthleticsPose/releases/latest/download/data.zip" '
+                    "&& unzip -q -o data.zip"], capture_output=True, text=True)
+print(r.stdout[-2000:], r.stderr[-2000:])
+print(subprocess.run(["bash", "-lc", "find . -name '*.ckpt' -o -name '*.pth' | head"],
                      capture_output=True, text=True).stdout)
 
-# %% CELL 3 -- INSPECT the dataset before assuming anything about it
+# %% CELL 3 -- INSPECT before computing anything
+# The layout below is expected, not verified from outside Kaggle. Confirm it
+# rather than trusting it -- writing a pipeline against a guessed schema is how
+# phase 0's traps were made.
 import numpy as np
 
 root = Path("data")
-print("top level:", sorted(p.name for p in root.iterdir())[:20])
-for pat in ("*.npz", "*.npy", "*.pkl", "*.json"):
-    for f in sorted(root.rglob(pat))[:6]:
-        print(f"  {f.relative_to(root)}  {f.stat().st_size/1e6:.1f} MB")
+print("top level:", sorted(p.name for p in root.iterdir()))
+npz = sorted(root.rglob("*.npz"))
+print(f"\n{len(npz)} npz files; first few:")
+for f in npz[:5]:
+    print("   ", f.relative_to(root))
 
-sample = next(iter(sorted(root.rglob("*.npz"))), None)
-if sample is not None:
-    z = np.load(sample, allow_pickle=True)
-    print("\nkeys:", list(z.keys()))
-    for k in list(z.keys())[:10]:
-        try:
-            print(f"  {k}: {np.asarray(z[k]).shape} {np.asarray(z[k]).dtype}")
-        except Exception as e:
-            print(f"  {k}: <{e}>")
+if npz:
+    z = np.load(npz[0], allow_pickle=True)
+    print("\nkeys in", npz[0].name, "->", list(z.keys()))
+    for k in z.keys():
+        a = np.asarray(z[k])
+        print(f"   {k:<24} {str(a.shape):<18} {a.dtype}")
 
-# %% CELL 4 -- what do the actions/subjects/cameras look like?
-# Confirm: which events are present, framerate, number of cameras, and whether
-# running/sprinting is among them. Phase 2 assumed ~0.295 s stance; check the
-# sampling here matches something comparable.
-# (Fill in against the keys printed by CELL 3 -- do not guess.)
+# THE decisive check: are camera extrinsics present? Without them the near/far
+# limb split cannot be computed, and it must NOT be guessed -- a wrong
+# assignment would invert the headline result.
+CAM_KEYS = [k for k in (z.keys() if npz else [])
+            if any(t in k.lower() for t in ("cam", "extrinsic", "rt", "proj"))]
+print("\ncamera-like keys:", CAM_KEYS or "NONE FOUND -- see CELL 6")
 
-# %% CELL 5 -- run the released evaluation + prediction pipeline
-subprocess.run(["bash", "-lc", "pip install -q uv && uv sync --frozen || "
-                "pip install -q -r requirements.txt || true"], check=False)
-subprocess.run(["bash", "-lc",
-                "uv run python scripts/evaluate.py evaluation=default || "
-                "python scripts/evaluate.py evaluation=default"], check=False)
-subprocess.run(["bash", "-lc",
-                "uv run python scripts/predict.py prediction=from_2d_markers "
-                "prediction.input.marker_type=det_ft || "
-                "python scripts/predict.py prediction=from_2d_markers "
-                "prediction.input.marker_type=det_ft"], check=False)
-print(subprocess.run(["bash", "-lc",
-                      "find data -name 'predictions*' -maxdepth 3 | head"],
+# %% CELL 4 -- which events, how many subjects, what framerate
+# configs/data/{running,sd_sprint,hurdle,racewalk,discus_shotput,all}.yaml exist,
+# so running and sprinting are both available. Restrict to those two: they are
+# the motions phase 2's stance-phase model applies to.
+print(subprocess.run(["bash", "-lc", "cat configs/data/running.yaml; echo ---; "
+                      "cat configs/data/sd_sprint.yaml; echo ---; "
+                      "cat configs/prediction/from_2d_markers.yaml"],
                      capture_output=True, text=True).stdout)
 
-# %% CELL 6 -- joint angles + the decomposition phase 2 needs
-# scripts/phase3_angles.py from the Overstride repo. Upload it as a Kaggle
-# dataset, or paste its contents into a cell. It has no Ferber dependency.
+# %% CELL 5 -- evaluate all three checkpoints (MPJPE), then predict
+# The generic-vs-fine-tuned contrast is the point: it brackets the operating
+# point instead of assuming one.
+for cfg, extra in (("default", ""),               # trained on AthleticsPose
+                   ("h36m_pretrained", ""),       # generic baseline
+                   ("ap3d_pretrained", "model=small")):
+    cmd = f"uv run python scripts/evaluate.py evaluation={cfg} {extra}"
+    r = subprocess.run(["bash", "-lc", cmd + " || " + cmd.replace("uv run ", "")],
+                       capture_output=True, text=True)
+    print(f"\n===== {cfg} =====\n{r.stdout[-1500:]}{r.stderr[-600:]}")
+
+cmd = ("uv run python scripts/predict.py prediction=from_2d_markers "
+       "prediction.input.marker_type=det_ft")
+r = subprocess.run(["bash", "-lc", cmd + " || " + cmd.replace("uv run ", "")],
+                   capture_output=True, text=True)
+print(r.stdout[-1500:], r.stderr[-600:])
+print(subprocess.run(["bash", "-lc", "find data -name 'predictions' -type d"],
+                     capture_output=True, text=True).stdout)
+
+# %% CELL 6 -- joint angles, near/far split, error decomposition
+# Upload scripts/phase3_angles.py as a Kaggle dataset named `overstride-scripts`.
+# Its H36M index map was checked against athleticspose/statics/joints.py and
+# matches (PELVIS, R_HIP, R_KNEE, R_ANKLE, L_HIP, L_KNEE, L_ANKLE, ...).
 sys.path.insert(0, "/kaggle/input/overstride-scripts")
-from phase3_angles import (error_decomposition, sagittal_angles,  # noqa: E402
-                           summarise)
+from phase3_angles import (H36M, error_decomposition,  # noqa: E402
+                           sagittal_angles, summarise)
 
-def near_far_limb(kp_world: np.ndarray, cam_pos: np.ndarray) -> str:
-    """Which limb is nearer the camera. Returns 'l' or 'r'.
+PRED_DIR = Path("data/AthleticsPoseDataset/predictions")
+rows = []
 
-    Uses mean hip-to-camera distance over the clip. If camera extrinsics are not
-    available, this must NOT be guessed -- the near/far split is the entire point
-    of the phase, and a wrong assignment would invert the result.
-    """
-    from phase3_angles import H36M
-    dl = np.linalg.norm(kp_world[:, H36M["l_hip"]] - cam_pos, axis=-1).mean()
-    dr = np.linalg.norm(kp_world[:, H36M["r_hip"]] - cam_pos, axis=-1).mean()
+def near_side(gt_kp: np.ndarray, cam_pos: np.ndarray | None) -> str | None:
+    """'l' or 'r' -- whichever hip is nearer the camera. None if unknowable."""
+    if cam_pos is None:
+        return None
+    dl = np.linalg.norm(gt_kp[:, H36M["l_hip"]] - cam_pos, axis=-1).mean()
+    dr = np.linalg.norm(gt_kp[:, H36M["r_hip"]] - cam_pos, axis=-1).mean()
     return "l" if dl < dr else "r"
 
-rows = []
-# for each clip:  est_kp (n,17,3), gt_kp (n,17,3), cam_pos (3,), stride_ids
-#     near = near_far_limb(gt_kp, cam_pos)
-#     for side in ('l','r'):
-#         e = sagittal_angles(est_kp, side); g = sagittal_angles(gt_kp, side)
-#         for joint in ('hip','knee'):          # ankle needs a toe keypoint
-#             d = error_decomposition(e[joint], g[joint], stride_ids)
-#             d.update(joint=joint, limb='near' if side == near else 'far',
-#                      clip=clip_id, checkpoint=ckpt_name)
-#             rows.append(d)
+for pred_file in sorted(PRED_DIR.rglob("*.npy")):
+    est = np.load(pred_file)                       # (T, 17, 3)
+    gt_file = next((f for f in npz if f.stem in pred_file.stem
+                    or pred_file.stem in f.stem), None)
+    if gt_file is None:
+        continue
+    z = np.load(gt_file, allow_pickle=True)
+    gt = np.asarray(z["markers_h36m"])             # (T, 17, 3)
+    n = min(len(est), len(gt))
+    est, gt = est[:n], gt[:n]
 
-# %% CELL 7 -- export the small result file (this is all that leaves Kaggle)
+    cam_pos = np.asarray(z[CAM_KEYS[0]]) if CAM_KEYS else None
+    if cam_pos is not None and cam_pos.size >= 3:
+        cam_pos = cam_pos.reshape(-1)[:3]
+    near = near_side(gt, cam_pos)
+
+    for side in ("l", "r"):
+        e, g = sagittal_angles(est, side), sagittal_angles(gt, side)
+        for joint in ("hip", "knee"):     # ankle needs a toe keypoint -> NaN
+            d = error_decomposition(e[joint], g[joint])
+            d.update(joint=joint, clip=pred_file.stem, side=side,
+                     limb=("unknown" if near is None
+                           else ("near" if side == near else "far")))
+            rows.append(d)
+
+print(f"{len(rows)} rows from {len(set(r['clip'] for r in rows))} clips")
+if not CAM_KEYS:
+    print("\nWARNING: no camera extrinsics found. The near/far split -- the number "
+          "phase 2 actually needs -- is NOT computed. Report as unavailable "
+          "rather than guessing; a wrong assignment would invert the result.")
+print(summarise(rows))
+
+# %% CELL 7 -- export the few KB that leave Kaggle
 import json
 
 out = Path("/kaggle/working/phase3_angle_errors.json")
-out.write_text(json.dumps(rows, indent=2), encoding="utf-8")
-print(summarise(rows))
-print(f"wrote {out}  ({out.stat().st_size/1e3:.1f} KB)")
+out.write_text(json.dumps({"rows": rows,
+                           "near_far_available": bool(CAM_KEYS),
+                           "caveats": [
+                               "2D->3D lifting only; original videos not released",
+                               "per-clip denormalisation uses GT 3D scale -> optimistic",
+                               "ankle unavailable: no toe keypoint in H36M-17"]},
+                          indent=2), encoding="utf-8")
+print(f"wrote {out} ({out.stat().st_size/1e3:.1f} KB) -- download this")

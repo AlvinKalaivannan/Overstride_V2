@@ -46,21 +46,52 @@ accepted manually before download.
 Both are non-commercial. `CLAUDE.md` already lists commercial framing as out of
 scope, so no new constraint.
 
+## What the repo actually provides — checked, not assumed
+
+- **Model:** MotionAGFormer (`base` and `small` variants).
+- **Three evaluation configs**, which is the whole reason to use this dataset:
+  `default` (trained on AthleticsPose), `h36m_pretrained` (generic baseline),
+  `ap3d_pretrained` (AthletePose3D, needs `model=small`). Generic vs
+  sport-fine-tuned brackets the operating point instead of assuming one.
+- **Running and sprinting are both present**: `configs/data/running.yaml` and
+  `configs/data/sd_sprint.yaml`.
+- **Joint convention is H36M-17**, order `PELVIS, R_HIP, R_KNEE, R_ANKLE, L_HIP,
+  L_KNEE, L_ANKLE, SPINE, THORAX, NECK, HEAD, L_SHOULDER, …` — verified against
+  `athleticspose/statics/joints.py`, and it matches the map in
+  `scripts/phase3_angles.py` exactly.
+- **Predictions** are `.npy` `(T, 17, 3)` mirroring the input tree; **ground
+  truth** is `.npz` under key `markers_h36m`, same shape.
+
+### Two limits that bound what phase 3 can claim
+
+1. **Original videos are not released** (anonymisation). What ships is 2D marker
+   detections plus 3D ground truth, so this measures the **2D → 3D lifting**
+   stage. Using `marker_type=det_ft` means real detector error *is* included, but
+   raw video decoding and person detection are not. The result is a **lower
+   bound** on a full in-the-wild pipeline.
+2. **The predictor denormalises each clip using a scale derived from ground-truth
+   3D.** A deployed system has no such scale. The reported errors are therefore
+   **optimistic**, and phase 4 must not assume that scale is available.
+
+Neither is a reason to skip phase 3 — a lower bound is exactly what decides
+whether the path is worth pursuing. Both belong in `results/phase03.md`.
+
 ## Steps
 
 1. **New Kaggle notebook.** Settings → Accelerator **GPU T4 ×2** (or P100);
    Settings → Internet **ON** (needed for the repo, data and checkpoints).
 2. **Upload `scripts/phase3_angles.py`** as a Kaggle dataset named
-   `overstride-scripts`. It has no Ferber dependency and imports nothing from
-   this repo.
-3. **Run `notebooks/phase3_kaggle.py` cell by cell.** Cells are marked
-   `# %% CELL n`.
-4. **Cells 3–4 inspect before computing.** The AthleticsPose array layout has not
-   been verified from here. Fill cell 4 against what cell 3 actually prints —
-   do not write the pipeline against a guessed schema. This is the same
-   discipline that surfaced the phase 0 traps.
-5. **Download `phase3_angle_errors.json`** (a few KB) and run
-   `scripts/phase3_report.py` locally.
+   `overstride-scripts`. It is the only file that needs to cross, has no Ferber
+   dependency, and imports nothing from this repo.
+3. **Import `notebooks/phase3_kaggle.ipynb`** (File → Import Notebook). It is
+   generated from `notebooks/phase3_kaggle.py` by
+   `scripts/make_phase3_notebook.py` — edit the `.py`, regenerate, so changes
+   stay reviewable in diffs.
+4. **Cell 3 inspects before anything computes.** The layout above is expected,
+   not verified from outside Kaggle. Confirm it rather than trusting it — writing
+   a pipeline against a guessed schema is how phase 0's traps were made.
+5. **Download `phase3_angle_errors.json`** (a few KB) — the only thing that
+   leaves Kaggle.
 
 ## Watch for
 
@@ -76,6 +107,9 @@ scope, so no new constraint.
   returns NaN for ankle rather than fabricating it. Hip and knee are available.
   Phase 2's `wave3` used hip/knee/ankle, so the video-side subset is narrower
   than the mocap-side one — a real limitation for phase 4, not a bug.
+  (`joints.py` also defines 84- and 64-marker mocap sets which *do* include toe;
+  if the release exposes those for the ground truth, ankle becomes recoverable on
+  the GT side but still not from an H36M-17 prediction.)
 
 ## The convention gap that phase 4 must handle
 
