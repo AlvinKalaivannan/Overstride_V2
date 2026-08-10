@@ -1,0 +1,82 @@
+# ---------------------------------------------------------------------------
+# DATA — never commit. The Ferber archive is 21 GB; GitHub rejects files >100 MB.
+# Data lives outside the repo at $DATA_ROOT. These patterns are a safety net
+# in case it is ever placed inside.
+# ---------------------------------------------------------------------------
+data/
+ric_data/
+*.zip
+*.7z
+*.tar.gz
+run_data_meta.csv
+walk_data_meta.csv
+Supplemental_materials/
+
+# Raw session files
+*.json
+!package.json
+!.vscode/*.json
+!configs/*.json
+
+# Derived arrays — regenerable from phase 0, keep out of history
+*.npz
+*.npy
+*.parquet
+*.feather
+*.h5
+*.hdf5
+*.mat
+
+# Video
+*.mp4
+*.mov
+*.avi
+*.mkv
+footage/
+
+# Model artifacts
+*.pt
+*.pth
+*.ckpt
+*.pkl
+*.joblib
+checkpoints/
+models/
+
+# ---------------------------------------------------------------------------
+# Secrets / config
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+.coverage
+htmlcov/
+
+# ---------------------------------------------------------------------------
+# OS / editor
+# ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/settings.json
+
+# ---------------------------------------------------------------------------
+# Tracked by exception — these are small and are the point of the project
+# ---------------------------------------------------------------------------
+!results/**
+!figures/**
+!docs/**

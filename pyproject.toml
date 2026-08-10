@@ -1,0 +1,17 @@
+[project]
+name = "overstride"
+version = "0.1.0"
+description = "Injury-risk screening for runners from monocular video."
+requires-python = ">=3.11"
+dependencies = [
+    "matplotlib>=3.9",
+    "numpy>=2.0",
+    "pandas>=2.2",
+    "pyarrow>=25.0.0",
+    "pypdf>=5.0",
+    "python-dotenv>=1.0",
+    "scikit-learn>=1.9.0",
+]
+
+[tool.ruff]
+line-length = 100
