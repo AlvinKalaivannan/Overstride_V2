@@ -7,7 +7,11 @@ dependencies = [
     "kaggle>=2.2.4",
     "matplotlib>=3.9",
     "numpy>=2.0",
-    "pandas>=2.2",
+    # Upper bound is a Windows Smart App Control constraint, not an API one:
+    # pandas 3.0.5's tzconversion .pyd is blocked as unreputable on this machine.
+    # Verified immaterial to results -- every phase 4 AUC was bit-identical
+    # across 3.0.5 and 2.3.3. See results/phase04.md.
+    "pandas>=2.2,<3",
     "pyarrow>=25.0.0",
     "pypdf>=5.0",
     "python-dotenv>=1.0",
