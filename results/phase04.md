@@ -1,27 +1,64 @@
 # Phase 4 — the limb signal under *measured* monocular error
 
-**Real monocular error costs about 0.03 AUC, which is small. It is also enough
-to put the honest video-recoverable feature set below the pre-registered bar.
-The verdict is two-sided and both sides matter.**
+**Real monocular error costs about 0.03 AUC, which is small. The honest
+video-recoverable feature set still lands below the pre-registered bar, in every
+condition — including the favourable side-on geometry and including at 30 fps.
+Error is not what is limiting it.**
 
-| feature set | realized error | AUC | spread | 95% CI | CI > 0.5 | mean ≥ 0.60 | Δ vs clean |
-|---|---|---|---|---|---|---|---|
-| **wave2 clean mocap** | 0° | **0.615** | — | [0.533, 0.693] | ✅ | ✅ | — |
-| **wave2 + real error, mocap** | 3.31° | **0.588** | 0.020 | [0.547, 0.622] | ✅ | ❌ | −0.027 |
-| **wave2 + real error, 60 fps** | 2.96° | **0.587** | 0.022 | [0.544, 0.626] | ✅ | ❌ | −0.028 |
-| **wave2 + real error, 30 fps** | 2.87° | **0.582** | 0.026 | [0.540, 0.632] | ✅ | ❌ | −0.033 |
-| wave3 clean mocap *(reference)* | 0° | 0.610 | — | [0.532, 0.686] | ✅ | ✅ | — |
-| wave3_hk + real error, mocap | 2.20° | 0.606 | 0.011 | [0.546, 0.667] | ✅ | ✅ | −0.003 |
-| wave3_hk + real error, 60 fps | 2.01° | 0.604 | 0.012 | [0.545, 0.668] | ✅ | ✅ | −0.006 |
-| wave3_hk + real error, 30 fps | 2.09° | 0.602 | 0.017 | [0.540, 0.663] | ✅ | ✅ | −0.008 |
+**`wave2` — hip + knee, the honest video-recoverable set:**
 
-**`wave2` is the result. `wave3_hk` is the optimistic control** and is reported
-only so the gap between them is visible — see "why wave3_hk is not the answer".
+| bank | fps | realized error | AUC | spread | 95% CI | CI > 0.5 | mean ≥ 0.60 | Δ vs clean |
+|---|---|---|---|---|---|---|---|---|
+| **clean mocap** | — | 0° | **0.615** | — | [0.533, 0.693] | ✅ | ✅ | — |
+| all views | mocap | 3.29° | 0.586 | 0.032 | [0.535, 0.636] | ✅ | ❌ | −0.029 |
+| all views | 60 fps | 2.94° | 0.588 | 0.033 | [0.538, 0.635] | ✅ | ❌ | −0.028 |
+| all views | 30 fps | 2.86° | 0.587 | 0.023 | [0.535, 0.631] | ✅ | ❌ | −0.029 |
+| **side-on only** | mocap | 2.24° | 0.587 | 0.018 | [0.517, 0.642] | ✅ | ❌ | −0.028 |
+| **side-on only** | 60 fps | 2.04° | 0.588 | 0.014 | [0.518, 0.640] | ✅ | ❌ | −0.027 |
+| **side-on only** | **30 fps** | **1.94°** | **0.583** | 0.023 | [0.515, 0.631] | ✅ | ❌ | −0.033 |
+
+**`wave3_hk` — the optimistic control (clean ankle a camera cannot deliver):**
+
+| bank | fps | realized error | AUC | 95% CI | mean ≥ 0.60 | Δ vs clean |
+|---|---|---|---|---|---|---|
+| clean mocap | — | 0° | 0.610 | [0.532, 0.686] | ✅ | — |
+| all views | mocap / 60 / 30 | 2.19 / 2.00 / 2.08° | 0.608 / 0.610 / 0.607 | — | ✅ | −0.002 / +0.000 / −0.002 |
+| side-on only | mocap / 60 / 30 | 1.49 / 1.40 / 1.47° | 0.599 / 0.599 / 0.595 | — | ❌ | −0.011 / −0.010 / −0.014 |
+
+The last row matters: **under the realistic side-on bank, even the optimistic
+feature set falls below the bar.** `wave3_hk` only cleared 0.60 when it was fed
+the less accurate all-views error, because a clean ankle channel diluting noisier
+hip/knee channels is worth more when those channels are noisier.
 
 **No ΔAUC excludes zero.** Every delta CI spans 0, so the degradation is real in
 direction and consistent across conditions, but it is not individually
-significant against fold noise. Saying "measured monocular error costs 0.03 AUC"
+significant against fold noise. Saying "measured monocular error costs ~0.03 AUC"
 is defensible; saying "it significantly degrades the signal" is not.
+
+**The striking thing is how flat this is.** `wave2` lands at 0.583–0.588 in all
+six conditions — across a 1.7× range of realized error and an 11× range of
+temporal resolution. Reducing error from 3.29° to 1.94° by restricting to side-on
+views buys nothing. **Error is not the binding constraint. The signal is simply
+weak**, and phase 4B measures what that means in practice.
+
+## Negative controls, re-asserted rather than inherited
+
+CLAUDE.md requires a demographics-only control and a provenance-only baseline
+alongside every kinematic score. On this within-subject task all three are
+constant within a session and so *must* sit at chance; a departure would mean the
+setup leaks and every number above is void. Asserted in-script (`assert worst <
+0.08`), not merely printed:
+
+| control | AUC | 95% CI |
+|---|---|---|
+| demographics (`CONTROL_CLEAN`) | 0.486 | [0.386, 0.572] |
+| provenance-only | 0.449 | [0.403, 0.503] |
+| file structure | 0.472 | [0.415, 0.537] |
+
+**Max \|AUC − 0.5\| = 0.051 → PASS.** Run speed is inside the demographics
+control and constant within a session, so it cannot drive limb choice; that is a
+stronger guarantee than the speed-matched subsample CLAUDE.md asks for on
+between-subject analyses.
 
 ![degradation curve](../figures/phase4_degradation.png)
 
@@ -69,6 +106,18 @@ actually has — temporal structure (the residual drifts across stance rather th
 jittering independently) and a systematic offset. Both matter here, because the
 feature is a left–right difference: error common to both limbs cancels, error
 specific to one limb does not.
+
+**Drawn as clip pairs, not independently.** Each source clip contributes exactly
+one near row and one far row. They are drawn together, so the common-mode error a
+single camera puts on both limbs survives into the left–right difference —
+because that is exactly what cancels. Independent draws destroy it and overstate
+the damage. One clip is drawn per Ferber session and shared across both limbs and
+both joints, so the hip/knee error correlation survives too.
+
+**Two banks.** `all views` uses all 592 paired clips (3.32° mean error).
+`side-on only` restricts to the 296 clips with view ratio ≥ 0.85 — the geometry
+Overstride actually prescribes, and, per phase 3B, the geometry where the pose
+estimator is most accurate (2.26° mean error).
 
 ## The split
 
@@ -136,16 +185,17 @@ finding.
 
 ### 3. Framerate does almost nothing at this error level — after a bug was fixed
 
-Realized error and AUC both fall slightly as framerate drops:
+Realized error falls slightly as framerate drops (reconstruction between sparse
+samples smooths the injected residual), while AUC barely moves:
 
-| fps | realized error | wave2 AUC |
-|---|---|---|
-| mocap (101 pts) | 3.31° | 0.588 |
-| 60 fps (18 pts) | 2.96° | 0.587 |
-| 30 fps (9 pts) | 2.87° | 0.582 |
+| fps | realized error | wave2 AUC (all views) | wave2 AUC (side-on) |
+|---|---|---|---|
+| mocap (101 pts) | 3.29° / 2.24° | 0.586 | 0.587 |
+| 60 fps (18 pts) | 2.94° / 2.04° | 0.588 | 0.588 |
+| 30 fps (9 pts) | 2.86° / 1.94° | 0.587 | 0.583 |
 
-Monotone, tiny, and inside both the realization spread and every CI. **At 3.3° of
-error, framerate is not the binding constraint** — consistent with phase 2's
+Differences are inside the realization spread and every CI. **At 2–3° of error,
+framerate is not the binding constraint** — consistent with phase 2's
 finding that 30 fps alone costs nothing, and with phase 2's interaction only
 biting at much higher error.
 
@@ -212,26 +262,30 @@ Realized errors are cached in `results/phase2_realized_error.json`.
 
 ## What still bounds this result
 
-Carried from phase 3, unresolved here:
-
 1. **3.32° is a lower bound.** AthleticsPose does not release the original
    videos, so this is 2D→3D lifting only — video decode and person detection
    error are excluded. Per-clip denormalisation uses a scale derived from
    ground-truth 3D, which a deployed system does not have. And the fine-tuned
    checkpoint was trained on this capture rig, these cameras, this sport:
    held-out *subjects* is not held-out *domain*.
-2. **The side-on occlusion penalty is still unmeasured, and phase 4 does not
-   close it.** In AthleticsPose the hips separate in depth by a median of 44 mm
-   (max 64 mm) against ~200–250 mm for a true lateral view — these are
-   near-frontal captures. The near/far residuals in the bank therefore carry
-   almost no occlusion asymmetry (3.38° near vs 3.26° far). **Phase 2 found that
-   occlusion asymmetry combined with low framerate is the lethal combination**,
-   and that cell remains untested with real error. A dataset with genuinely
-   lateral views is required.
-3. **The residuals are drawn independently per limb.** Real bilateral error from
-   one camera would share a common component that partly cancels in the R − L
-   difference. Independent draws are the conservative choice, but they are a
-   choice.
+
+2. > **~~The side-on occlusion penalty is still unmeasured.~~ WITHDRAWN.** The
+   > original version of this report called this the project's largest open gap,
+   > on phase 3's claim that AthleticsPose contains only near-frontal views.
+   > **That claim was a unit error** — 44 *pixels* compared against a 200–250
+   > *mm* reference. Measured unit-free, half the clips are near-lateral and the
+   > far-limb penalty does not grow with view angle (`results/phase03b.md`). The
+   > `side-on only` bank above is the direct test, and it changes nothing.
+
+3. **The angle-convention transfer is an assumption, now bounded rather than
+   assumed away.** `phase3_angles.py` flagged that keypoint three-point angles
+   and Ferber Cardan angles are not the same quantity, and that phase 4 must
+   handle it. It cannot be tested directly — no subject has both — so phase 4B
+   bounds it instead: the verdict holds unless the magnitude transfer is off by
+   more than ~2×, and only reaches chance at ~3×. See `results/phase04b.md`.
+
+4. **Nothing reaches a full 90° lateral view** (max view ratio ~0.97), so the
+   side-on bank is near-lateral rather than perfectly lateral.
 
 ## Environment deviation, recorded
 
@@ -248,16 +302,22 @@ repository depends on the pandas version.
 |---|---|---|
 | 1 | measured (not assumed) error injected | ✅ 1,184 empirical residual curves, 3.32° |
 | 2 | real ΔAUC reported | ✅ −0.027 to −0.033 for wave2; no delta CI excludes zero |
-| 3 | honest video-recoverable set separated from optimistic one | ✅ wave2 vs wave3_hk, gap quantified |
-| 4 | verdict against the pre-registered bar | ⚠️ **split** — CI leg passes, mean ≥ 0.60 leg fails |
-| 5 | occlusion penalty under real error | ❌ **not measured** — no side-on views exist in the source data |
+| 3 | honest set separated from optimistic one | ✅ wave2 vs wave3_hk, gap quantified |
+| 4 | negative controls re-asserted | ✅ max \|AUC−0.5\| = 0.051, asserted in-script |
+| 5 | occlusion penalty under real error | ✅ **resolved** — side-on bank run; phase 3B shows the penalty is ~0 and flat in view angle |
+| 6 | verdict against the pre-registered bar | ❌ **fails the mean ≥ 0.60 leg in every condition** |
 
-**Item 4 is the headline and item 5 is the reason not to round it up.** The video
-path is not closed — the signal clearly survives contact with real monocular
-error, at all three framerates, with every CI excluding chance. But at 0.582–0.588
-the honest feature set sits below the bar this project fixed in advance, and the
-one condition phase 2 identified as fatal has still never been tested with real
-error.
+**Item 6 is the headline, and item 5 no longer softens it.** The signal survives
+contact with real monocular error — every CI excludes chance, at every framerate,
+under both banks. But `wave2` sits at **0.583–0.588** against a bar of 0.60, and
+the occlusion escape hatch is gone: the geometry is favourable, the error is
+small, and the score still does not reach the bar.
+
+**Error is not what is limiting this.** Halving the realized error changes
+nothing. What limits it is the strength of the underlying limb-asymmetry signal,
+which phase 5 measured at 0.610 on *perfect mocap*. Phase 4B measures what a
+score in this range means for an actual user, and that is the result phase 6
+has to be designed around.
 
 ## Reproduction
 

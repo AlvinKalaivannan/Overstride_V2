@@ -1,0 +1,51 @@
+{
+  "geometry": {
+    "n_clips": 592,
+    "view_ratio_median": 0.7513029418659134,
+    "out_of_plane_deg_median": 48.70336912753735,
+    "femur_mm": 479.249643641209,
+    "pelvis_mm": 206.97849331582273,
+    "depth_sep_mm": 145.36921787036817
+  },
+  "models": {
+    "ap3d (other sport)": {
+      "n_clips": 592,
+      "near_mae": 22.305014721903227,
+      "far_mae": 20.520945969734814,
+      "penalty": -1.784068752168413,
+      "corr_penalty_ratio": 0.1764957609276171,
+      "slope_per_unit_ratio": 3.7879141987900447,
+      "slope_ci": [
+        2.204151602590793,
+        5.3494222835309495
+      ],
+      "penalty_at_ratio_1": -0.663197611750836
+    },
+    "ath-det-ft (fine-tuned)": {
+      "n_clips": 592,
+      "near_mae": 3.42898429275828,
+      "far_mae": 3.306632870459096,
+      "penalty": -0.12235142229918453,
+      "corr_penalty_ratio": 0.16106771641106507,
+      "slope_per_unit_ratio": 0.6369666749763812,
+      "slope_ci": [
+        0.2589871720276847,
+        0.9686428633448239
+      ],
+      "penalty_at_ratio_1": 0.06613161240546239
+    },
+    "h36m (generic)": {
+      "n_clips": 592,
+      "near_mae": 18.682557074761604,
+      "far_mae": 17.581889258732065,
+      "penalty": -1.1006678160295411,
+      "corr_penalty_ratio": 0.1955843718310317,
+      "slope_per_unit_ratio": 4.598363034741931,
+      "slope_ci": [
+        2.7861158951226503,
+        6.50478192703793
+      ],
+      "penalty_at_ratio_1": 0.260020982162243
+    }
+  }
+}

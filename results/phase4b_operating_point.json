@@ -1,0 +1,220 @@
+{
+  "configs": {
+    "clean mocap (upper bound)": {
+      "auc_pooled_oof": 0.6140766675644134,
+      "operating_points": [
+        {
+          "point": "Youden-optimal",
+          "threshold": 0.48538830876350403,
+          "sensitivity": 0.7044917257683215,
+          "specificity": 0.49113924050632907,
+          "ppv": 0.5971943887775552,
+          "npv": 0.6081504702194356,
+          "balanced_accuracy": 0.5978154831373252
+        },
+        {
+          "point": "specificity >= 0.90",
+          "threshold": 0.6444068789482117,
+          "sensitivity": 0.15130023640661938,
+          "specificity": 0.9012658227848102,
+          "ppv": 0.6213592233009709,
+          "npv": 0.4979020979020979,
+          "balanced_accuracy": 0.5262830295957148
+        },
+        {
+          "point": "sensitivity >= 0.90",
+          "threshold": 0.41305877566337584,
+          "sensitivity": 0.8983451536643026,
+          "specificity": 0.23797468354430384,
+          "ppv": 0.5580029368575624,
+          "npv": 0.6861313868613139,
+          "balanced_accuracy": 0.5681599186043031
+        },
+        {
+          "point": "threshold 0.50",
+          "threshold": 0.5002068996429443,
+          "sensitivity": 0.6359338061465721,
+          "specificity": 0.5189873417721519,
+          "ppv": 0.5860566448801744,
+          "npv": 0.5710306406685236,
+          "balanced_accuracy": 0.577460573959362
+        }
+      ],
+      "calibration": {
+        "brier": 0.23918122574810688,
+        "brier_baseline": 0.24970707970421022,
+        "calibration_slope": 0.8268255433255983,
+        "calibration_intercept": 0.06848500884948455,
+        "reliability_bins": [
+          {
+            "n": 164,
+            "mean_pred": 0.350725146246756,
+            "observed": 0.3475609756097561
+          },
+          {
+            "n": 163,
+            "mean_pred": 0.45888414891219576,
+            "observed": 0.4539877300613497
+          },
+          {
+            "n": 164,
+            "mean_pred": 0.5194364823946139,
+            "observed": 0.5670731707317073
+          },
+          {
+            "n": 163,
+            "mean_pred": 0.5785587326149267,
+            "observed": 0.588957055214724
+          },
+          {
+            "n": 164,
+            "mean_pred": 0.6737370462679282,
+            "observed": 0.6280487804878049
+          }
+        ]
+      },
+      "repeatability": {
+        "n_subjects_multi_session": 74,
+        "n_subjects_same_side": 72,
+        "n_session_pairs": 258,
+        "binary_agreement": 0.7441860465116279,
+        "score_corr": 0.6466802642304381,
+        "mean_abs_score_diff": 0.06314930986295375
+      }
+    },
+    "deployment: lateral bank, 30 fps": {
+      "auc_pooled_oof": 0.5688900858844301,
+      "operating_points": [
+        {
+          "point": "Youden-optimal",
+          "threshold": 0.4997596996133235,
+          "sensitivity": 0.6572104018912529,
+          "specificity": 0.47848101265822784,
+          "ppv": 0.5743801652892563,
+          "npv": 0.5658682634730537,
+          "balanced_accuracy": 0.5678457072747404
+        },
+        {
+          "point": "specificity >= 0.90",
+          "threshold": 0.6149483588770923,
+          "sensitivity": 0.13002364066193853,
+          "specificity": 0.8987341772151899,
+          "ppv": 0.5789473684210527,
+          "npv": 0.4910096818810511,
+          "balanced_accuracy": 0.5143789089385642
+        },
+        {
+          "point": "sensitivity >= 0.90",
+          "threshold": 0.41762840035941007,
+          "sensitivity": 0.900709219858156,
+          "specificity": 0.16455696202531644,
+          "ppv": 0.5358649789029536,
+          "npv": 0.6074766355140185,
+          "balanced_accuracy": 0.5326330909417363
+        },
+        {
+          "point": "threshold 0.50",
+          "threshold": 0.4997596996133235,
+          "sensitivity": 0.6572104018912529,
+          "specificity": 0.47848101265822784,
+          "ppv": 0.5743801652892563,
+          "npv": 0.5658682634730537,
+          "balanced_accuracy": 0.5678457072747404
+        }
+      ],
+      "calibration": {
+        "brier": 0.2460445923549373,
+        "brier_baseline": 0.24970707970421022,
+        "calibration_slope": 0.7158044969189953,
+        "calibration_intercept": 0.06848500884948455,
+        "reliability_bins": [
+          {
+            "n": 164,
+            "mean_pred": 0.389963628965803,
+            "observed": 0.40853658536585363
+          },
+          {
+            "n": 163,
+            "mean_pred": 0.4731913021867759,
+            "observed": 0.4662576687116564
+          },
+          {
+            "n": 164,
+            "mean_pred": 0.5207849840613026,
+            "observed": 0.5975609756097561
+          },
+          {
+            "n": 163,
+            "mean_pred": 0.564695910865557,
+            "observed": 0.5337423312883436
+          },
+          {
+            "n": 164,
+            "mean_pred": 0.6333705629659067,
+            "observed": 0.5792682926829268
+          }
+        ]
+      },
+      "repeatability": {
+        "n_subjects_multi_session": 74,
+        "n_subjects_same_side": 72,
+        "n_session_pairs": 258,
+        "binary_agreement": 0.6666666666666666,
+        "score_corr": 0.4722562174447466,
+        "mean_abs_score_diff": 0.056864239114436
+      }
+    }
+  },
+  "convention_sensitivity": [
+    {
+      "scale": 0.5,
+      "realized_error_deg": 1.0106433002169832,
+      "auc_mean": 0.5992583720856188,
+      "ci": [
+        0.5186131214228277,
+        0.6652313028179948
+      ],
+      "survives": true
+    },
+    {
+      "scale": 1.0,
+      "realized_error_deg": 1.9401112515002592,
+      "auc_mean": 0.58272898786624,
+      "ci": [
+        0.5147911640887376,
+        0.6312135696489933
+      ],
+      "survives": true
+    },
+    {
+      "scale": 1.5,
+      "realized_error_deg": 2.9024928509847165,
+      "auc_mean": 0.5668600677897121,
+      "ci": [
+        0.5095596234804408,
+        0.6093787834294163
+      ],
+      "survives": true
+    },
+    {
+      "scale": 2.0,
+      "realized_error_deg": 3.873774030761746,
+      "auc_mean": 0.553747627994035,
+      "ci": [
+        0.5047159547798117,
+        0.5973875983369654
+      ],
+      "survives": true
+    },
+    {
+      "scale": 3.0,
+      "realized_error_deg": 5.825558721286788,
+      "auc_mean": 0.5341395398694492,
+      "ci": [
+        0.49423395298235656,
+        0.5798060823377279
+      ],
+      "survives": false
+    }
+  ]
+}

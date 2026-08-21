@@ -146,19 +146,28 @@ def main() -> int:
                                / f"{det_file.stem}.npz")
                     if not gt_file.exists():
                         continue
+                    blob = np.load(gt_file)
                     det2d = np.load(det_file).astype(np.float64)
-                    gt3d = np.asarray(np.load(gt_file)["markers_h36m"])
-                    n = min(len(det2d), len(gt3d))
+                    gt3d = np.asarray(blob["markers_h36m"])
+                    # markers_h36m is in PIXELS. Each clip carries a per-frame
+                    # p2mm factor and the released evaluator divides by it,
+                    # uniformly across all three axes, to reach millimetres
+                    # (linghtning_module.py: y_sample / p2mm_sample[:,None,None]).
+                    # Reporting the raw values as "mm" understates MPJPE ~3.5x.
+                    p2mm = np.asarray(blob["p2mm"], dtype=np.float64).ravel()
+                    n = min(len(det2d), len(gt3d), len(p2mm))
                     if n < 10:
                         continue
-                    det2d, gt3d = det2d[:n], gt3d[:n]
+                    det2d, gt3d, p2mm = det2d[:n], gt3d[:n], p2mm[:n]
 
                     est = predict(model, det2d, gt3d)
 
-                    # MPJPE, root-relative, as the paper reports it
+                    # MPJPE, root-relative, in true millimetres
                     e = est - est[:, :1]
                     g = gt3d - gt3d[:, :1]
-                    mpjpes.append(float(np.mean(np.linalg.norm(e - g, axis=-1))))
+                    per_frame = np.linalg.norm(e - g, axis=-1).mean(axis=1)
+                    mpjpes.append(float(np.mean(
+                        per_frame / np.maximum(p2mm, 1e-9))))
                     n_clips += 1
 
                     # Near/far limb. "by_cam" means organised by camera, NOT
@@ -189,7 +198,7 @@ def main() -> int:
         mpjpe_by_model[label] = mpjpes
         if mpjpes:
             print(f"  {n_clips} clips | MPJPE {np.mean(mpjpes):.1f} mm "
-                  f"(median {np.median(mpjpes):.1f})")
+                  f"(median {np.median(mpjpes):.1f})  [true mm, p2mm-corrected]")
 
     OUT.parent.mkdir(exist_ok=True)
     OUT.write_text(json.dumps({
@@ -203,6 +212,7 @@ def main() -> int:
             "per-clip denormalisation uses GT 3D scale -> optimistic",
             "ankle unavailable: H36M-17 has no toe keypoint",
             "held-out subjects only (S11,S13,S16) per configs/data/running.yaml",
+            "MPJPE is p2mm-corrected to true mm; markers_h36m is stored in pixels",
         ],
     }, indent=2), encoding="utf-8")
     print(f"\nwrote {OUT.relative_to(REPO)}  ({len(rows)} rows)")

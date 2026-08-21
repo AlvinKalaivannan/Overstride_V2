@@ -1,14 +1,40 @@
 # Phase 3 — monocular 3D kinematics error, measured
 
+> ## ⚠️ Corrected — see `results/phase03b.md`
+>
+> Two errors in the original version of this report, both from the same root
+> cause: **`markers_h36m` is stored in PIXELS, not millimetres.** Each clip
+> carries a per-frame `p2mm` factor and the released evaluator divides by it
+> (`y_sample / p2mm_sample[:, None, None]`, applied to all three axes).
+>
+> 1. **MPJPE was reported in pixels labelled as mm.** Corrected below — the
+>    fine-tuned checkpoint is **51.7 mm**, not 11.8 mm.
+> 2. **The claim that this dataset has only near-frontal views was wrong**, and
+>    with it the conclusion that the far-limb split was "uninformative". It
+>    compared 44 *pixels* against a 200–250 *mm* reference. Measured
+>    unit-free, the hips separate in depth by **0.756 of the subject's own
+>    pelvis width** — about **49° out of the image plane**, and *zero* clips are
+>    near-frontal. **The far-limb penalty was measured, on genuinely oblique-to-
+>    lateral views, and it is ~0.** Gate item 2 is resolved, not open.
+>
+> **The joint-angle results below are unaffected.** `sagittal_angles` works in
+> the body's own frame and is scale-invariant; every angle MAE re-ran
+> bit-identical after the fix.
+
 **Sport-fine-tuned monocular pose reaches ~3.4° sagittal joint-angle error, which
 is comfortably inside the region where phase 2 says the signal survives. Generic
 pose does not.**
 
-| checkpoint | MPJPE | hip MAE | knee MAE | mean sagittal MAE |
+| checkpoint | MPJPE (true mm) | hip MAE | knee MAE | mean sagittal MAE |
 |---|---|---|---|---|
-| **ath-det-ft (sport fine-tuned)** | **11.8 mm** | **2.8–3.0°** | **3.7–4.0°** | **3.4°** |
-| h36m (generic) | 34.8 mm | 11.4–12.2° | 23.7–25.2° | 18.1° |
-| ap3d (other sport) | 37.3 mm | 17.4–17.6° | 23.6–27.1° | 21.4° |
+| **ath-det-ft (sport fine-tuned)** | **51.7 mm** (median 36.9) | **2.9°** | **3.8°** | **3.4°** |
+| h36m (generic) | 135.2 mm | 11.8° | 24.5° | 18.1° |
+| ap3d (other sport) | 142.9 mm | 17.5° | 25.3° | 21.4° |
+
+The corrected MPJPE is what makes the setup credible: AthletePose3D reports
+**214 → 65 mm** on fine-tuning, and this reproduces at **135 → 52 mm**. The old
+11.8 mm figure would have been far better than any published result, which
+should have been the tell.
 
 592 held-out clips, subjects **S11 / S13 / S16** only — the test split named in
 `configs/data/running.yaml`. The fine-tuned checkpoint was trained on the other
@@ -65,7 +91,7 @@ Phase 2 measured where the within-subject limb signal (AUC 0.610) survives:
 binding requirement.** A generic off-the-shelf 3D pose model is not accurate
 enough at low framerate; a fine-tuned one has ~5× the margin.
 
-## The far-limb result, and why it does not transfer
+## The far-limb result — corrected, and it *does* transfer
 
 Measured far-limb penalty (far MAE − near MAE):
 
@@ -75,25 +101,29 @@ Measured far-limb penalty (far MAE − near MAE):
 | h36m | 18.68° | 17.58° | −1.10° |
 | ap3d | 22.31° | 20.52° | −1.78° |
 
-Essentially zero, and if anything the far limb is *better*. **This does not
-answer the question phase 2 raised**, and it would be wrong to report it as if it
-did.
+Essentially zero, and if anything the far limb is *better*.
 
-The reason is geometric. In a true side-on view the hips separate in depth by
-about a pelvis width, ~200–250 mm. In this dataset the median separation is
-**44 mm**, the maximum is **64 mm**, and **61.7% of clips are under 50 mm** —
-these are near-frontal views of athletes running toward or away from the camera,
-which is what a track capture rig produces. The far limb is barely occluded, so
-there is almost no near/far asymmetry to detect.
+> **The original report dismissed this as uninformative on the grounds that the
+> dataset had only near-frontal views. That was a unit error** — 44 pixels
+> compared against a 200–250 mm reference. See `results/phase03b.md`.
 
-**The side-on occlusion penalty remains unmeasured.** Phase 2 showed it is
-decisive in combination with low framerate, and AthleticsPose cannot answer it.
-A dataset with genuinely lateral views is needed.
+Measured unit-free, as the fraction of the subject's own hip-to-hip vector lying
+along the camera depth axis: **median 0.751, i.e. 48.7° out of the image plane.
+Zero clips are near-frontal; 50% are near-lateral.** And phase 3B regressed the
+penalty on that ratio: extrapolated to a *fully* lateral view it is **+0.07°**
+for the fine-tuned checkpoint.
 
-The depth sign itself was verified rather than assumed: across 592 clips,
+**So the penalty was measured, on the geometry that matters, and it is ~0.**
+Accuracy in fact *improves* as the view becomes side-on (near MAE 4.66° → 2.11°
+across ratio quartiles) — a lateral view resolves sagittal motion best, which is
+fortunate, because side-on is the geometry Overstride prescribes.
+
+The depth sign was verified rather than assumed: across 592 clips,
 `corr(z_L − z_R, conf_L − conf_R) = −0.664` using the 2D detector's own
 confidence channel — the deeper limb is detected less confidently, as an occluded
-limb must be. Getting that sign backwards would have inverted the table above.
+limb must be.
+
+Getting that sign backwards would have inverted the table above.
 
 ## What these numbers are not
 
@@ -117,9 +147,11 @@ fabricating it.
 
 ## Anything that surprised us, or looks wrong
 
-1. **The far limb is not worse.** Expected the opposite; the explanation is that
-   the dataset has no side-on views, which is itself the finding.
-2. **Fine-tuning buys 5× on angles, not just positions.** MPJPE 34.8 → 11.8 mm
+1. **The far limb is not worse, even on side-on views.** Expected the opposite.
+   The original explanation — "the dataset has no side-on views" — was a unit
+   error; half the clips *are* near-lateral, and the penalty still does not
+   appear. Accuracy improves with lateralness rather than degrading.
+2. **Fine-tuning buys 5× on angles, not just positions.** MPJPE 135 → 52 mm
    and MAE 18.1 → 3.4° move together.
 3. **Knee error is roughly double hip error** in every checkpoint. The knee is
    the joint the phase 2 sagittal subset leans on most.
@@ -156,9 +188,10 @@ Raw rows in `results/phase3_angle_errors.json` (7,104 rows).
 | # | item | status |
 |---|---|---|
 | 1 | sagittal hip/knee MAE per checkpoint vs published band | ✅ generic 11.4–25.2° inside 14.1–25.8° |
-| 2 | near/far split | ⚠️ **computed but uninformative** — no side-on views in this dataset |
+| 2 | near/far split | ✅ **resolved in phase 3B** — measured on oblique-to-lateral views; penalty ~0 and flat in view angle |
 | 3 | systematic vs random decomposition | ✅ bias reported per joint/limb |
-| 4 | placement on the phase 2 surface | ✅ fine-tuned survives incl. 30 fps; generic dies at 30 fps |
+| 4 | placement on the phase 2 surface | ⚠️ **too optimistic** — see `results/phase04.md`; phase 2's nominal σ is not the error reaching the classifier |
 
-Item 2 is the one gap, and it is a property of the dataset rather than the
-method. Phase 4 should not assume the far-limb penalty is zero.
+Item 2 was recorded as the phase's one gap. It was not a gap — it was a unit
+error, and phase 3B closes it. Item 4's placement was superseded by phase 4's
+direct measurement, which is the authority.

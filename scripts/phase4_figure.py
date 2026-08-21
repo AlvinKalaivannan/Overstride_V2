@@ -142,17 +142,23 @@ def main() -> int:
 
     # Phase 4: measured residuals injected, plotted at each condition's OWN
     # realized mean |degraded - clean| -- the same quantity as the phase 2 x
-    # positions, so the two are directly comparable.
+    # positions, so the two are directly comparable. Only wave2 is shown;
+    # wave3_hk credits a clean ankle channel a camera cannot deliver.
     style = {"mocap": "#1f6fb4", "30fps": "#c0392b"}
     for s in p4["summary"]:
         if s["fps"] not in style or s["features"] != "wave2":
             continue
+        lateral = s.get("bank") == "lateral only"
+        c = style[s["fps"]]
         ax.errorbar(s["realized_error_deg"], s["auc_mean"],
                     yerr=[[s["auc_mean"] - s["ci"][0]], [s["ci"][1] - s["auc_mean"]]],
-                    fmt="D", color=style[s["fps"]], ms=8.5, mfc="white", mew=2.2,
+                    fmt="D", color=c, ms=8.5, mew=2.2,
+                    mfc=c if lateral else "white",
                     capsize=4, elinewidth=1.6, zorder=6)
     ax.plot([], [], "D", color="0.25", ms=8.5, mfc="white", mew=2.2, ls="none",
-            label="phase 4, MEASURED monocular error (wave2: hip+knee)")
+            label="phase 4, MEASURED error (wave2) — all camera views")
+    ax.plot([], [], "D", color="0.25", ms=8.5, mew=2.2, ls="none",
+            label="phase 4, MEASURED error (wave2) — side-on views only")
 
     for name, x in sorted(measured.items(), key=lambda kv: kv[1]):
         ax.axvline(x, color="0.45", ls=":", lw=1.3, zorder=0)
@@ -185,9 +191,9 @@ def main() -> int:
              "Phase 2 x-positions are the MEASURED mean |degraded - clean| of "
              "its own degrade(), not its nominal sigma; its sweep stopped at "
              "sigma 15.\n"
-             "Measured error is a LOWER BOUND: 2D-to-3D lifting only, and no "
-             "side-on views exist in the source clips -- so the occlusion "
-             "penalty is still unmeasured.",
+             "Measured error is a LOWER BOUND: 2D-to-3D lifting only. Half the "
+             "source clips are near-lateral and the far-limb penalty does not "
+             "grow with view angle (phase 3B).",
              fontsize=7.2, color="0.35", va="bottom", linespacing=1.5)
 
     fig.subplots_adjust(left=0.085, right=0.985, top=0.93, bottom=0.235)
