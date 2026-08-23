@@ -157,7 +157,9 @@
         ]
       }
     ],
-    "gain_25_to_100": 0.02475784610781462
+    "gain_25_to_100": 0.02475784610781462,
+    "final_increment": 0.001429210679174342,
+    "saturated": true
   },
   "results": {
     "NEG demographics": {

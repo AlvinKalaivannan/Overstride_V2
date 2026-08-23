@@ -1,8 +1,30 @@
 # Phase 3 — setup on Kaggle
 
-**Status: setup ready, not yet run.** Phase 3 needs CUDA, which this laptop does
-not have. `CLAUDE.md` puts it on Kaggle Notebooks (P100/T4) and forbids the
-Ferber archive leaving the laptop — nothing here needs it.
+> ## ⚠️ SUPERSEDED — this route was abandoned. Phase 3 ran locally on CPU.
+>
+> Two Kaggle runs were given neither GPU nor Internet: the account is not
+> phone-verified and Kaggle withholds both silently (`torch 2.10.0+cpu`,
+> `Could not resolve host: github.com`). **Phase 3 was run on this laptop's CPU
+> instead**, in ~90 min, and completed. GPU was only ever a speed convenience —
+> the quantity measured is identical either way.
+>
+> **Results: `results/phase03.md`.** Runner: `scripts/phase3_infer.py`.
+> `notebooks/phase3_kaggle.ipynb` and `notebooks/phase3_kaggle.py` are the
+> superseded Kaggle route, kept as the record.
+>
+> **Two claims below are also outdated**, and are corrected elsewhere:
+> - *"phase 3 needs CUDA"* — it does not.
+> - *"the signal survives 8° of far-limb error"* — that reads phase 2's **nominal
+>   σ**, not the error that actually reached the classifier. Phase 2 low-pass
+>   filters after injecting noise, so σ 8 delivers a realized 1.69° at full
+>   resolution. See the correction in `results/phase04.md`.
+>
+> The body is kept unchanged as a record of what was planned.
+
+**Status: ~~setup ready, not yet run~~ — abandoned, see above.** Phase 3 needs
+CUDA, which this laptop does not have. `CLAUDE.md` puts it on Kaggle Notebooks
+(P100/T4) and forbids the Ferber archive leaving the laptop — nothing here needs
+it.
 
 ---
 

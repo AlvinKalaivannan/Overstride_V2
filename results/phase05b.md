@@ -9,7 +9,7 @@ there is no representation of this data that rescues the injured-limb task.
 |---|---|---|
 | **D1 severity dose-response** (primary) | ρ = **+0.044** [−0.038, +0.130], p = 0.228 | ❌ **fails** — direction not supported |
 | **D2 `dv_r` clinical probe** | **0.610** vs reference **0.610**, ΔAUC +0.000 [−0.067, +0.071] | ❌ no headroom from a different modality |
-| **D3 learning curve** | 0.585 → 0.599 → 0.608 → **0.610** | ❌ saturated; final increment +0.002 |
+| **D3 learning curve** | 0.585 → 0.599 → 0.608 → **0.610** | ❌ saturated; final increment +0.001 |
 
 Reference: `limbsag_mean` AUC **0.610** [0.532, 0.686], the phase 5 winner,
 reproduced here exactly.
@@ -128,10 +128,10 @@ decimals. **The limitation is the signal.**
 | 25% (~135) | 0.585 | [0.514, 0.663] | — |
 | 50% (~270) | 0.599 | [0.510, 0.674] | +0.014 |
 | 75% (~405) | 0.608 | [0.518, 0.693] | +0.009 |
-| **100% (~540)** | **0.610** | [0.532, 0.685] | **+0.002** |
+| **100% (~540)** | **0.610** | [0.532, 0.685] | **+0.001** |
 
 **Saturated.** The total 25→100% gain is +0.025, but it is nearly all in the
-first doubling — the last quarter of the data bought **+0.002**. Extrapolating
+first doubling — the last quarter of the data bought **+0.001**. Extrapolating
 the shape, doubling the cohort would be worth on the order of +0.005.
 
 > The script originally thresholded on the total gain and printed "more data may

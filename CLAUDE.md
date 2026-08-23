@@ -14,6 +14,24 @@ any output, README, docstring, or plot title. Use "detect", "classify", or
 
 ---
 
+> ## PROJECT STATUS: COMPLETE — the answer is a negative result
+>
+> **The degradation curve is measured: monocular video costs ~0.03 AUC against
+> marker mocap.** It is that small because there was very little to lose. The
+> only task carrying kinematic injury signal — identifying *which limb* is
+> injured — tops out at **AUC 0.610** on perfect mocap and **0.583** with real
+> video error, against a chance rate of 0.517.
+>
+> Screening failed outright (0 of 60 pre-registered tests). Within-subject limb
+> identification cleared its bar but fails every deployment requirement, and
+> phases 5B–5D established the ceiling is the **signal**, not the model or the
+> camera.
+>
+> **See `README.md` for the synthesis.** The rules below still bind any further
+> work on this repository; the phase table records what happened, not a plan.
+
+---
+
 ## Non-negotiable rules
 
 Violating any of these invalidates the project's results. If a task appears to
@@ -112,11 +130,20 @@ laptop; the only thing that crosses is a feature file of roughly 10 MB.
 | Phase | Environment | Notes |
 |---|---|---|
 | 0–2 | Laptop, CPU | No GPU available and none needed |
-| 3 | Kaggle Notebooks (P100/T4) | CUDA required; Ferber data not needed here |
+| 3 | ~~Kaggle Notebooks (P100/T4)~~ → **Laptop, CPU** | See deviation below |
 | 4–6 | Laptop, CPU | |
 
 Do not propose solutions requiring a local GPU or requiring the Ferber archive
 to be uploaded to cloud storage.
+
+> **Deviation, recorded.** Phase 3 was planned for Kaggle because CUDA was
+> assumed necessary. Two Kaggle runs were given neither GPU nor Internet — the
+> account is not phone-verified and Kaggle withholds both silently. **Phase 3 ran
+> locally on CPU instead**, in ~90 min. GPU was only ever a speed convenience:
+> the quantity measured (angular error between estimated and ground-truth 3D) is
+> identical on CPU, and the rule above forbids solutions *requiring* a local GPU,
+> which CPU inference does not. The Ferber archive was never involved.
+> `docs/phase3-setup.md` and `notebooks/phase3_kaggle.*` are the superseded route.
 
 ---
 
@@ -125,20 +152,39 @@ to be uploaded to cloud storage.
 Each phase has a gate. Do not begin a phase before its predecessor's gate is
 recorded in `results/`.
 
-| Phase | Work | Gate |
-|---|---|---|
-| **0** | Inventory: parse, join, characterize, verify against Table 1 | `docs/data-inventory.md` exists and Table 1 reproduces |
-| **1** | Injury classifier on all 9 mocap waveforms | Beats the demographics-only control |
-| **2** | Restrict to 3 sagittal waveforms, downsample, inject keypoint noise | Degradation measured — **the headline result** |
-| **3** | Video → 3D kinematics via released checkpoints | Joint-angle MAE within range of published figures |
-| **4** | Video-derived features through the phase 2 model | Real ΔAUC, not simulated |
-| **5** | Personalization: `InjSide` asymmetry, within-session stride distributions | Beats the population model |
-| **6** | Demo shell | — |
+| Phase | Work | Gate | Outcome |
+|---|---|---|---|
+| **0** | Inventory: parse, join, characterize, verify against Table 1 | `docs/data-inventory.md` exists and Table 1 reproduces | ✅ |
+| **1** | Injury classifier on all 9 mocap waveforms | Beats the demographics-only control | ❌ **kill criterion fired** (0/60 tests) |
+| **2** | Restrict to 3 sagittal waveforms, downsample, inject keypoint noise | Degradation measured — **the headline result** | ✅ (σ labels corrected in phase 4) |
+| **3** | Video → 3D kinematics via released checkpoints | Joint-angle MAE within range of published figures | ✅ 3.4° fine-tuned |
+| **3B** | Viewpoint geometry; the pixel/`p2mm` unit error | — | ✅ occlusion penalty ~0 |
+| **4** | Video-derived features through the phase 2 model | Real ΔAUC, not simulated | ✅ −0.027 to −0.033 |
+| **4B** | Operating point, calibration, repeatability | — | ❌ not deployable |
+| **5** | Personalization: `InjSide` asymmetry, within-session stride distributions | Beats the population model | ✅ 0.610 |
+| **5B–5D** | Ceiling diagnostics, further feature families, abstention | — | ❌ ceiling is the signal |
+| **6** | ~~Demo shell~~ → **Methods demo + synthesis** | — | ✅ `README.md` |
+
+> **Phase 6 was redefined.** "Demo shell" assumed something worth demonstrating
+> to a user. Phases 4B and 5D showed a per-user limb verdict is unsupportable —
+> PPV 0.574 against a 0.517 base rate, calibration slope 0.716, and the model
+> disagrees with itself on a third of repeat scans. **Building one would
+> misrepresent the evidence.** Phase 6 became the honest presentation of the
+> measurement instead. See `results/phase04b.md` and `results/phase05d.md`.
 
 **Phase 1 has a kill criterion.** Build the demographics-only control *first*,
 before any kinematic model. If the kinematic model cannot beat it, the gait
 data carries no injury signal beyond "older, heavier, slower people are
 injured," and no downstream video pipeline can rescue that. Report it and stop.
+
+> **It fired, and the project continued deliberately.** Phases 1C/1D reported the
+> failure plainly: 0 of 60 pre-registered tests survived correction, and a
+> provenance-only baseline scored 0.775–0.863 while measuring paperwork. Work
+> continued onto the **within-subject** limb task, which is a different question
+> against a stronger control set (provenance, demographics, structure and limb
+> dominance all verified at chance). That pivot is a real departure from this
+> rule and is recorded in `results/phase02.md`. The video pipeline was then built
+> to measure degradation of *that* signal, not to rescue screening.
 
 Phases 0–2 require no camera, no GPU, and no pose estimation.
 
@@ -190,6 +236,14 @@ before writing results.
   within-session stride distributions, and regenerating means re-running hours
   of MATLAB.
 - Sagittal subset is channels for hip/knee/ankle flexion-extension only
+- **AthleticsPose `markers_h36m` is in PIXELS, not millimetres.** Each `.npz`
+  carries a per-frame `p2mm` factor and the released evaluator *divides* by it,
+  uniformly across all three axes
+  (`linghtning_module.py`: `y_sample / p2mm_sample[:, None, None]`). Reading the
+  raw values as mm understates MPJPE ~3x and makes side-on views look
+  near-frontal. **This cost two wrong claims across two reports** before it was
+  caught — see `results/phase03b.md`. Joint *angles* are unaffected: they are
+  scale-invariant, and every angle MAE re-ran bit-identical after the fix.
 - Plots go to `figures/`, tables to `results/`, never inline in notebooks only
 - Prefer scripts over notebooks for anything reproducible
 
