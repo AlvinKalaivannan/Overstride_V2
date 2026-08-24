@@ -31,6 +31,16 @@ pose does not.**
 | h36m (generic) | 135.2 mm | 11.8° | 24.5° | 18.1° |
 | ap3d (other sport) | 142.9 mm | 17.5° | 25.3° | 21.4° |
 
+> **Phase 7A revisited this.** An independent reimplementation reproduces the
+> sagittal MAE at **3.43°** on the same 592 clips, which validates both numbers.
+> It also found the inference path was leaving **−0.25°** on the table: windows
+> were stitched consecutively with no shared context, and short windows were
+> padded with all-zero keypoints. With both fixed the same measurement gives
+> **3.18°**. The figure below is kept as the record of what phase 3 actually ran;
+> `scripts/video_kinematics.py` uses the improved path. No downstream conclusion
+> changes — phase 5C showed *halving* the injected error moves nothing that
+> survives its interval. See `results/phase07.md`.
+
 The corrected MPJPE is what makes the setup credible: AthletePose3D reports
 **214 → 65 mm** on fine-tuning, and this reproduces at **135 → 52 mm**. The old
 11.8 mm figure would have been far better than any published result, which

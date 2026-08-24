@@ -7,6 +7,11 @@ dependencies = [
     "kaggle>=2.2.4",
     "matplotlib>=3.9",
     "numpy>=2.0",
+    # Video decode for scripts/video_kinematics.py. The 2D pose detector is
+    # torchvision's Keypoint R-CNN (BSD-3-Clause, already present via torch) --
+    # mediapipe was tried first and its native library is blocked by this
+    # machine's Smart App Control. See results/phase07.md.
+    "opencv-python>=4.10",
     # Upper bound is a Windows Smart App Control constraint, not an API one:
     # pandas 3.0.5's tzconversion .pyd is blocked as unreputable on this machine.
     # Verified immaterial to results -- every phase 4 AUC was bit-identical
@@ -17,6 +22,9 @@ dependencies = [
     "python-dotenv>=1.0",
     "scikit-learn>=1.9.0",
 ]
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
 
 [tool.ruff]
 line-length = 100

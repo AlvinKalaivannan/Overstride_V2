@@ -1,0 +1,74 @@
+{
+  "capture_fps": {
+    "n_clips": 33,
+    "strides_per_frame": 0.022058823529411766,
+    "fps_at_cadence_2.5": 113.33333333333333,
+    "fps_at_cadence_3.0": 136.0
+  },
+  "n_clips": 200,
+  "n_multiwindow": 150,
+  "configs": [
+    {
+      "config": "baseline (phase 3)",
+      "detector": "ft",
+      "padding": "zero",
+      "windows": "consecutive",
+      "hip_mae": 3.2932358493883545,
+      "knee_mae": 5.107583538212947,
+      "mean_mae": 4.200409693800651,
+      "n": 200
+    },
+    {
+      "config": "edge padding",
+      "detector": "ft",
+      "padding": "edge",
+      "windows": "consecutive",
+      "hip_mae": 3.1637576793248514,
+      "knee_mae": 5.128230237442945,
+      "mean_mae": 4.145993958383898,
+      "n": 200
+    },
+    {
+      "config": "overlapped windows",
+      "detector": "ft",
+      "padding": "zero",
+      "windows": "overlap",
+      "hip_mae": 2.9457206481532485,
+      "knee_mae": 4.921791360263339,
+      "mean_mae": 3.933756004208294,
+      "n": 200
+    },
+    {
+      "config": "both fixes",
+      "detector": "ft",
+      "padding": "edge",
+      "windows": "overlap",
+      "hip_mae": 2.9689977068552458,
+      "knee_mae": 4.849174329891195,
+      "mean_mae": 3.9090860183732206,
+      "n": 200
+    },
+    {
+      "config": "generic COCO detector",
+      "detector": "coco",
+      "padding": "zero",
+      "windows": "consecutive",
+      "hip_mae": 4.724139349460982,
+      "knee_mae": 7.014925335758218,
+      "mean_mae": 5.869532342609601,
+      "n": 200
+    },
+    {
+      "config": "generic COCO + fixes",
+      "detector": "coco",
+      "padding": "edge",
+      "windows": "overlap",
+      "hip_mae": 4.111831416166997,
+      "knee_mae": 6.718523873192143,
+      "mean_mae": 5.41517764467957,
+      "n": 200
+    }
+  ],
+  "fix_effect_deg": -0.29132367542743065,
+  "generic_detector_cost_deg": 1.6691226488089494
+}

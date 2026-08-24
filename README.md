@@ -119,6 +119,7 @@ guessing.
 | 5 | Within-subject limb identification | beat the population model | ✅ 0.610, all confounds at chance |
 | 5B/5C/5D | Ceiling diagnostics, feature attempts, abstention | — | ❌ ceiling is the signal |
 | 6 | Methods demo + synthesis | — | this document |
+| 7 | Harden the inference path; video → kinematics tool | — | ✅ −0.25° recovered; 3.4° confirmed at 3.43° |
 
 **Phase 1's kill criterion fired and the project continued deliberately**, onto
 the within-subject task, which met an equivalent pre-registered bar against a
@@ -142,6 +143,19 @@ cp .env.example .env          # set DATA_ROOT to the Ferber archive
 .venv/Scripts/python.exe scripts/phase4_real_delta.py     # the degradation curve
 .venv/Scripts/python.exe scripts/phase6_numbers.py        # every number above, from source
 ```
+
+### Running it on your own video
+
+```bash
+.venv/Scripts/python.exe scripts/video_kinematics.py --video CLIP.mp4 --out DIR
+.venv/Scripts/python.exe -m pytest tests/ -q
+```
+
+Side-on clip of a single runner in, hip and knee flexion traces out. **It is a
+kinematics extractor and says nothing about injury** — phases 4B and 5D
+established a per-runner verdict is unsupportable. It prints its full error
+budget on every run and refuses to write output when it cannot find the subject.
+See `results/phase07.md`.
 
 Waveforms are **derived, not stored** — the archive holds raw marker
 trajectories and scalar summaries only, and the 101-point stance curves come from
