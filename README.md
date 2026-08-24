@@ -125,6 +125,10 @@ guessing.
 the within-subject task, which met an equivalent pre-registered bar against a
 stronger control set. That pivot is recorded in `results/phase02.md`.
 
+Resuming this work? Start with
+[`docs/AGENT_CONTEXT.md`](docs/AGENT_CONTEXT.md) — current state, the traps that
+already cost real errors, and an honest register of what is still missing.
+
 Full reports: [`results/`](results/) — one `phaseNN.md` per phase, each with
 cross-fold CIs, the exact split, n per group, and what was excluded and why.
 A single-page synthesis with all four figures is at

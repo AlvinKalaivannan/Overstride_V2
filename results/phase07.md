@@ -101,6 +101,23 @@ cost, because it is the same *kind* of substitution: a general-purpose COCO
 detector in place of one fine-tuned on this capture rig. **It is a proxy, not a
 measurement of Keypoint R-CNN**, and the tool says so.
 
+> ### ⚠️ This number is probably an overestimate — checkpoint/detector mismatch
+>
+> Found after this phase was written. The release ships **three checkpoints
+> matched to three input types** — `ath-det-ft`, `ath-det-coco` and `ath-gt` —
+> all identical architecture (11,721,795 params each). Phase 3 paired `det-ft`
+> weights with `det_ft` inputs correctly. **The experiment above fed `det_coco`
+> inputs into the `det-ft` checkpoint.**
+>
+> So +1.67° conflates two things: a genuinely worse detector, and the wrong
+> weights for that detector. The detector-only cost is likely smaller.
+> `scripts/video_kinematics.py` inherits the same mismatch and is probably
+> running less accurately than it needs to.
+>
+> **Fix:** load `motionagformer-b-ath-det-coco-v1.ckpt` for COCO-style input and
+> re-run `scripts/phase7_inference_fix.py --clips 200`. One-line change, ~30 min.
+> Tracked as gap 1 in `docs/AGENT_CONTEXT.md`.
+
 ---
 
 ## The tool — `scripts/video_kinematics.py`
