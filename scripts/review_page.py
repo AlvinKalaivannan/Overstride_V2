@@ -25,6 +25,9 @@ PAGES = {
     "validation": (REPO / "docs" / "validation-plan-review.md",
                    REPO / "docs" / "validation-plan-review.html",
                    "Overstride — notes on the validation plan"),
+    "readiness": (REPO / "docs" / "second-cohort-readiness-review.md",
+                  REPO / "docs" / "second-cohort-readiness-review.html",
+                  "Overstride — notes on second-cohort readiness"),
 }
 
 # Dropped in after the named section, so a cold reader sees the finding before

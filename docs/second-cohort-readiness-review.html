@@ -1,0 +1,245 @@
+<title>Overstride &#8212; notes on second-cohort readiness</title>
+<style>
+:root {
+  --paper:#f6f7f9; --panel:#ffffff; --ink:#14171c; --muted:#66707c;
+  --rule:#dde1e6; --accent:#1f6fb4; --accent-soft:#eaf1f8; --neg:#c0392b;
+  --ok:#2e7d55;
+  --serif:Georgia,'Iowan Old Style','Times New Roman',serif;
+  --sans:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark) {
+  :root:not([data-theme="light"]) {
+    --paper:#101317; --panel:#171b21; --ink:#e7eaee; --muted:#98a2ae;
+    --rule:#2a3038; --accent:#6aa6dd; --accent-soft:#1a2733; --neg:#e07b6c;
+    --ok:#5cb98c;
+  }
+}
+:root[data-theme="dark"] {
+  --paper:#101317; --panel:#171b21; --ink:#e7eaee; --muted:#98a2ae;
+  --rule:#2a3038; --accent:#6aa6dd; --accent-soft:#1a2733; --neg:#e07b6c;
+  --ok:#5cb98c;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:16.5px;line-height:1.68;-webkit-font-smoothing:antialiased}
+main{max-width:1080px;margin:0 auto;padding:64px 28px 96px}
+h1,h2,h3{font-family:var(--serif);font-weight:600;text-wrap:balance;
+  letter-spacing:-.01em;line-height:1.2}
+h1{font-size:clamp(2rem,4.4vw,3.1rem);margin:0 0 1.4rem;max-width:20ch}
+h2{font-size:clamp(1.35rem,2.4vw,1.8rem);margin:3.4rem 0 .9rem;
+  padding-top:1.5rem;border-top:1px solid var(--rule)}
+h2:first-of-type{border-top:none;padding-top:0;margin-top:2.2rem}
+h3{font-size:1.1rem;margin:2rem 0 .5rem;color:var(--accent)}
+p,ul,ol{max-width:70ch}
+p{margin:0 0 1.1rem}
+ul,ol{margin:0 0 1.15rem;padding-left:1.3rem}
+li{margin-bottom:.55rem}
+li>strong:first-child{color:var(--ink)}
+strong{font-weight:650}
+em{color:var(--muted);font-style:italic}
+hr{border:none;border-top:1px solid var(--rule);margin:2.6rem 0}
+code{font-family:var(--mono);font-size:.875em;background:var(--accent-soft);
+  padding:.1em .35em;border-radius:3px}
+pre{background:var(--panel);border:1px solid var(--rule);padding:16px 18px;
+  overflow-x:auto;font-size:.87rem;line-height:1.6}
+pre code{background:none;padding:0}
+.tablewrap{overflow-x:auto;margin:1.4rem 0;background:var(--panel);
+  border:1px solid var(--rule)}
+table{border-collapse:collapse;width:100%;font-size:.9rem;margin:0;
+  min-width:520px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--rule);
+  vertical-align:top}
+th{font-family:var(--mono);font-size:.695rem;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted);font-weight:500;
+  border-bottom:1px solid var(--rule)}
+tbody tr:last-child td{border-bottom:none}
+.plate{margin:1.8rem 0;background:var(--panel);border:1px solid var(--rule);
+  padding:14px}
+.plate img{width:100%;height:auto;display:block}
+.plate figcaption{font-size:.85rem;color:var(--muted);margin-top:11px;
+  padding-top:10px;border-top:1px solid var(--rule);max-width:88ch}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;
+  transition:none!important}}
+</style>
+<main>
+<h1>Notes on "Second Cohort Readiness"</h1>
+<p><strong>Responding to:</strong> the readiness companion to the validation plan &#8212; R1 (adapter
+contract), R2 (conformance tests), R3 (site as a fifth negative control), R4
+(frozen model and pre-registered falsification), plus acquisition routes and the
+de-identification trap.
+<strong>Method:</strong> same as <code>docs/validation-plan-review.md</code> &#8212; every premise testable
+against this repository was tested, with commands shown.</p>
+<hr />
+<h2>Verdict</h2>
+<p><strong>The readiness argument is right and I would act on it. Its central strategic
+claim is not currently supported by the numbers it rests on.</strong></p>
+<p>The framing &#8212; that "get a second cohort" bundles a blocked external dependency
+with weeks of unblocked local work, and that the local half pays for itself
+regardless &#8212; is correct and useful. R1 through R4 are each independently
+justified, and two of them are things I would adopt whether or not a second
+cohort ever appears.</p>
+<p>But &#167;2, "the finding pays for the cohort", uses the phase 4 offset as a
+conversion constant. <strong>Phase 4 did not measure that offset precisely enough to
+convert with.</strong> That does not sink the idea; it reorders when the idea becomes
+usable.</p>
+<hr />
+<h2>1. The conversion argument does not hold yet</h2>
+<p>The claim: because monocular video costs a measured 0.027&#8211;0.033 AUC, a partner
+clinic can collect with a phone rather than a motion capture lab, and "a camera
+cohort landing at 0.583 is consistent with a mocap-equivalent 0.610&#8211;0.616,
+because phase 4 measured exactly that gap."</p>
+<p>What phase 4 actually reports:</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>bank</th>
+<th>fps</th>
+<th>AUC</th>
+<th>&#916;AUC</th>
+<th>95% CI</th>
+<th>excludes 0?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>lateral only</td>
+<td>30 fps</td>
+<td>0.583</td>
+<td>&#8722;0.033</td>
+<td><strong>[&#8722;0.065, +0.001]</strong></td>
+<td><strong>no</strong></td>
+</tr>
+<tr>
+<td>lateral only</td>
+<td>mocap</td>
+<td>0.587</td>
+<td>&#8722;0.028</td>
+<td>[&#8722;0.067, +0.015]</td>
+<td>no</td>
+</tr>
+<tr>
+<td>all views</td>
+<td>mocap</td>
+<td>0.586</td>
+<td>&#8722;0.029</td>
+<td>[&#8722;0.085, +0.027]</td>
+<td>no</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Not one delta interval excludes zero.</strong> Carrying the interval instead of the
+point estimate:</p>
+<pre><code>camera-collected AUC (deployment config): 0.583
+measured offset: -0.033  CI [-0.065, +0.001]
+  mocap-equivalent using the POINT estimate : 0.615
+  mocap-equivalent using the INTERVAL       : 0.582 to 0.648
+  interval width: 0.066 AUC
+</code></pre>
+<p>For scale: the ceiling is 0.610 and the pre-registered bar is 0.600. <strong>The
+conversion interval is seven times wider than the gap between them.</strong> A camera
+cohort at 0.583 is consistent with a mocap-equivalent that clears the bar
+comfortably <em>and</em> with one that sits below the current ceiling. It cannot
+distinguish replication from failure, which is the one thing the conversion was
+supposed to do.</p>
+<h3>Three further problems, in increasing order of seriousness</h3>
+<p><strong>Transportability.</strong> The offset was measured by injecting residuals into <em>these</em>
+Ferber waveforms on <em>this</em> cohort. Nothing establishes it carries to a different
+population with a different injury mix.</p>
+<p><strong>Additivity.</strong> AUC differences are not additive. The delta depends on the score
+distribution and the base rate, so subtracting a delta measured at 0.615 from a
+different cohort's 0.583 is not a defined operation, only an approximation whose
+error is unquantified.</p>
+<p><strong>The real camera penalty is larger, and currently unbounded.</strong> Phase 4's
+residuals came from AthleticsPose 2D&#8594;3D lifting with a checkpoint fine-tuned on
+that rig. A phone-camera cohort adds, on top of that: the generic-detector
+penalty (+0.54&#176;, measured in phase 7), video decode and person detection (not
+measured &#8212; AthleticsPose releases no source video), and domain gap (not
+measured). <code>scripts/video_kinematics.py</code> prints exactly this list as its error
+budget on every run. So the conversion needs an offset <strong>larger than the one
+measured, by an unknown amount.</strong></p>
+<h3>What would make the argument work</h3>
+<p>The idea is sound in principle and worth preserving. It becomes usable when the
+conversion constant is re-derived rather than reused:</p>
+<ol>
+<li><strong>After B1</strong>, take the error measured on <em>real video with ground truth</em> &#8212;
+   decode, detection and lifting together, not lifted keypoints alone.</li>
+<li><strong>Re-inject that error</strong> into the Ferber waveforms through the existing phase
+   4 machinery (<code>build_features</code> in <code>scripts/phase4_real_delta.py</code> already takes
+   an arbitrary residual bank).</li>
+<li><strong>Report the new delta with its interval</strong>, and state up front how wide the
+   interval must be for the conversion to discriminate. If it stays at &#177;0.03, the
+   conversion still cannot do the job and camera collection has to be justified on
+   cost grounds alone rather than as a measurable equivalence.</li>
+</ol>
+<p>That sequencing also makes the readiness case <em>stronger</em>, not weaker: it gives B1
+a second reason to exist beyond validating the tool.</p>
+<hr />
+<h2>2. What I would adopt regardless</h2>
+<p><strong>"The negative controls define the metadata contract."</strong> This is the best idea in
+either document. The four controls consume specific fields &#8212;</p>
+<pre><code>provenance   : yrs_missing, lvl_missing, year
+demographics : age, Height, Weight, speed_r, Gender
+structure    : n_marker_channels, n_joints_landmarks, n_neutral_markers, ...
+dominant leg : DominantLeg
+</code></pre>
+<p>&#8212; and a cohort that does not ship them cannot be validated, no matter how good
+its kinematics are. That turns a vague ask ("can we have your data?") into a
+specific schedule in a data-use agreement. It is worth writing down even if no
+partner is ever approached, because it is also the specification the adapter in
+R1 has to satisfy.</p>
+<p><strong>The de-identification trap.</strong> Standard de-identification strips dates.
+<code>year</code> is a date-derived field and it sits in the provenance control &#8212; the
+control that exists because collection wave produced the 0.775 artefact in phase
+1. So a cohort de-identified by the usual defaults arrives <strong>unable to support the
+control that matters most</strong>, and nothing surfaces the problem until ingestion.
+Asking up front for a coarsened but non-constant wave indicator is cheap; asking
+afterwards means re-opening an agreement. This is the single most actionable item
+in the document and it belongs in the first paperwork conversation.</p>
+<p><strong>R3's reasoning about what differencing cancels.</strong> Correct and precisely stated:
+a left-minus-right difference within one session cancels any site offset applied
+symmetrically to both limbs, exactly as it cancels demographics &#8212; but it does not
+cancel site differences in <em>noise level</em> or in how asymmetry is measured. The
+proposed control (fit site from the within-subject difference features; require
+chance) is the right test and mirrors the existing negative-control pattern, so it
+drops straight into <code>phase1_eval.evaluate</code> with no new machinery.</p>
+<p><strong>R4's timing argument.</strong> A frozen model applied to new data answers a question;
+the same model tuned after seeing that data answers nothing, and no amount of good
+intent recovers the difference. Freezing costs days now and is unavailable later.</p>
+<hr />
+<h2>3. Smaller notes</h2>
+<p><strong>R1 slightly overreaches on &#167;7.8.</strong> The adapter boundary "is the only thing that
+actually retires" the MATLAB concern &#8212; it retires the <em>barrier</em> for future work,
+and makes Fukuchi a second implementation that proves the boundary is real. But
+every existing published result still came through the patched pipeline. The
+adapter improves what happens next; it does not retrospectively validate what has
+already been computed. The honest claim is that it retires the barrier, not the
+error source.</p>
+<p><strong>R2's strongest test is the one it lists last.</strong> "Every provenance field the
+negative controls consume, present and non-constant" is the check that will
+actually fire, and it is the same failure the de-identification trap describes.
+Worth promoting to first, since it is the one that determines whether a cohort is
+analysable at all rather than merely well-formed.</p>
+<p><strong>The acquisition ranking is sensible</strong>, and the Ferber-authors route is
+genuinely the cheapest email available. Worth noting it costs nothing to send
+while R1&#8211;R4 proceed.</p>
+<hr />
+<h2>4. Sequencing</h2>
+<p>Nothing here changes the validation plan's order. It adds work that runs
+alongside it:</p>
+<ul>
+<li><strong>R1, R2, R3 start now</strong> &#8212; all local, all independently justified, none
+  dependent on any external answer.</li>
+<li><strong>R4 before any second cohort exists</strong>, which is the whole point of it.</li>
+<li><strong>&#167;2's conversion argument waits for B1</strong>, and should be re-derived there rather
+  than carried forward as written.</li>
+<li><strong>The de-identification ask goes into the first conversation</strong> with any partner,
+  including the Ferber authors.</li>
+</ul>
+<p>The readiness document's own test &#8212; does this still pay if the cohort never
+arrives? &#8212; is the right one, and R1 through R4 each pass it. &#167;2 does not pass it,
+because its value is entirely contingent on an acquisition happening <em>and</em> on an
+offset tight enough to convert with. That is the one part to hold loosely.</p>
+</main>
