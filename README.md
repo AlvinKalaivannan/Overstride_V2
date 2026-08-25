@@ -125,6 +125,10 @@ guessing.
 the within-subject task, which met an equivalent pre-registered bar against a
 stronger control set. That pivot is recorded in `results/phase02.md`.
 
+Reviewing this work? See [`docs/REVIEW.md`](docs/REVIEW.md) — current state,
+every published claim that moved and why, where the work is weakest, and the
+decisions outstanding.
+
 Resuming this work? Start with
 [`docs/AGENT_CONTEXT.md`](docs/AGENT_CONTEXT.md) — current state, the traps that
 already cost real errors, and an honest register of what is still missing.
