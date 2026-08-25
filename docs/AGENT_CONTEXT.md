@@ -5,7 +5,7 @@ how this was built can be productive without reconstructing it from 14 reports
 and 42 scripts. `README.md` is the *finding*, written for a reader; this is
 *working context*, written for whoever resumes.
 
-Current HEAD: `038014e` (phase 7). Phases 0–7 all have recorded gates.
+Current HEAD: `27f4558`. Phase 7 plus the checkpoint fix. Phases 0–7 all have recorded gates.
 
 ---
 
@@ -233,55 +233,59 @@ imports.
 
 Ordered by payoff per unit effort.
 
+### Closed
+
+**~~Checkpoint / detector mismatch~~ — FIXED.** The release ships three
+checkpoints matched to three input types (`ath-det-ft`, `ath-det-coco`,
+`ath-gt`), all identical architecture. Phase 7's first run fed `det_coco` inputs
+into the `det-ft` checkpoint, conflating "worse detector" with "wrong weights for
+that detector". Pairing each correctly dropped the generic-detector penalty from
+**+1.67° to +0.54°** — three times smaller — and only **+0.17°** once the
+inference fixes are applied. `scripts/video_kinematics.py` now loads
+`ath-det-coco`, since Keypoint R-CNN is itself a general-purpose COCO detector.
+The `ft` rows were bit-identical across both runs, confirming the change touched
+only what it should have. See `results/phase07.md`.
+
+**Generalise the lesson:** this release pairs a checkpoint to an input type. If
+you change what feeds the lifter, check which checkpoint matches it.
+
 ### Worth doing
 
-**1. Checkpoint / detector mismatch — ~30 min, ML evaluation hygiene**
-There are three checkpoints matched to three input types — `ath-det-ft`,
-`ath-det-coco`, `ath-gt` — all identical architecture (11,721,795 params). Phase
-3 paired `det-ft` weights with `det_ft` inputs correctly. **Phase 7's
-detector-gap experiment fed `det_coco` inputs into the `det-ft` checkpoint**, so
-its **+1.67° penalty conflates "worse detector" with "wrong checkpoint for that
-detector" and is likely an overestimate.** `scripts/video_kinematics.py` inherits
-the same mismatch and is probably running less accurately than it needs to.
-*Fix:* one-line change in `load_model`, re-run
-`scripts/phase7_inference_fix.py --clips 200`. *Payoff:* a corrected error budget
-and a directly better tool.
-
-**2. End-to-end on a real clip — minutes, needs only footage**
+**1. End-to-end on a real clip — minutes, needs only footage**
 The pipeline has never seen real running video. *Payoff:* confirms it works in
 situ at all. This is the cheapest unresolved item and blocks nothing else.
 
-**3. Integration test — hours, test engineering**
+**2. Integration test — hours, test engineering**
 The 19 tests cover invariants; none runs a phase end to end. Reproducibility is
 this project's main claim and rests entirely on re-running scripts by hand.
 *Payoff:* guards the claim.
 
-**4. Frame-rate assumption — hours, ablation (harness exists)**
+**3. Frame-rate assumption — hours, ablation (harness exists)**
 The ~120 fps figure is inferred from stride cadence (0.0221 strides/frame at an
 assumed 2.5–3.0 strides/s → 113–136 fps), not documented anywhere. The
 resampling step in the tool is untested for effect. *Payoff:* removes an
 assumption from the tool's core path.
 
-**5. 2D smoothing choice — hours, signal processing**
+**4. 2D smoothing choice — hours, signal processing**
 The 10 Hz low-pass was inherited from the Ferber pipeline, never tuned or
 measured for this use. *Payoff:* small, but the ablation harness already exists.
 
 ### Larger, and genuinely structural
 
-**6. Gait event / stride segmentation — 1–2 days plus validation, signal processing**
+**5. Gait event / stride segmentation — 1–2 days plus validation, signal processing**
 The tool emits continuous per-frame traces. The research models consume 101-point
 stance-normalised curves. **Without this there is no path from a video to the
 analysis that took seven phases to build** — the two halves of the project are
 disjoint. This is the highest-value larger item.
 
-**7. Detector validation on real video — days, pose benchmarking / data capture**
+**6. Detector validation on real video — days, pose benchmarking / data capture**
 Keypoint R-CNN's error on real footage is the largest unquantified term in the
 tool's budget, and **it cannot be closed with this project's data**: AthleticsPose
 does not release its source videos, so no clip with ground truth exists in reach.
 Needs either a labelled public dataset with video, or a marker-lab-plus-camera
 capture. *Payoff:* turns "unquantified" into a number.
 
-**8. Camera motion / panning — medium, tracking**
+**7. Camera motion / panning — medium, tracking**
 The tool refuses on crowded frames but has no handling for a panning camera.
 Robustness only. Note `CLAUDE.md` forbids multi-person tracking.
 

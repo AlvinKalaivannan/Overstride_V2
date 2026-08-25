@@ -4,7 +4,7 @@
 reproduces it at **3.43°** on the same 592 clips. But the inference path had two
 unexamined properties worth **−0.25°** together, and swapping the fine-tuned
 detections for generic COCO ones — which is what any off-the-shelf detector
-gives you — costs **+1.67°**. Both numbers were needed before a video tool could
+gives you — costs **+0.54°**. Both numbers were needed before a video tool could
 state an honest error budget.
 
 | | hip | knee | mean | vs baseline |
@@ -61,8 +61,8 @@ baseline reads 4.20° here rather than 3.43°; the *deltas* are the point.
 | edge padding | fine-tuned | edge | consecutive | 3.16 | 5.13 | 4.15 | −0.05 |
 | **overlapped windows** | fine-tuned | zero | overlap | 2.95 | 4.92 | **3.93** | **−0.27** |
 | both fixes | fine-tuned | edge | overlap | 2.97 | 4.85 | 3.91 | −0.29 |
-| **generic COCO detector** | **COCO** | zero | consecutive | 4.72 | 7.01 | **5.87** | **+1.67** |
-| generic COCO + fixes | COCO | edge | overlap | 4.11 | 6.72 | 5.42 | +1.21 |
+| **generic COCO detector** | **COCO** | zero | consecutive | 3.82 | 5.65 | **4.74** | **+0.54** |
+| generic COCO + fixes | COCO | edge | overlap | 3.46 | 5.28 | 4.37 | +0.17 |
 
 **Windowing is the real fix; padding is almost nothing.** That makes sense —
 padding only touches the tail of a sequence, while boundaries occur throughout.
@@ -93,30 +93,34 @@ confidence interval. The degradation curve is insensitive to error at this scale
 the fine-tuned `det_markers2d_by_cam_ft`. Swapping one for the other, everything
 else held fixed:
 
-**+1.67°** at the phase 3 baseline (4.20 → 5.87), **+1.21°** with the fixes
-applied (3.91 → 5.42). Measured on the 200-clip long-biased subsample.
+**+0.54°** at the phase 3 baseline (4.20 → 4.74), and only **+0.17°** once the
+inference fixes are applied (3.91 → 4.37). Measured on the 200-clip long-biased
+subsample.
 
 This is the closest available proxy for what torchvision's Keypoint R-CNN will
 cost, because it is the same *kind* of substitution: a general-purpose COCO
 detector in place of one fine-tuned on this capture rig. **It is a proxy, not a
 measurement of Keypoint R-CNN**, and the tool says so.
 
-> ### ⚠️ This number is probably an overestimate — checkpoint/detector mismatch
+> ### A checkpoint/detector mismatch, found and fixed
 >
-> Found after this phase was written. The release ships **three checkpoints
-> matched to three input types** — `ath-det-ft`, `ath-det-coco` and `ath-gt` —
-> all identical architecture (11,721,795 params each). Phase 3 paired `det-ft`
-> weights with `det_ft` inputs correctly. **The experiment above fed `det_coco`
-> inputs into the `det-ft` checkpoint.**
+> The first version of this experiment reported **+1.67°**. That was wrong, and
+> the error is worth recording because it is easy to repeat.
 >
-> So +1.67° conflates two things: a genuinely worse detector, and the wrong
-> weights for that detector. The detector-only cost is likely smaller.
-> `scripts/video_kinematics.py` inherits the same mismatch and is probably
-> running less accurately than it needs to.
+> The release ships **three checkpoints matched to three input types** —
+> `ath-det-ft`, `ath-det-coco` and `ath-gt` — all identical architecture
+> (11,721,795 params each). Phase 3 paired `det-ft` weights with `det_ft` inputs
+> correctly. **The first run of this experiment fed `det_coco` inputs into the
+> `det-ft` checkpoint**, so its number conflated two different things: a
+> genuinely worse detector, and the wrong weights for that detector.
 >
-> **Fix:** load `motionagformer-b-ath-det-coco-v1.ckpt` for COCO-style input and
-> re-run `scripts/phase7_inference_fix.py --clips 200`. One-line change, ~30 min.
-> Tracked as gap 1 in `docs/AGENT_CONTEXT.md`.
+> Pairing each detector with its own checkpoint, the cost falls from **+1.67° to
+> +0.54°** — three times smaller. The `ft` rows are bit-identical across the two
+> runs, which confirms the change touched only what it should have.
+>
+> `scripts/video_kinematics.py` was making the same mistake and now loads
+> `motionagformer-b-ath-det-coco-v1.ckpt`, since Keypoint R-CNN is itself a
+> general-purpose COCO detector.
 
 ---
 
@@ -160,7 +164,8 @@ running indicates a tracking failure.
 
 - lifting error **≥3.4°** — in-domain, track rig, on AthleticsPose's *own*
   fine-tuned detections
-- **+1.67°** generic-detector penalty, measured in this phase
+- **+0.54°** generic-detector penalty, measured in this phase (+0.17° once the
+  inference fixes are applied)
 - **+ unquantified Keypoint R-CNN error on your footage**
 - **+ unquantified domain gap** — the checkpoint was fine-tuned on a track rig
 - ankle dorsiflexion unavailable: H36M-17 has no toe keypoint
@@ -172,7 +177,7 @@ running indicates a tracking failure.
 **The detector stage itself.** AthleticsPose does not release its source videos,
 so there is no footage with ground truth anywhere in reach to measure Keypoint
 R-CNN against. That gap cannot be closed with the data this project has, and no
-amount of care in the code substitutes for it. The +1.67° proxy is the honest
+amount of care in the code substitutes for it. The +0.54° proxy is the honest
 bound; it is not a measurement of this detector.
 
 **End-to-end on real footage.** The pipeline has been exercised on synthetic

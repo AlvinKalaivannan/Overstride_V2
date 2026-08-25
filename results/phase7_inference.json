@@ -53,9 +53,9 @@
       "detector": "coco",
       "padding": "zero",
       "windows": "consecutive",
-      "hip_mae": 4.724139349460982,
-      "knee_mae": 7.014925335758218,
-      "mean_mae": 5.869532342609601,
+      "hip_mae": 3.8216570539913364,
+      "knee_mae": 5.652647846027726,
+      "mean_mae": 4.737152450009531,
       "n": 200
     },
     {
@@ -63,12 +63,12 @@
       "detector": "coco",
       "padding": "edge",
       "windows": "overlap",
-      "hip_mae": 4.111831416166997,
-      "knee_mae": 6.718523873192143,
-      "mean_mae": 5.41517764467957,
+      "hip_mae": 3.458713980595922,
+      "knee_mae": 5.279085277303705,
+      "mean_mae": 4.368899628949814,
       "n": 200
     }
   ],
   "fix_effect_deg": -0.29132367542743065,
-  "generic_detector_cost_deg": 1.6691226488089494
+  "generic_detector_cost_deg": 0.5367427562088798
 }

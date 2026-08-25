@@ -231,7 +231,10 @@ def main() -> int:
     kp_model = resample(kp, n_model)
 
     print("lifting to 3D (edge padding, overlapped windows, scale-free)")
-    model = load_model("motionagformer-b-ath-det-ft-v1.ckpt", "base")
+    # Keypoint R-CNN is a general-purpose COCO detector, so the matched
+    # checkpoint is the COCO one -- not the fine-tuned-detector weights. Pairing
+    # them wrongly is gap 1 in docs/AGENT_CONTEXT.md.
+    model = load_model("motionagformer-b-ath-det-coco-v1.ckpt", "base")
     if model is None:
         raise SystemExit("checkpoint missing -- see docs for the download")
     est = lift(model, kp_model, pad="edge", windows="overlap")
@@ -282,7 +285,7 @@ def main() -> int:
         "video": str(args.video), "generated": datetime.now(timezone.utc).isoformat(),
         "frames": len(kp), "fps": fps, "resolution": [w, h],
         "model_fps": MODEL_FPS, "detector": "torchvision keypointrcnn_resnet50_fpn",
-        "lifter": "motionagformer-b-ath-det-ft-v1",
+        "lifter": "motionagformer-b-ath-det-coco-v1",
         "padding": "edge", "windows": "overlap-50pct", "scale_free": True,
         "detection": meta, "warnings": warns, "error_budget": budget,
         "not_an_injury_tool": "Kinematics only. Phases 4B and 5D of this project "

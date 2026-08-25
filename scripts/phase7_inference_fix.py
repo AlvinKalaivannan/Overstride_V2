@@ -49,6 +49,13 @@ from phase3_infer import CLIP, DATA, TEST_SUBJECTS, load_model  # noqa: E402
 OUT = REPO / "results" / "phase7_inference.json"
 ACTIONS = ["running", "sprint"]
 
+# The release ships one checkpoint PER INPUT TYPE, all identical architecture
+# (11,721,795 params). Pairing COCO detections with the fine-tuned-detector
+# weights conflates "worse detector" with "wrong weights for that detector",
+# which is what the first version of this experiment did.
+CKPT_FOR = {"ft": "motionagformer-b-ath-det-ft-v1.ckpt",
+            "coco": "motionagformer-b-ath-det-coco-v1.ckpt"}
+
 # baseline == exactly what phase 3 did
 CONFIGS = [
     ("baseline (phase 3)",      "ft",   "zero", "consecutive"),
@@ -194,9 +201,12 @@ def main() -> int:
     print(f"=== B. inference-path ablation on {len(clips)} held-out clips ===")
     print(f"  {n_multi} exceed the 81-frame window (multi-window path)\n")
 
-    model = load_model("motionagformer-b-ath-det-ft-v1.ckpt", "base")
-    if model is None:
-        raise SystemExit("fine-tuned checkpoint missing")
+    models = {}
+    for det in sorted({c[1] for c in CONFIGS}):
+        models[det] = load_model(CKPT_FOR[det], "base")
+        if models[det] is None:
+            raise SystemExit(f"checkpoint missing: {CKPT_FOR[det]}")
+        print(f"  {det:5} -> {CKPT_FOR[det]}")
 
     err = {name: {"hip": [], "knee": []} for name, *_ in CONFIGS}
     for i, (action, subj, stem, _n) in enumerate(clips):
@@ -215,7 +225,7 @@ def main() -> int:
         ga = sagittal_angles(gt3d, near)
 
         for name, det, pad, win in CONFIGS:
-            est = lift(model, srcs[det][:n], pad, win)
+            est = lift(models[det], srcs[det][:n], pad, win)
             ea = sagittal_angles(est, near)
             for joint in ("hip", "knee"):
                 d = np.abs(ea[joint] - ga[joint])
