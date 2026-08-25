@@ -1,0 +1,239 @@
+<title>Overstride &#8212; notes on the validation plan</title>
+<style>
+:root {
+  --paper:#f6f7f9; --panel:#ffffff; --ink:#14171c; --muted:#66707c;
+  --rule:#dde1e6; --accent:#1f6fb4; --accent-soft:#eaf1f8; --neg:#c0392b;
+  --ok:#2e7d55;
+  --serif:Georgia,'Iowan Old Style','Times New Roman',serif;
+  --sans:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark) {
+  :root:not([data-theme="light"]) {
+    --paper:#101317; --panel:#171b21; --ink:#e7eaee; --muted:#98a2ae;
+    --rule:#2a3038; --accent:#6aa6dd; --accent-soft:#1a2733; --neg:#e07b6c;
+    --ok:#5cb98c;
+  }
+}
+:root[data-theme="dark"] {
+  --paper:#101317; --panel:#171b21; --ink:#e7eaee; --muted:#98a2ae;
+  --rule:#2a3038; --accent:#6aa6dd; --accent-soft:#1a2733; --neg:#e07b6c;
+  --ok:#5cb98c;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:16.5px;line-height:1.68;-webkit-font-smoothing:antialiased}
+main{max-width:1080px;margin:0 auto;padding:64px 28px 96px}
+h1,h2,h3{font-family:var(--serif);font-weight:600;text-wrap:balance;
+  letter-spacing:-.01em;line-height:1.2}
+h1{font-size:clamp(2rem,4.4vw,3.1rem);margin:0 0 1.4rem;max-width:20ch}
+h2{font-size:clamp(1.35rem,2.4vw,1.8rem);margin:3.4rem 0 .9rem;
+  padding-top:1.5rem;border-top:1px solid var(--rule)}
+h2:first-of-type{border-top:none;padding-top:0;margin-top:2.2rem}
+h3{font-size:1.1rem;margin:2rem 0 .5rem;color:var(--accent)}
+p,ul,ol{max-width:70ch}
+p{margin:0 0 1.1rem}
+ul,ol{margin:0 0 1.15rem;padding-left:1.3rem}
+li{margin-bottom:.55rem}
+li>strong:first-child{color:var(--ink)}
+strong{font-weight:650}
+em{color:var(--muted);font-style:italic}
+hr{border:none;border-top:1px solid var(--rule);margin:2.6rem 0}
+code{font-family:var(--mono);font-size:.875em;background:var(--accent-soft);
+  padding:.1em .35em;border-radius:3px}
+pre{background:var(--panel);border:1px solid var(--rule);padding:16px 18px;
+  overflow-x:auto;font-size:.87rem;line-height:1.6}
+pre code{background:none;padding:0}
+.tablewrap{overflow-x:auto;margin:1.4rem 0;background:var(--panel);
+  border:1px solid var(--rule)}
+table{border-collapse:collapse;width:100%;font-size:.9rem;margin:0;
+  min-width:520px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--rule);
+  vertical-align:top}
+th{font-family:var(--mono);font-size:.695rem;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted);font-weight:500;
+  border-bottom:1px solid var(--rule)}
+tbody tr:last-child td{border-bottom:none}
+.plate{margin:1.8rem 0;background:var(--panel);border:1px solid var(--rule);
+  padding:14px}
+.plate img{width:100%;height:auto;display:block}
+.plate figcaption{font-size:.85rem;color:var(--muted);margin-top:11px;
+  padding-top:10px;border-top:1px solid var(--rule);max-width:88ch}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;
+  transition:none!important}}
+</style>
+<main>
+<h1>Notes on the Overstride Validation Plan</h1>
+<p><strong>Responding to:</strong> the validation plan produced after <code>docs/REVIEW.md</code> &#8212; dataset
+triage, a soft-spot closure matrix, and a sequence B0 &#8594; A1/A2 &#8594; B1 &#8594; C &#8594; D.
+<strong>Method:</strong> every premise testable against this repository was tested. Commands
+and outputs are shown so nothing needs taking on trust.</p>
+<hr />
+<h2>Verdict</h2>
+<p><strong>The plan is sound and I would run it, with one correction.</strong> Its central
+move &#8212; splitting my &#167;7 "one dataset" weakness into <em>does the ceiling generalize</em>
+and <em>is the measured error right</em> &#8212; is sharper than how I wrote it, and its
+conclusion that no open dataset fixes the first is a real finding rather than a
+failed search.</p>
+<p>Three things need saying:</p>
+<ol>
+<li><strong>A1's premise is wrong in a way that changes its design</strong>, though the step
+   survives and can be made stronger than proposed.</li>
+<li><strong>One matrix cell is misattributed</strong>, and a second premise needs a check the
+   plan does not name.</li>
+<li><strong>The plan identifies a genuine gap in my own review</strong> that I missed.</li>
+</ol>
+<hr />
+<h2>1. A1 re-scoped &#8212; Ferber walking is not a free replication</h2>
+<p>The plan describes the walking trials as "same 1,798 subjects, same injury
+labels, a second gait mode&#8230; the closest thing to a free replication in this whole
+plan." Measured, that does not hold.</p>
+<pre><code>.venv/Scripts/python.exe scripts/walk_cohort_check.py
+</code></pre>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>walk</th>
+<th>run</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>sessions / subjects</td>
+<td>2,088 / 1,686</td>
+<td>1,832 / 1,402</td>
+</tr>
+<tr>
+<td>unilateral (<code>InjSide</code> L/R)</td>
+<td>1,281 / 1,093</td>
+<td>1,038 / 869</td>
+</tr>
+<tr>
+<td><strong>OA-labelled sessions</strong></td>
+<td><strong>419 (20.1%)</strong></td>
+<td><strong>14 (0.8%)</strong></td>
+</tr>
+<tr>
+<td>median age</td>
+<td>44</td>
+<td>37</td>
+</tr>
+</tbody>
+</table></div>
+<p>Broken down by label: <code>knee oa</code> 190 walk / 0 run, <code>hip oa</code> 87 / 0, <code>oa</code> 75 / 0,
+<code>osteoarthritis</code> 67 / 14. <strong>Essentially the entire osteoarthritis cohort walked
+and did not run</strong> &#8212; which matches <code>docs/data-inventory.md</code>, where the paper's 247
+OA subjects reduce to 12 in the running metadata.</p>
+<p>This matters because <code>CLAUDE.md</code> excludes OA from primary analysis: degenerative,
+mean age 56, slowest run speed, <strong>confounded with the demographic control</strong>. The
+seven-year median age gap between the cohorts is that composition showing through.</p>
+<p>So A1 is not a gait-mode comparison holding everything else fixed. It is a
+different population <em>and</em> a different gait mode, and reporting it as the former
+would repeat the class of error this project spent phase 1 learning to avoid.</p>
+<h3>It survives, at a workable scale</h3>
+<pre><code>all walking sessions            2088 / 1686 subjects
+unilateral (InjSide L/R)        1281 / 1093 subjects
+  excluding OA (CLAUDE.md)       995 /  904 subjects
+  and also in the run cohort     880 /  792 subjects
+
+running analysis, for comparison:   818 /  675 subjects
+</code></pre>
+<p><strong>880 sessions / 792 subjects</strong> against the running analysis's 818 / 675 &#8212;
+comparable, before the waveform and MIN_STEPS filters shrink it further as they
+did for running.</p>
+<h3>And a better design is available than the plan proposes</h3>
+<p><strong>1,290 subjects appear in both gait modes.</strong> Restricting to those makes gait
+mode the only variable changing within a subject &#8212; a paired design, strictly
+stronger than comparing two cohorts that differ in composition. The plan compares
+cohorts; it should compare subjects to themselves. That is the same logic that
+rescued the project at phase 5, applied one level up.</p>
+<h3>What this changes about A1</h3>
+<ul>
+<li><strong>Decide the OA exclusion before starting, not during.</strong> The plan's step 1 asks
+  whether walking regenerates through the MATLAB path; the composition question
+  is separate and comes first, because it determines what is being measured.</li>
+<li><strong>Restrict to the 1,290 dual-mode subjects</strong> and state the paired design
+  explicitly.</li>
+<li><strong>Keep the plan's stop condition</strong> &#8212; it is correct and important. If any
+  negative control leaves chance on the walking subset, report the confound and
+  stop.</li>
+<li><strong>Revise the cost framing.</strong> Still days, still no acquisition, but "free
+  replication" oversells it. It is a <em>cheap and differently-composed</em> second look.</li>
+</ul>
+<hr />
+<h2>2. Two smaller corrections</h2>
+<p><strong>The sampling rate differs, and A1's feasibility check should target it.</strong>
+Walking is mostly 120 Hz while running is almost entirely 200 Hz &#8212; 1,822 running
+sessions at 200 Hz against 10 at 120 (<code>docs/data-inventory.md</code>). The 101-point
+stance normalisation should absorb this, but filter cutoffs and the MIN_STEPS
+threshold interact with sample rate. That is the specific thing to verify in step
+1, and the plan does not name it.</p>
+<p><strong>&#167;7.3 is misattributed in the matrix.</strong> The plan credits BioCV with closing
+"detector cost on biased subsample". That caveat is closed by <strong>A2</strong> &#8212; the
+full-592 re-run, forty minutes, no new data. BioCV <em>supersedes</em> it with an
+independent measurement from a different lab, which is a different and better
+thing, but the matrix should not show a weeks-long external dependency closing
+something an afternoon closes. Corrected, BioCV still closes three of nine on its
+own, which remains the strongest concentration in the table.</p>
+<hr />
+<h2>3. What the plan gets right</h2>
+<p><strong>The A/B split.</strong> My &#167;7 treated "one dataset" as a single weakness across items
+7.3 through 7.6. Separating <em>generality of the finding</em> from <em>accuracy of the
+measurement</em> is the better decomposition, because only one of them has an
+available fix. I would adopt this framing in any future version of the brief.</p>
+<p><strong>The honest conclusion.</strong> "Nothing found here lets the negative result claim
+generality" is the right answer, stated plainly rather than worked around with
+adjacent datasets. Its closing section &#8212; that the one-clinic limitation survives
+every step, and that a real fix is a collaboration rather than a download &#8212; is
+correct and should stay exactly as written.</p>
+<p><strong>Falsification conditions declared in advance.</strong> B1's MAE bands (&#8804;5&#176; consistent,
+6&#8211;10&#176; softens, &gt;10&#176; revises the headline) mirror the pre-registration discipline
+the project used for its own bars. Naming the outcome that would break the claim
+<em>before</em> running is the right habit.</p>
+<p><strong>The BioCV licence tension.</strong> Well spotted, and it bites harder than the plan
+says: &#167;10 of my brief promises a reviewer can regenerate every figure from
+<code>results/*.json</code>. A BioCV-derived number cannot honour that. The resolution is
+probably to ship the code and a documented access path while keeping the number
+outside the reproducibility guarantee &#8212; but that is a decision, and it should be
+made before building on it rather than discovered at write-up.</p>
+<h3>It found a gap in my review</h3>
+<p>The plan's rationale for GaitRec is that the Ferber null is ambiguous between
+<em>running overuse injury is a subtle signal</em> and <em>the limb-asymmetry method is
+underpowered</em>. <strong>My brief did not raise that, and it should have.</strong></p>
+<p>The project has strong negative controls &#8212; provenance, demographics, structure
+and dominant leg all verified at chance, which establishes the design does not
+leak. It has <strong>no positive control</strong>: nothing demonstrates the method can detect
+a limb asymmetry known to be large. Without one, "we found nothing" and "this
+method finds nothing" are not separated by the evidence.</p>
+<p>That is a real hole in the argument, and it is cheaper to fix than generality.
+GaitRec is a defensible probe provided it is framed as a positive control and
+never as replication &#8212; the plan's own warning about that framing is exactly
+right. A synthetic positive control would be cheaper still: inject a known
+asymmetry of known magnitude into the Ferber waveforms and confirm the pipeline
+recovers it at the expected effect size. That costs hours, not a week, and it
+answers the same question without importing a different modality.</p>
+<hr />
+<h2>4. On sequencing</h2>
+<p><strong>B0 first is right</strong> &#8212; it is the only step with an external dependency, and
+everything downstream of it waits.</p>
+<p><strong>A2 this week</strong> &#8212; forty minutes, closes &#167;7.3 outright, and both the plan and my
+brief already recommend it. There is no argument for deferring.</p>
+<p><strong>A1 after the OA decision</strong>, not before. The analysis is days; the design
+question is an afternoon and determines what the days measure.</p>
+<p><strong>The synthetic positive control belongs alongside A2</strong> on cost grounds &#8212; hours,
+no new data, and it addresses the ambiguity that D would otherwise take a week to
+probe. If it comes back showing the method recovers a known asymmetry cleanly,
+D's value drops considerably.</p>
+<hr />
+<h2>5. The limitation that survives</h2>
+<p>The plan's closing section is correct and I would not soften it. Nothing in this
+sequence supplies a second cohort of clinically diagnosed runners with per-limb
+waveforms, because no such open dataset appears to exist. The finding continues
+to rest on one clinic, one protocol, one population.</p>
+<p>That boundary is not a defect to be managed. Stating it precisely is the same
+discipline that produced the corrections ledger in <code>docs/REVIEW.md</code>, and it is
+the reason the null is worth anything at all.</p>
+</main>

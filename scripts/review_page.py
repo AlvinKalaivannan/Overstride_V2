@@ -15,9 +15,17 @@ from pathlib import Path
 import markdown
 
 REPO = Path(__file__).resolve().parents[1]
-SRC = REPO / "docs" / "REVIEW.md"
 FIG = REPO / "figures"
-OUT = REPO / "docs" / "review.html"
+
+# Which markdown file to render. Both use the same styling so the review and the
+# response to the validation plan read as one pair of documents.
+PAGES = {
+    "review": (REPO / "docs" / "REVIEW.md", REPO / "docs" / "review.html",
+               "Overstride — review brief"),
+    "validation": (REPO / "docs" / "validation-plan-review.md",
+                   REPO / "docs" / "validation-plan-review.html",
+                   "Overstride — notes on the validation plan"),
+}
 
 # Dropped in after the named section, so a cold reader sees the finding before
 # being asked to judge it.
@@ -40,6 +48,12 @@ def plate(name: str, caption: str) -> str:
 
 
 def main() -> int:
+    import sys
+    which = sys.argv[1] if len(sys.argv) > 1 else "review"
+    if which not in PAGES:
+        raise SystemExit(f"unknown page {which!r}; choose from {sorted(PAGES)}")
+    SRC, OUT, PAGE_TITLE = PAGES[which]
+
     body = markdown.markdown(
         SRC.read_text(encoding="utf-8"),
         extensions=["tables", "attr_list", "sane_lists", "fenced_code"],
@@ -51,7 +65,7 @@ def main() -> int:
     body = body.replace("</table>", "</table></div>")
 
     # insert each figure directly before the <h2> that follows its anchor section
-    for anchor, (fig, cap) in AFTER_SECTION.items():
+    for anchor, (fig, cap) in (AFTER_SECTION.items() if which == "review" else ()):
         marker = f"<h2>{anchor}</h2>"
         if marker not in body:
             print(f"  WARNING: section not found, figure skipped: {anchor}")
@@ -62,7 +76,7 @@ def main() -> int:
         else:
             body = body[:nxt] + plate(fig, cap) + body[nxt:]
 
-    html = f"""<title>Overstride — review brief</title>
+    html = f"""<title>{PAGE_TITLE}</title>
 <style>
 :root {{
   --paper:#f6f7f9; --panel:#ffffff; --ink:#14171c; --muted:#66707c;
