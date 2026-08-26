@@ -183,6 +183,9 @@ def main() -> int:
                     help="0 = every held-out clip")
     ap.add_argument("--only", type=str, default="",
                     help="comma-separated config indices, e.g. 0,3")
+    ap.add_argument("--out", type=str, default="",
+                    help="output filename under results/; defaults by scope so "
+                         "a full-n run never clobbers the 200-clip result")
     args = ap.parse_args()
 
     print("=== A. capture rate, recovered from the data ===")
@@ -268,8 +271,16 @@ def main() -> int:
         print(f"  cost of a generic COCO detector: {gap:+.2f} deg "
               f"({by_name['generic COCO detector']['mean_mae']:.2f} vs {bmean:.2f})")
 
-    out_path = OUT if not args.only else OUT.with_name(
-        OUT.stem + "_full.json")
+    # The 200-clip subsample result is published. A different scope is a
+    # different measurement and gets a different file.
+    if args.out:
+        out_path = OUT.with_name(args.out)
+    elif args.only:
+        out_path = OUT.with_name(OUT.stem + "_partial.json")
+    elif args.clips == 0:
+        out_path = OUT.with_name(OUT.stem + "_full.json")
+    else:
+        out_path = OUT
     out_path.write_text(json.dumps({"capture_fps": fps, "n_clips": len(clips),
                                "n_multiwindow": n_multi, "configs": rows,
                                "fix_effect_deg": fixes,

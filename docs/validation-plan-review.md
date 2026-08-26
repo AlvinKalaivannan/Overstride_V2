@@ -187,3 +187,104 @@ to rest on one clinic, one protocol, one population.
 That boundary is not a defect to be managed. Stating it precisely is the same
 discipline that produced the corrections ledger in `docs/REVIEW.md`, and it is
 the reason the null is worth anything at all.
+
+---
+
+# Addendum — rev 3
+
+**Responding to:** the revision that drops BioCV for AthletePose3D and declares
+no gated work remaining. Two things were checked against the repository: the new
+precondition (B0), and one row of the reworked triage table.
+
+## 6. B0 clears — the fine-tune did not see AthletePose3D
+
+Rev 3 makes this a stop condition, correctly: if `ath-det-ft` was fine-tuned on
+AthletePose3D, then measuring error on AthletePose3D is train-on-test and B1
+validates nothing. It was not.
+
+**`ft` names the 2D detector, not a lifter fine-tune.** In
+`data/athleticspose/repo/athleticspose/datasets/dynamic_dataset.py:80`,
+`det_model_type` selects between two directories of input keypoints:
+
+```
+det_model_type == "pretrained"  ->  det_markers2d_by_cam_coco
+det_model_type == "ft"          ->  det_markers2d_by_cam_ft
+```
+
+Same training corpus either way. So `motionagformer-b-ath-det-ft-v1.ckpt` reads
+as *trained on AthleticsPose, fed fine-tuned-detector 2D* — the `ath` prefix is
+the corpus, and it is AthleticsPose.
+
+**AthletePose3D ships as a separate checkpoint this project never loads.**
+
+```
+checkpoints/motionagformer-b-ath-det-ft-v1.ckpt      used  (AthleticsPose)
+checkpoints/motionagformer-b-ath-det-coco-v1.ckpt    used  (AthleticsPose)
+checkpoints/motionagformer-b-ath-gt-v1.ckpt          unused
+checkpoints/motionagformer-b-h36m.pth                unused
+checkpoints/motionagformer-s-ap3d.pth                unused (AthletePose3D)
+```
+
+`configs/evaluation/ap3d_pretrained.yaml` exists solely to evaluate that separate
+small model. And `configs/default.yaml` trains from scratch — 200 epochs, lr
+5e-4, no `resume` or initialisation key — so the `ath` checkpoints do not inherit
+AP3D or H36M weights either.
+
+**B1 is therefore an independent test.** The 21.4° on the phase 3 figure is the
+AP3D-trained model evaluated *on AthleticsPose*, a published cross-dataset
+reference rather than anything this project trained. Rev 3's instruction to state
+the relationship in the write-up regardless still stands — a reader seeing
+AthletePose3D on both axes deserves the explanation.
+
+## 7. The triage table has AthleticsPose wrong, and it is load-bearing
+
+Rev 3's dataset table says AthleticsPose's "**ground truth is Theia3D
+markerless**, not marker-based — it cannot serve as error ground truth for a
+markerless pipeline", and demotes it to "variance, never for the headline
+number."
+
+The files say otherwise.
+
+```
+data/AthleticsPoseDataset/raw_markers_in_world/**/*.npy
+  500 files, every one shaped (T, 84, 3), float64, world millimetres, zero NaN
+  marker-count histogram: {84: 500}
+data/AthleticsPoseDataset/camera_params/*.json
+  9 cameras per capture session, 14 sessions
+subjects: 24 total — 6 of them running (S07, S09, S11, S13, S16, S19)
+```
+
+**84 labelled markers per frame is a marker-based optical signature.** A
+markerless system emits segment or joint poses, on the order of 20–30, not 84
+markers in world coordinates — and the directory is named `raw_markers_in_world`.
+Stated precisely: this is an inference from the released file structure. The
+paper's methods section could not be extracted from the PDF, so the capture
+vendor is not named here.
+
+### Three things that changes
+
+**The existing 3.4° is already measured against marker mocap.** It is not
+markerless-against-markerless, so the project's load-bearing number rests on
+better ground than rev 3 credits it with — not worse.
+
+**AthleticsPose has the larger running-subject pool.** Six running subjects
+against AthletePose3D's three. The dataset rev 3 demotes to a variance check has
+twice the running subjects of the one it promotes to the headline.
+
+**B1 survives, but its justification has to change.** The reason to run
+AthletePose3D is not that AthleticsPose cannot supply marker ground truth. It is
+that AthletePose3D is a **second lab with a different protocol**, and — decisively
+— that it **releases raw video**, which AthleticsPose explicitly does not:
+
+> "We currently do not plan to release the original video files."
+> — `data/athleticspose/repo/README.md`
+
+That is what closes §7.5, "the tool has never run on real footage", and no amount
+of AthleticsPose keypoints substitutes for it. The step is right; the stated
+reason is not, and the reason is what a reviewer will check.
+
+## 8. Sequencing, unchanged
+
+A2 and A3 remain the two steps that start immediately and need no download, and
+A3 remains the best value in the plan for the reason rev 3 gives. Nothing in this
+addendum moves anything in §4 above.
