@@ -1,0 +1,18 @@
+{
+  "oa_excluded": true,
+  "oa_decision": "operator, 2026-08-26, before any walking curve existed",
+  "n_walk_sessions": 2088,
+  "n_walk_subjects": 1686,
+  "n_run_sessions": 1832,
+  "n_run_subjects": 1402,
+  "n_unknown_sessions": 73,
+  "n_oa_sessions_excluded": 419,
+  "n_oa_subjects_excluded": 246,
+  "n_subjects_both_modes": 1290,
+  "n_unilateral_injured": 783,
+  "n_paired_sessions": 686,
+  "n_paired_subjects": 614,
+  "right_injured_rate": 0.5247813411078717,
+  "n_list_paths": 686,
+  "n_missing_files": 0
+}
