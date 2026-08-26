@@ -74,7 +74,7 @@ error is unquantified.
 **The real camera penalty is larger, and currently unbounded.** Phase 4's
 residuals came from AthleticsPose 2D→3D lifting with a checkpoint fine-tuned on
 that rig. A phone-camera cohort adds, on top of that: the generic-detector
-penalty (+0.54°, measured in phase 7), video decode and person detection (not
+penalty (+0.45°, measured in phase 7 at full n), video decode and person detection (not
 measured — AthleticsPose releases no source video), and domain gap (not
 measured). `scripts/video_kinematics.py` prints exactly this list as its error
 budget on every run. So the conversion needs an offset **larger than the one

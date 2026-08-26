@@ -93,7 +93,7 @@ changed or only a number did.**
 | claim | was | now | cause |
 |---|---|---|---|
 | MPJPE (fine-tuned / generic / other-sport) | 11.8 / 34.8 / 37.3 mm | **51.7 / 135.2 / 142.9 mm** | Pixels read as mm. **This made the setup more credible** — it now sits sensibly against AthletePose3D's published 214 → 65 mm, where 11.8 mm would have beaten every published result. |
-| Generic-detector cost | +1.67° | **+0.54°** | COCO detections were fed into the fine-tuned-*detector* checkpoint. Three checkpoints ship, matched to three input types. |
+| Generic-detector cost | +1.67° | **+0.45°** | COCO detections were fed into the fine-tuned-*detector* checkpoint. Three checkpoints ship, matched to three input types. (+0.54° on the 200-clip subsample; **+0.45° at full n**, see `results/phase07.md` addendum.) |
 | Phase 3 sagittal MAE | 3.4° | **confirmed at 3.43°**; 3.18° with inference fixes | Not an error — the inference path was suboptimal by −0.25°, not wrong. |
 | Phase 2 σ interpretation | "absorbs 15° of symmetric error" | realized error was **3.08°** | Its 10 Hz low-pass removes ~80% of injected noise at full resolution, so nominal σ ≠ error reaching the classifier. |
 | Phase 3's placement on the phase 2 surface | "3.4° sits below every tested noise level" | too optimistic on realized error | Same cause as above. |
@@ -155,9 +155,11 @@ The honest soft spots, listed so review is efficient rather than a hunt.
 2. **Repeatability rests on non-independent pairs.** 258 pairs from 72 subjects,
    so a subject with 8 sessions contributes 28. The 0.667 is an estimate with
    real uncertainty — though not plausibly near 1.0.
-3. **The +0.54° detector cost is a proxy on a biased subsample.** 200 clips
-   deliberately weighted toward long ones, not the full 592, and it bounds
-   "generic COCO detector", not Keypoint R-CNN specifically.
+3. ~~**The +0.54° detector cost is a proxy on a biased subsample.**~~
+   **CLOSED (A2).** Re-run on all 592 held-out clips: the cost is **+0.45°**,
+   and the fix effect **−0.25°**. The subsample overstated absolute MAE by 22%
+   but both deltas held to within 0.09°. What remains is narrower and still
+   true: it bounds "generic COCO detector", not Keypoint R-CNN specifically.
 4. **120 fps is inferred**, from stride cadence with an assumed 2.5–3.0 strides/s.
    The tool's rate-matching step depends on it.
 5. **The video tool has never seen real footage.** Exercised on synthetic video

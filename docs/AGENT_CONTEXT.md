@@ -240,8 +240,9 @@ checkpoints matched to three input types (`ath-det-ft`, `ath-det-coco`,
 `ath-gt`), all identical architecture. Phase 7's first run fed `det_coco` inputs
 into the `det-ft` checkpoint, conflating "worse detector" with "wrong weights for
 that detector". Pairing each correctly dropped the generic-detector penalty from
-**+1.67° to +0.54°** — three times smaller — and only **+0.17°** once the
-inference fixes are applied. `scripts/video_kinematics.py` now loads
+**+1.67° to +0.54°** on the 200-clip subsample — three times smaller. Re-run at
+full n (A2, all 592 clips) it is **+0.45°**, and **+0.08°** once the inference
+fixes are applied. **Quote the full-n figures.** `scripts/video_kinematics.py` now loads
 `ath-det-coco`, since Keypoint R-CNN is itself a general-purpose COCO detector.
 The `ft` rows were bit-identical across both runs, confirming the change touched
 only what it should have. See `results/phase07.md`.

@@ -173,13 +173,17 @@ def check(angles: dict, kp: np.ndarray, meta: dict, n: int) -> list[str]:
 def error_budget() -> list[str]:
     b = ["lifting error 3.4 deg mean sagittal MAE -- measured on AthleticsPose "
          "held-out subjects, ITS OWN fine-tuned detections, a track capture rig"]
-    p7 = REPO / "results" / "phase7_inference.json"
-    if p7.exists():
+    # Prefer the full-n measurement. The 200-clip file is a long-weighted
+    # subsample kept for the record; quoting it here would overstate the cost.
+    p7 = next((f for f in (REPO / "results" / "phase7_inference_full.json",
+                           REPO / "results" / "phase7_inference.json")
+               if f.exists()), None)
+    if p7 is not None:
         d = json.loads(p7.read_text(encoding="utf-8"))
         b.append(f"+ generic COCO detector penalty "
                  f"{d['generic_detector_cost_deg']:+.2f} deg -- measured in "
                  "phase 7A by swapping the fine-tuned detections for generic "
-                 "COCO ones on the same clips")
+                 f"COCO ones on the same {d['n_clips']} clips")
     b += ["+ UNQUANTIFIED Keypoint R-CNN error on your footage -- AthleticsPose "
           "does not release its source videos, so there is no video with ground "
           "truth to measure this against",

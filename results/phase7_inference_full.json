@@ -19,6 +19,26 @@
       "n": 592
     },
     {
+      "config": "edge padding",
+      "detector": "ft",
+      "padding": "edge",
+      "windows": "consecutive",
+      "hip_mae": 2.6806513214409273,
+      "knee_mae": 3.9252174779622506,
+      "mean_mae": 3.3029343997015888,
+      "n": 592
+    },
+    {
+      "config": "overlapped windows",
+      "detector": "ft",
+      "padding": "zero",
+      "windows": "overlap",
+      "hip_mae": 2.622240829704096,
+      "knee_mae": 3.9258792919895895,
+      "mean_mae": 3.2740600608468426,
+      "n": 592
+    },
+    {
       "config": "both fixes",
       "detector": "ft",
       "padding": "edge",
@@ -27,8 +47,28 @@
       "knee_mae": 3.774656886669418,
       "mean_mae": 3.176139186895175,
       "n": 592
+    },
+    {
+      "config": "generic COCO detector",
+      "detector": "coco",
+      "padding": "zero",
+      "windows": "consecutive",
+      "hip_mae": 3.1905982663966883,
+      "knee_mae": 4.562415656124874,
+      "mean_mae": 3.876506961260781,
+      "n": 592
+    },
+    {
+      "config": "generic COCO + fixes",
+      "detector": "coco",
+      "padding": "edge",
+      "windows": "overlap",
+      "hip_mae": 2.847969956216151,
+      "knee_mae": 4.170602130496392,
+      "mean_mae": 3.509286043356272,
+      "n": 592
     }
   ],
   "fix_effect_deg": -0.25284510586310516,
-  "generic_detector_cost_deg": NaN
+  "generic_detector_cost_deg": 0.4475226685025011
 }

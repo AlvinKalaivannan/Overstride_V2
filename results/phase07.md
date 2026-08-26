@@ -211,3 +211,73 @@ scripts by hand. These cover the invariants that would silently corrupt results:
 ```
 
 Outputs: `results/phase7_inference.json`, `results/phase7_inference_full.json`.
+
+---
+
+# Addendum — the ablation at full n (A2)
+
+The table above ran on a **200-clip subsample deliberately weighted toward long
+clips**, which was the right choice for exercising the multi-window path but left
+an open caveat: `docs/REVIEW.md` §7.3 recorded the detector cost as "a proxy on a
+biased subsample." This re-runs the identical factorial pass on **every held-out
+clip**, closing it.
+
+```
+.venv/Scripts/python.exe scripts/phase7_inference_fix.py --clips 0
+-> results/phase7_inference_full.json
+```
+
+**592 clips**, 298 of which exceed the 81-frame window (50.3%, against 75% in the
+subsample — that skew is exactly what was being corrected for).
+
+| configuration | detector | padding | windows | hip | knee | mean | vs baseline |
+|---|---|---|---|---|---|---|---|
+| baseline (phase 3) | fine-tuned | zero | consecutive | 2.82 | 4.04 | **3.43** | — |
+| edge padding | fine-tuned | edge | consecutive | 2.68 | 3.93 | 3.30 | −0.13 |
+| overlapped windows | fine-tuned | zero | overlap | 2.62 | 3.93 | 3.27 | −0.15 |
+| **both fixes** | fine-tuned | edge | overlap | 2.58 | 3.77 | **3.18** | **−0.25** |
+| **generic COCO detector** | **COCO** | zero | consecutive | 3.19 | 4.56 | **3.88** | **+0.45** |
+| generic COCO + fixes | COCO | edge | overlap | 2.85 | 4.17 | 3.51 | +0.08 |
+
+## What changed, and what did not
+
+| quantity | 200-clip subsample | **592 clips (full)** |
+|---|---|---|
+| baseline MAE | 4.20° | **3.43°** |
+| effect of the inference fixes | −0.29° | **−0.25°** |
+| generic-detector cost | +0.54° | **+0.45°** |
+
+**The absolute error moved a lot; the deltas barely moved.** The subsample
+overstated baseline MAE by 0.77° (22%) because long clips are harder, exactly as
+the original report predicted. Both deltas held to within 0.09°, so the
+subsample's conclusions were sound — they are now measured rather than inferred.
+
+**Precisely which caveat this closes.** The fix effect had *already* been run at
+full n on two configurations (`--clips 0 --only 0,3`); only the **detector cost**
+was subsample-bound, which is what `docs/REVIEW.md` §7.3 recorded. This pass adds
+the missing four configurations. The two that overlap reproduce **bit-identically**
+— baseline 3.428984°, both-fixes 3.176139°, difference 0.00e+00 — which is a
+determinism check on the whole ablation, not just a repeat.
+
+**The published figure is the full-n one from here on.** The generic-detector
+penalty in the error budget is **+0.45°**, and `scripts/video_kinematics.py`
+prefers `phase7_inference_full.json` when it exists so the tool cannot quote the
+subsample. The 200-clip file is kept as the record of what was run.
+
+## The baseline reproduces phase 3 exactly
+
+Full-n baseline: **3.43°** against phase 3's published **3.4°**. The subsample
+was the outlier, not phase 3 — which is worth stating, because the 4.20° in the
+table above could otherwise be misread as phase 3 being optimistic. It was not.
+
+## Capture rate
+
+Recovered from ankle-vertical zero crossings on 33 clips: **113–136 fps** for a
+running cadence of 2.5–3.0 strides/s, bracketing 120. Worth noting alongside the
+validation plan's rev 3, which reports AthletePose3D as natively 120 fps — that
+would turn this inference into a direct check, on a dataset where the rate is
+documented rather than recovered. §7.4 is not closed by this addendum; it is only
+made consistent.
+
+**n = 33 is small** for the fps estimate and the cadence assumption is still the
+weak link. The claim remains a range, not a number.
