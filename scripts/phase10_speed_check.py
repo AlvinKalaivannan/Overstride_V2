@@ -35,8 +35,10 @@ Run: .venv/Scripts/python.exe scripts/phase10_speed_check.py
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
+from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -48,6 +50,25 @@ MANIFEST = FUK / "ric_format" / "batch_manifest.csv"
 OUT = REPO / "results" / "phase10_speed.json"
 
 BAND_GOOD, BAND_USABLE = 3.0, 8.0    # percent, declared in advance
+
+
+def duplicate_groups() -> dict[str, list[str]]:
+    """Trials whose source marker files are byte-identical.
+
+    Found BY this validation rather than assumed: three subjects in the Fukuchi
+    release publish the same recording under all three speed names. Detected as
+    four of the five worst speed outliers, each computing an identical speed at
+    every nominal speed, and confirmed by MD5.
+
+    Such a trial cannot validate anything: the same bytes carry three different
+    nominal speeds, so its true speed is unassignable. The whole group is
+    excluded from the speed statistics and reported as a dataset defect.
+    """
+    by_hash: dict[str, list[str]] = defaultdict(list)
+    for f in sorted(FUK.glob("*run*markers.txt")):
+        by_hash[hashlib.md5(f.read_bytes()).hexdigest()].append(
+            f.name.replace("markers.txt", ""))
+    return {h: v for h, v in by_hash.items() if len(v) > 1}
 
 
 def main() -> int:
@@ -66,6 +87,18 @@ def main() -> int:
     if not len(ok):
         print("no successful trials")
         return 2
+
+    dups = duplicate_groups()
+    dup_trials = {t for v in dups.values() for t in v}
+    n_before = len(ok)
+    excluded = ok[ok["trial"].isin(dup_trials)]
+    ok = ok[~ok["trial"].isin(dup_trials)].copy()
+    print(f"\n=== duplicate-content trials excluded: {len(excluded)} "
+          f"of {n_before} ===")
+    for v in dups.values():
+        print(f"    {' == '.join(v)}")
+    if len(excluded):
+        print("  (same bytes under three nominal speeds -> speed unassignable)")
 
     ok["abs_err"] = ok["speed_computed"] - ok["speed_nominal"]
     ok["rel_err"] = 100 * ok["abs_err"] / ok["speed_nominal"]
@@ -116,6 +149,8 @@ def main() -> int:
 
     payload = {
         "n_trials": int(len(ok)), "n_subjects": int(ok["subject"].nunique()),
+        "duplicate_groups": {h: v for h, v in dups.items()},
+        "n_excluded_duplicates": int(len(excluded)),
         "n_pipeline_errors": int(len(failed)),
         "per_speed": per_speed,
         "median_rel_err_pct": overall, "correlation": r,

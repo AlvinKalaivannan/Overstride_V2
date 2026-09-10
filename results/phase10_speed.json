@@ -1,0 +1,61 @@
+{
+  "n_trials": 61,
+  "n_subjects": 26,
+  "duplicate_groups": {
+    "f3d00b1e21c87a35591b544bfc805676": [
+      "RBDS029runT25",
+      "RBDS029runT35",
+      "RBDS029runT45"
+    ],
+    "455b2fb5e0a4c77602e72a296c206e44": [
+      "RBDS030runT25",
+      "RBDS030runT35",
+      "RBDS030runT45"
+    ],
+    "e35fae14fca7f26c4c4085fbbf48e45c": [
+      "RBDS032runT25",
+      "RBDS032runT35",
+      "RBDS032runT45"
+    ]
+  },
+  "n_excluded_duplicates": 6,
+  "n_pipeline_errors": 0,
+  "per_speed": {
+    "2.5": {
+      "n": 23,
+      "computed_mean": 2.5477739130434784,
+      "computed_sd": 0.020860990645685272,
+      "mean_abs_err_ms": 0.04777391304347827,
+      "median_rel_err_pct": 1.8542799999999993
+    },
+    "3.5": {
+      "n": 22,
+      "computed_mean": 3.5554053181818177,
+      "computed_sd": 0.023340690744229262,
+      "mean_abs_err_ms": 0.055405318181818194,
+      "median_rel_err_pct": 1.5675142857142825
+    },
+    "4.5": {
+      "n": 16,
+      "computed_mean": 4.5784576875,
+      "computed_sd": 0.030529087449444565,
+      "mean_abs_err_ms": 0.07845768749999993,
+      "median_rel_err_pct": 1.760911111111104
+    }
+  },
+  "median_rel_err_pct": 1.7069777777777715,
+  "correlation": 0.9995450129139551,
+  "regression_slope": 1.0148322673819743,
+  "regression_intercept": 0.008363553862661667,
+  "error_drift_ms": 0.030683774456521658,
+  "bands": {
+    "pass_pct": 3.0,
+    "usable_pct": 8.0
+  },
+  "verdict": "PASS -- the adapter transfers",
+  "eventsflag_median": 0.7197,
+  "steps_median": 29.0,
+  "source": "Fukuchi et al. 2017, figshare 10.6084/m9.figshare.4543435 v5",
+  "licence": "CC BY 4.0",
+  "retrieved": "2026-09-10"
+}
