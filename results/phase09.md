@@ -109,8 +109,11 @@ than inherited: a control that cleared on running has said nothing about walking
 
 ```
 gate: max |AUC - 0.5| = 0.026 (demographics)  ->  PASS
-      running's equivalent was 0.051
 ```
+
+**Every interval includes 0.5, which is the whole requirement.** Running's gate
+figure was 0.051, but the two should not be compared as a measure of relative
+cohort cleanliness — see the correction under *What surprised me*.
 
 The fifth control was not in the validation plan. It was added because walking
 mixes 120 and 200 Hz and decimation is exactly where phase 4's framerate artefact
@@ -213,12 +216,31 @@ its marginal value is modest.
 
 ## What surprised me
 
-**The controls are *tighter* than running's** — worst deviation 0.026 against
-0.051. Going in, the plausible explanation for a weaker walking result was a
-messier cohort: a different population, a mixed sampling rate, 22.7% partial event
-detection. All three were real concerns and none of them bit. The cohort is
-cleaner than running's on every control, and the signal is still smaller. That
-removes the comfortable explanation and leaves the uncomfortable one.
+**The cohort's known weaknesses did not bite.** Going in, the plausible
+explanation for a weaker walking result was a messier cohort: a different
+population, a mixed 120/200 Hz sampling rate, 22.7% partial event detection. All
+three were real concerns. None of them showed up — the controls are at chance and
+the sensitivity analysis moved the primary by 0.004. The comfortable explanation
+is not available, which leaves the uncomfortable one.
+
+> **Correction to an earlier draft of this section.** It read *"the controls are
+> tighter than running's — worst deviation 0.026 against 0.051"* and concluded the
+> walking cohort was the cleaner of the two. **That comparison does not hold and
+> the conclusion should not be drawn from it.** Running's worst deviation was
+> provenance at **0.449 — 0.051 *below* chance**, and leakage pushes a control
+> *above* chance, so that number was estimation noise rather than contamination.
+> The CI widths are also comparable (running 0.100–0.186, walking 0.072–0.165),
+> and the comparison took the maximum of four noisy estimates against the maximum
+> of five, which is the kind of comparison that manufactures differences.
+>
+> What the controls do establish is narrower and entirely sufficient: **every
+> control CI in both cohorts includes 0.5, so neither design leaks and the walking
+> null is not a leakage artefact.** No claim about relative cohort quality is
+> supported, and none is needed.
+
+Worth noting without chasing: all five walking controls sit slightly *below*
+chance (0.474–0.487). Given intervals 0.072–0.165 wide, and controls that share
+folds, subjects and overlapping features, that is noise rather than a pattern.
 
 **The sampling-rate control was the tightest of the five** (0.486, [0.450, 0.522])
 despite being the one added specifically out of suspicion. The 101-point stance
