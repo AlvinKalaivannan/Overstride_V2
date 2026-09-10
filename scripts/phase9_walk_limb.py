@@ -43,6 +43,23 @@ is void. Decimation is exactly where phase 4's framerate artefact came from.
 STOP CONDITION: if any negative control leaves chance (|AUC - 0.5| >= 0.06,
 phase 5's gate), report the confound and do NOT publish a kinematic AUC.
 
+ONE SENSITIVITY ANALYSIS, DECLARED BEFORE RUNNING AND OUTSIDE THE HOLM FAMILY
+----------------------------------------------------------------------------
+22.8% of walking sessions carry `eventsflag_mean < 1`: the pipeline's automated
+event detection partially fell back to foot-forward/foot-back. Running has no
+equivalent -- it is a walking-specific data-quality caveat, visible in the batch
+log and recorded per session in the manifest.
+
+The PRIMARY test is therefore re-run on the `eventsflag_mean == 1.0` subset.
+
+This is NOT a fourth hypothesis test and it does NOT enter the Holm correction.
+It is the same hypothesis on cleaner data, and it is declared here before any
+walking AUC exists precisely so it cannot later be mistaken for a search for a
+subset where the result improves. Both numbers get reported whichever way they
+fall: if the clean subset agrees, event-detection quality is not driving the
+result; if it disagrees, that is a finding about the walking data and is
+reported as one.
+
 Run: .venv/Scripts/python.exe scripts/phase9_walk_limb.py
 """
 
@@ -205,6 +222,20 @@ def main() -> int:
     folds = make_folds(y, groups)
     check_no_group_leakage(folds, groups)
 
+    # PCA cannot ask for more components than the smallest training fold has
+    # samples. At this cohort's size the cap never binds -- it is here so a
+    # small cohort fails loudly at the top rather than crashing an hour into
+    # the run, and so that if it ever DOES bind the report says so.
+    min_train = min(len(f["train"]) for f in folds)
+    print(f"smallest training fold: {min_train} sessions")
+
+    def cap(n_components: int, n_features: int) -> int:
+        c = min(n_components, n_features, min_train - 1)
+        if c != n_components:
+            print(f"    NOTE: PCA capped {n_components} -> {c} "
+                  f"(min train fold {min_train}, {n_features} features)")
+        return c
+
     results: dict = {}
 
     def run(name, num, cat, pca=None):
@@ -263,7 +294,8 @@ def main() -> int:
     nch = {"limbsag_mean": 3, "limb9_mean": 9, "limb15_mean": 15}
     tested = []
     for name in PREREGISTERED:
-        r = run(f"{name} [matched]", sets[name], [], PCA_PER_CHANNEL * nch[name])
+        r = run(f"{name} [matched]", sets[name], [],
+                cap(PCA_PER_CHANNEL * nch[name], len(sets[name])))
         r["p"] = fold_p(np.array(r["auc"]))
         tested.append(r)
 
@@ -286,10 +318,11 @@ def main() -> int:
 
     print("\n=== reading, per the pre-declared bands ===")
     a = primary["auc_mean"]
-    if a >= 0.65:
+    clears = a >= BAR_AUC and primary["ci_lo"] > 0.5   # BOTH halves of the bar
+    if a >= 0.65 and clears:
         verdict = ("ABOVE 0.65 -- confound alert, not success. Inspect residual "
                    "composition before treating this as a stronger signal.")
-    elif a >= BAR_AUC:
+    elif clears:
         verdict = ("near 0.61 with controls at chance -- the ceiling is a "
                    "property of GAIT, not of running specifically.")
     elif primary["ci_lo"] <= 0.5:
@@ -300,6 +333,36 @@ def main() -> int:
                    "than in running, and it does not clear pre-registration.")
     print(f"  primary (limbsag_mean) = {a:.3f}  ->  {verdict}")
     payload["verdict"] = verdict
+
+    # --- sensitivity: clean event detection only (NOT in the Holm family) ---
+    clean = df["eventsflag_mean"] >= 1.0
+    print(f"\n=== sensitivity: eventsflag_mean == 1.0 "
+          f"({int(clean.sum())}/{len(df)} sessions, "
+          f"{100 * (~clean).mean():.1f}% excluded) ===")
+    sub = df[clean].reset_index(drop=True)
+    ys, gs = sub["label"].to_numpy(), sub["sub_id"].to_numpy()
+    if len(np.unique(ys)) < 2 or sub["sub_id"].nunique() < 50:
+        print("  SKIPPED -- clean subset too small to split safely")
+        payload["sensitivity"] = {"skipped": True, "n": int(clean.sum())}
+    else:
+        sfolds = make_folds(ys, gs)
+        check_no_group_leakage(sfolds, gs)
+        name = PREREGISTERED[0]
+        best = None
+        for kind in ("logit", "hgb"):
+            r = evaluate(f"{name} [clean] ({kind})", kind, sub, sets[name], [],
+                         sfolds, gs, pca_components=PCA_PER_CHANNEL * nch[name])
+            best = r if best is None or r["auc_mean"] > best["auc_mean"] else best
+        lo, hi = ci(best["auc"])
+        print("  " + fmt_result(best))
+        print(f"  primary on all sessions: {a:.3f}  |  clean only: "
+              f"{best['auc_mean']:.3f}  (delta {best['auc_mean'] - a:+.3f})")
+        payload["sensitivity"] = {
+            "n_sessions": int(clean.sum()),
+            "n_subjects": int(sub["sub_id"].nunique()),
+            "frac_excluded": float((~clean).mean()),
+            "auc_mean": float(best["auc_mean"]), "ci_lo": lo, "ci_hi": hi,
+            "delta_vs_primary": float(best["auc_mean"] - a)}
 
     OUT.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     print(f"\nwrote {OUT.relative_to(REPO)}")

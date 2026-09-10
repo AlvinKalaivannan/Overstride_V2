@@ -43,9 +43,29 @@ fclose(fid);
 paths = paths{1};
 n = numel(paths);
 
-mf = fopen(manifestFile, 'w');
-fprintf(mf, ['json,sub_id,session,label_used,n_live,n_agree,resolved,' ...
-             'speed,nsteps_L,nsteps_R,eventsflag_mean,hz,secs,err\n']);
+% RESUMABLE. A full pass is ~60 minutes, and an interrupted run must not throw
+% away completed work. Sessions already recorded in the manifest are skipped and
+% the manifest is appended to, so this can be restarted freely.
+done = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+if exist(manifestFile, 'file')
+    fidm = fopen(manifestFile, 'r');
+    fgetl(fidm);                                   % discard header
+    while true
+        ln = fgetl(fidm);
+        if ~ischar(ln); break; end
+        c = strsplit(ln, ',');
+        if numel(c) >= 3
+            done([c{2} '__' c{3}]) = true;
+        end
+    end
+    fclose(fidm);
+    fprintf('resuming: %d sessions already in manifest\n', done.Count);
+    mf = fopen(manifestFile, 'a');
+else
+    mf = fopen(manifestFile, 'w');
+    fprintf(mf, ['json,sub_id,session,label_used,n_live,n_agree,resolved,' ...
+                 'speed,nsteps_L,nsteps_R,eventsflag_mean,hz,secs,err\n']);
+end
 
 ANG = {'L_ankle','L_knee','L_hip','L_foot','L_pelvis', ...
        'R_ankle','R_knee','R_hip','R_foot','R_pelvis'};
@@ -58,6 +78,7 @@ for i = 1:n
     [~, sessName] = fileparts(jsonFile);
     parts = strsplit(strrep(jsonFile, '\', '/'), '/');
     subId = parts{end-1};
+    if isKey(done, [subId '__' sessName]); continue; end
     t0 = tic; errMsg = ''; resolved = 0; bestLabel = ''; bestAgree = -1;
     bestLive = 0; spd = NaN; nsL = NaN; nsR = NaN; evm = NaN; hz = NaN;
     saved = false;
@@ -133,6 +154,8 @@ for i = 1:n
             jsonFile, subId, sessName, bestLabel, bestLive, bestAgree, ...
             resolved, spd, nsL, nsR, evm, hz, secs, errMsg);
 
+    % Flush periodically so an interrupt loses at most the row in flight.
+    if mod(i, 10) == 0; fclose(mf); mf = fopen(manifestFile, 'a'); end
     if mod(i, 25) == 0 || i == n
         el = toc(t_start);
         fprintf('%d/%d  %.2f s/file  elapsed %.1f min  eta %.1f min\n', ...
