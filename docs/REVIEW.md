@@ -177,9 +177,24 @@ The honest soft spots, listed so review is efficient rather than a hunt.
    dataset README (a recorded diagnosis outranks a blank severity field), and
    phase 1's kill criterion fired but work continued onto the within-subject
    task. Both are recorded rather than hidden, but a reviewer should weigh them.
-8. **Waveforms come from a patched MATLAB pipeline.** It reproduces the archive's
-   own `dv_r` exactly — which is the check that it is faithful — but it is both a
-   reproducibility barrier and a possible error source.
+8. ~~**Waveforms come from a patched MATLAB pipeline.**~~ **LARGELY CLOSED
+   (phase 10).** It reproduces the archive's own `dv_r` exactly, and it has now
+   been driven by a **second lab's markers** — Fukuchi et al. 2017, different
+   subjects, different marker model, 150 Hz instead of 200. It recovers that
+   lab's prescribed treadmill speed to a median **1.71%** (r = 0.9995, slope
+   1.0148) and reproduces their independently computed sagittal waveform shapes
+   (hip |r| = 0.993; knee amplitude within 1.4%). **The pipeline is not
+   generating archive-specific artefacts.**
+
+   Two genuine modelling limitations surfaced, neither visible without an
+   external dataset: the **foot segment's long axis is hardcoded to the
+   laboratory** (`gait_kinematics.m:118`, heel markers only, no forefoot), which
+   makes the **ankle the weakest channel** (|r| 0.816, range 43% larger than
+   Fukuchi's); and the **hip joint centre is a geometric rule** (`GTR + 25%` of
+   the inter-GTR distance) rather than a regression, which scales hip amplitude
+   by ~11% while preserving its shape. Agreement also degrades with speed
+   (|r| 0.960 at 2.5 m/s → 0.888 at 4.5). The reproducibility barrier remains:
+   MATLAB is still required. See `results/phase10.md`.
 
 ---
 

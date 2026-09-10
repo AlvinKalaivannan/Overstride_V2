@@ -1,0 +1,79 @@
+{
+  "n_comparisons": 366,
+  "n_trials": 61,
+  "n_subjects": 26,
+  "per_joint": {
+    "ankle": {
+      "n": 122,
+      "median_r": -0.8163812570767388,
+      "median_abs_r": 0.8163812570767388,
+      "median_rms_aligned_deg": 6.325833844899055,
+      "median_amp_ratio": 1.4333479480832598,
+      "median_range_ours_deg": 39.96499061584473,
+      "median_range_fuk_deg": 27.687078467442653,
+      "median_offset_deg": -12.67892235480728,
+      "convention_inverted": true
+    },
+    "hip": {
+      "n": 122,
+      "median_r": -0.992631499323356,
+      "median_abs_r": 0.992631499323356,
+      "median_rms_aligned_deg": 2.964770749120612,
+      "median_amp_ratio": 1.1122559773820366,
+      "median_range_ours_deg": 43.106924057006836,
+      "median_range_fuk_deg": 38.654759016267334,
+      "median_offset_deg": -44.22583620316843,
+      "convention_inverted": true
+    },
+    "knee": {
+      "n": 122,
+      "median_r": 0.8966887280285132,
+      "median_abs_r": 0.8966887280285132,
+      "median_rms_aligned_deg": 4.599054226671328,
+      "median_amp_ratio": 1.0137917000190724,
+      "median_range_ours_deg": 33.28114438056946,
+      "median_range_fuk_deg": 32.5050851744186,
+      "median_offset_deg": -3.0518943305611703,
+      "convention_inverted": false
+    }
+  },
+  "per_speed": {
+    "2.5": {
+      "n": 138,
+      "median_abs_r": 0.959775313002901,
+      "median_rms_deg": 3.484345782106426,
+      "median_amp_ratio": 1.0955265368579454
+    },
+    "3.5": {
+      "n": 132,
+      "median_abs_r": 0.9115479881126256,
+      "median_rms_deg": 4.779353891784538,
+      "median_amp_ratio": 1.1250784602139174
+    },
+    "4.5": {
+      "n": 96,
+      "median_abs_r": 0.8882381725357815,
+      "median_rms_deg": 6.41499101060262,
+      "median_amp_ratio": 1.1558309661120905
+    }
+  },
+  "overall_median_abs_r": 0.93301517514044,
+  "overall_median_rms_aligned_deg": 4.480945860536151,
+  "sign_convention": {
+    "hip": "inverted",
+    "knee": "same",
+    "ankle": "inverted"
+  },
+  "overall_median_amp_ratio": 1.1239767251653014,
+  "stance_frac_median": 0.3212669683257919,
+  "bands": {
+    "r_pass": 0.95,
+    "r_partial": 0.85,
+    "rms_pass_deg": 3.0
+  },
+  "verdict": "PARTIAL -- shape recovered, detail differs",
+  "n_skipped": 0,
+  "source": "Fukuchi et al. 2017, figshare 10.6084/m9.figshare.4543435 v5",
+  "licence": "CC BY 4.0",
+  "retrieved": "2026-09-10"
+}

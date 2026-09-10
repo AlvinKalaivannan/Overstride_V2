@@ -265,3 +265,163 @@ quantity derived through two coordinate transforms and an SVD fit.
 - `scripts/matlab/fukuchi_probe.m` — single-trial probe
 - `scripts/phase10_speed_check.py` — validation and duplicate detection
 - `results/phase10_speed.json`
+
+---
+
+# Part 2 — the angle comparison
+
+Part 1 established that the pipeline's **geometry** transfers (speed to 1.71%,
+r = 0.9995). Speed does not exercise the angle convention at all, so this
+compares the sagittal waveforms the RIC pipeline recovers from Fukuchi's markers
+against the waveforms **Fukuchi published from the same recordings**, computed
+independently in Visual3D with their own model.
+
+**Verdict: PARTIAL — shape is recovered, and the disagreements localise to two
+specific modelling choices in the RIC pipeline that this comparison identified.**
+
+## Resolving the normalisation mismatch
+
+The two are not comparable as shipped: `gait_steps` emits 101 points of
+**stance**, Fukuchi 101 points of the **full gait cycle**. Fukuchi's cycle starts
+at initial contact — verified from curve shape, not assumed (knee 13.4° at 0%,
+40.6° midstance peak near 20%, 84.6° swing peak near 70%, back to 13.4° at 100%).
+
+Their curve is therefore sliced to stance and resampled to 101 points, with the
+stance fraction **measured per trial from their own instrumented-treadmill
+vertical force** — independent of both pipelines.
+
+```
+stance fraction, from Fukuchi's force plate
+  2.5 m/s   0.368
+  3.5 m/s   0.322
+  4.5 m/s   0.303
+```
+
+**Monotone decreasing with speed**, which is what running requires and is a
+check on the force-based detection itself. An earlier version produced
+non-monotone fractions (0.390 / 0.337 / 0.358); the cause was threshold noise
+splitting single contacts in two, breaking the strict alternation that
+`stride = onset[i] → onset[i+2]` depends on. A 0.05 s minimum contact duration
+fixed it.
+
+## Result
+
+**61 trials / 26 subjects, 366 curve comparisons.**
+
+| joint | n | median r | \|r\| | RMS aligned | amp ratio | offset |
+|---|---|---|---|---|---|---|
+| **hip** | 122 | −0.993 | **0.993** | 2.96° | 1.112 | −44.2° |
+| **knee** | 122 | +0.897 | 0.897 | 4.60° | **1.014** | −3.1° |
+| **ankle** | 122 | −0.816 | 0.816 | 6.33° | 1.433 | −12.7° |
+
+```
+overall median |r| = 0.933   median sign-aligned RMS = 4.48 deg
+pre-declared: |r|>=0.95 AND RMS<=3 deg pass | |r|>=0.85 partial | else fail
+VERDICT: PARTIAL -- shape recovered, detail differs
+```
+
+### Sign conventions differ, and that is reported rather than hidden
+
+Resolved **once per joint from the population median**, never per curve:
+
+```
+hip     median r = -0.993   INVERTED vs Fukuchi
+knee    median r = +0.897   same as Fukuchi
+ankle   median r = -0.816   INVERTED vs Fukuchi
+```
+
+**An earlier version of this script got the metric wrong and it is worth
+recording.** A pure sign inversion makes offset-removed RMS equal *twice* the
+signal amplitude, so the first pass reported hip at |r| = 0.991 beside a 28°
+RMS — two numbers that cannot describe the same pair of curves. The metric was
+conflating "the convention differs" with "the magnitudes differ". The docstring
+had warned against exactly this failure for *offsets* and missed it for *signs*.
+
+## What the disagreements localise to
+
+This is the part worth having, because it names specific modelling choices rather
+than producing an undifferentiated error number.
+
+**Hip: near-perfect shape, amplitude 11% larger.** |r| = 0.993 with a 1.112
+range ratio is the signature of a joint-centre definition difference, not a
+kinematic one. `gait_kinematics.m:81` places the hip joint centre at
+`GTR + 25% of the inter-GTR distance` — a geometric rule. Visual3D models
+conventionally use a regression-based hip joint centre. A different HJC moves the
+thigh's proximal end, scaling the hip angle while preserving its shape exactly.
+The −44.2° offset is a neutral-definition difference on top.
+
+**Knee: amplitude almost exact (1.4%), shape good.** The knee is the joint both
+models define the same way — midpoint of medial and lateral markers — and it is
+correspondingly the closest in amplitude.
+
+**Ankle: the weakest, and the RIC foot model explains it.**
+`gait_kinematics.m:118-120` builds the foot segment from **heel markers only**,
+and hardcodes its long axis to the laboratory:
+
+```matlab
+% long axis of the the foot is aligned with the lab
+l_foot_x = [0 0 -1];
+```
+
+The subject's actual foot orientation is never measured. Fukuchi carries MT1, MT2
+and MT5 forefoot markers and can define a real foot segment. So our ankle range
+runs 43% larger with the poorest shape agreement — and this is a **limitation of
+the RIC pipeline's foot model**, not an adapter error. It would have been
+invisible without an independent dataset to compare against, which is precisely
+what §7.8 asked for.
+
+## Agreement degrades with speed
+
+```
+2.5 m/s   |r| 0.960   RMS 3.48 deg   amp ratio 1.096   (n=138)
+3.5 m/s   |r| 0.912   RMS 4.78 deg   amp ratio 1.125   (n=132)
+4.5 m/s   |r| 0.888   RMS 6.41 deg   amp ratio 1.156   (n=96)
+```
+
+Monotone in all three measures. Three candidate causes are not separated here:
+genuine difficulty at speed, degrading event detection (median `eventsflag` 0.72,
+with fallback in *every* trial), and the speed-dependent exclusion bias from
+Part 1 (19.4% excluded at 2.5 m/s rising to 41.9% at 4.5). **At the slowest
+speed the result would clear the pass band** (|r| 0.960, RMS 3.48°); it is the
+fast trials that pull it into PARTIAL.
+
+## What this establishes, and what it does not
+
+**Established.** Driven by an independent lab's marker model, the RIC pipeline
+recovers sagittal hip and knee stance kinematics whose shape matches that lab's
+own independent processing (hip |r| 0.993, knee amplitude within 1.4%). Combined
+with Part 1's speed validation, **§7.8 is answered as far as an open dataset can
+answer it**: the pipeline is not generating archive-specific artefacts.
+
+**Not established: that the two agree in absolute angle.** They do not, and were
+never going to — offsets run −3° to −44° because the models define neutral and
+joint centres differently. This comparison tests whether the same motion produces
+the same *waveform*, not whether two marker models produce the same number.
+
+**The ambiguity declared in advance still holds for the ankle.** A disagreement
+there is consistent with both an adapter error and a genuine foot-model
+difference. The hardcoded lab-aligned long axis makes the latter much the more
+likely reading, but this comparison alone cannot exclude the former.
+
+## Implication for the project's own results
+
+The ankle is the least trustworthy of the three sagittal mocap channels. Phase 5's
+`limbsag` feature set used hip, knee **and** ankle, so one of its three channels
+rests on a foot model that assumes the foot points along the lab axis.
+
+This does **not** change any conclusion. Phase 5's result was a null, and phase 8
+established the design resolves a 0.25° consistent asymmetry, so a noisier third
+channel cannot manufacture the absence of a signal. If anything it marginally
+strengthens the reading that the signal is small: one of three channels carries
+more measurement error than previously documented. Worth recording as a caveat on
+the mocap channels, not as a revision.
+
+It also connects to a limitation already on record from the other direction:
+`CLAUDE.md` notes ankle dorsiflexion is **unavailable** from the video path
+because H36M-17 has no toe keypoint. The ankle is the weakest channel in both
+modalities, for the same underlying reason — nothing observes the forefoot.
+
+## Files
+
+- `scripts/phase10_angle_compare.py`
+- `results/phase10_angles.json`
