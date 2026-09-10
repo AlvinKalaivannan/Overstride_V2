@@ -166,7 +166,13 @@ The honest soft spots, listed so review is efficient rather than a hunt.
    and on AthleticsPose keypoints only.
 6. **One dataset, one protocol.** Treadmill running, stance phase only, a single
    clinic. The negative result's *generality* rests entirely on that, and no
-   external validation exists.
+   external validation exists. **Phase 9 does not close this.** Running the limb
+   task on the same archive's *walking* trials is a **gait-mode generalisation
+   test, not a replication**: same clinic, same collection waves, same paperwork
+   confound, largely the same people. It found 0.547 [0.465, 0.627] against
+   running's 0.610, with all five negative controls at chance — which establishes
+   that the ceiling is not a general property of gait, and establishes nothing
+   about generality beyond this clinic.
 7. **Two documented protocol deviations.** The labelling rule departs from the
    dataset README (a recorded diagnosis outranks a blank severity field), and
    phase 1's kill criterion fired but work continued onto the within-subject

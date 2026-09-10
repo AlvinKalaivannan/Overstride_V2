@@ -24,6 +24,13 @@ known to be injured — tops out at **AUC 0.610** on perfect mocap, and lands at
 diagnostics say the ceiling is a property of what unilateral running injury does
 to stance-phase gait symmetry in this cohort, not of how it has been modelled.
 
+Two later phases sharpened that sentence. A **positive control** (phase 8) showed
+the design resolves a consistent asymmetry of **0.25°**, so the ceiling is not an
+underpowered test — the observed 0.610 is worth about **0.17° RMS**. And the word
+*running* in it is now measured rather than assumed: the same task on the same
+archive's **walking** trials, restricted to subjects who did both, reaches only
+**0.547 [0.465, 0.627]** with all five negative controls at chance (phase 9).
+
 ![the degradation curve](figures/phase4_degradation.png)
 
 ## Two levels, two verdicts
@@ -57,6 +64,8 @@ Five independent lines of evidence, each designed to detect headroom:
 | **Learning curve** | 0.585 → 0.599 → 0.608 → 0.610. The last quarter of the data bought **+0.001** |
 | **Four more feature families** — velocities, stride distributions, per-condition splits | Best is +0.008 with a CI spanning [−0.110, +0.089]. Velocities score **0.499** |
 | **Abstention and repeat scans** | Neither rescues the deployment configuration |
+| **Positive control** — inject a known asymmetry and sweep its magnitude | Design resolves **0.25°** at AUC 0.681. Not underpowered; the 0.610 is worth ≈**0.17° RMS** |
+| **A second gait mode** — the same task on walking, paired dual-mode subjects | **0.547** [0.465, 0.627], fails the bar. The ceiling is not a property of gait in general |
 
 If the ceiling were an artefact of the sagittal waveform representation, a
 clinical scalar set built from different planes and different physics would not

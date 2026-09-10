@@ -165,6 +165,8 @@ recorded in `results/`.
 | **5B–5D** | Ceiling diagnostics, further feature families, abstention | — | ❌ ceiling is the signal |
 | **6** | ~~Demo shell~~ → **Methods demo + synthesis** | — | ✅ `README.md` |
 | **7** | Harden the inference path; `video_kinematics.py` | — | ✅ −0.25° recovered; first tests in the repo |
+| **8** | Positive control: inject a known asymmetry, sweep its magnitude | Method detects an asymmetry known to be present | ✅ resolves 0.25°; 0.610 ≈ 0.17° RMS |
+| **9** | A1 — the same limb task on **walking**, paired dual-mode subjects | Clears phase 5's bar with controls at chance | ❌ **0.547**, does not replicate |
 
 > **Phase 6 was redefined.** "Demo shell" assumed something worth demonstrating
 > to a user. Phases 4B and 5D showed a per-user limb verdict is unsupportable —
