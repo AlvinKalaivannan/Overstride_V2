@@ -159,7 +159,22 @@ def ric_stance_curve(mat: dict, side: str, joint: str) -> np.ndarray:
 
 
 def main() -> int:
-    man_p = FUK / "ric_format" / "batch_manifest.csv"
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--curves", default="curves",
+                    help="subdirectory of ric_format holding the .mat curves")
+    ap.add_argument("--manifest", default="batch_manifest.csv")
+    ap.add_argument("--out", default="", help="output json filename")
+    ap.add_argument("--label", default="", help="tag printed with the results")
+    args = ap.parse_args()
+    global CURVES, OUT
+    CURVES = FUK / "ric_format" / args.curves
+    if args.out:
+        OUT = REPO / "results" / args.out
+    if args.label:
+        print(f"### {args.label}")
+
+    man_p = FUK / "ric_format" / args.manifest
     if not man_p.exists():
         print(f"ERROR: {man_p} not found. Run fukuchi_batch.m first.")
         return 2

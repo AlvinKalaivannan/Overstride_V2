@@ -425,3 +425,127 @@ modalities, for the same underlying reason — nothing observes the forefoot.
 
 - `scripts/phase10_angle_compare.py`
 - `results/phase10_angles.json`
+
+---
+
+# Part 3 — testing a fix for the ankle, and falsifying it
+
+Part 2 found the ankle is the weakest channel (|r| 0.816, range 43% larger than
+Fukuchi's) and identified a candidate cause: `gait_kinematics.m:119` hardcodes each
+foot's long axis to the laboratory, asserting **zero toe-out** for every subject.
+
+**The hypothesis was that measuring the foot axis instead of assuming it would
+close the ankle gap. It does not. The hypothesis is falsified.**
+
+## Implementation
+
+The data to do better is **already in the archive and unused**:
+`joints.L_first` and `joints.L_fifth` are the first and fifth metatarsal heads,
+referenced by neither pipeline file. Their midpoint minus the heel-marker
+centroid is the subject's own measured foot long axis.
+
+Added to `scripts/vendor_matlab_code.py` as a second patch, behind a
+`RIC_DERIVE_FOOT_AXIS` global, **empty by default**. One line changes per side;
+the surrounding construction orthogonalises whatever axis it is handed
+(`foot_z = cross(x, heel_vertical)`, then `foot_y = cross(z, x)`), so nothing
+else about the foot frame is touched.
+
+### Regression test: the default path is bit-identical
+
+Before believing anything about pass B, pass A re-ran all 67 trials with the flag
+**off** and was compared channel-by-channel against the pre-patch output:
+
+```
+files compared: 67
+max absolute difference across every channel: 0.000e+00
+REGRESSION: PASS -- the default path is untouched
+```
+
+Every existing result in this repository came through that path, so this check
+had to pass before the experiment meant anything.
+
+## Result: no improvement
+
+| | A — axis assumed | B — axis measured | change |
+|---|---|---|---|
+| **ankle \|r\|** | 0.816 | **0.813** | −0.003 |
+| ankle RMS aligned | 6.33° | 6.30° | −0.03° |
+| **ankle amp ratio** | 1.433 | **1.442** | +0.009 |
+| ankle offset | −12.7° | −17.6° | **−4.9°** |
+| knee \|r\| | 0.897 | 0.902 | +0.005 |
+| hip \|r\| | 0.993 | 0.992 | −0.001 |
+| overall \|r\| | 0.933 | 0.930 | −0.003 |
+
+The flag is working — the ankle offset moved by 4.9° — but shape and amplitude are
+unchanged within noise, and the overall figure is marginally *worse*.
+
+## Why, measured rather than guessed
+
+The assumed axis was nearly right:
+
+```
+angle between the measured foot long axis and the assumed lab axis
+  n = 134 feet | median 5.3 deg | IQR 4.6-6.3 | max 11.6
+
+decomposed (RBDS001):
+  L: toe-out  -3.6 deg | pitch +6.9 deg | length 195 mm
+  R: toe-out  -5.8 deg | pitch +7.3 deg | length 198 mm
+```
+
+Two things follow.
+
+**The assumption is only ~5° wrong, and most of that is pitch, not toe-out.**
+The forefoot sits ~7° above the heel markers, which is anatomy plus shoe geometry —
+the metatarsal heads are higher on the shoe than the heel markers. Actual toe-out
+is 4–6°, smaller than assumed when the hypothesis was formed.
+
+**A frame rotation shifts an offset; it cannot scale a range.** Rotating the long
+axis by 5° moves the ankle's zero by about 5° — observed as a 4.9° offset shift,
+matching almost exactly — and leaves the amplitude alone. So this was never
+capable of explaining a 43% amplitude error, and the expected outcome should have
+been stated in advance as an offset shift and nothing else.
+
+**The error in my reasoning was conflating two claims:** that the reference frame
+is wrong (true, by ~5°) and that this is why the ankle disagrees (false). The
+first was verified; the second was assumed.
+
+## What this means for the remaining plan
+
+**Step 3 is cancelled.** The plan was to regenerate the RIC waveforms with the
+derived axis and report whether phase 5's 0.610 moved. There is no longer a reason
+to: the change does not improve agreement against an external reference, so
+spending ~3 hours of MATLAB regeneration plus eight phase re-runs would propagate a
+change with no demonstrated benefit and a measurable cost in comparability.
+
+The staged ordering is what made this cheap. Validating against Fukuchi *before*
+touching the project's own numbers cost about twenty minutes of compute and
+settled the question; doing it the other way round would have cost a day and
+produced a set of revised results with no evidence they were better.
+
+**The patch stays, off by default**, documented in
+`scripts/vendor_matlab_code.py`, because the finding is worth preserving: the
+archive carries unused forefoot landmarks, the hardcoded axis is ~5° wrong, and
+that error is an offset rather than a distortion.
+
+## The ankle discrepancy is still unexplained
+
+Ruled out: the foot long-axis assumption. Still open, and not investigated here:
+
+- the foot segment's **vertical** axis still comes from heel markers alone — the
+  patch changed only the long axis
+- the **ankle joint centre** is the midpoint of the medial and lateral ankle
+  markers; Fukuchi's model may place it differently
+- Fukuchi may use a **multi-segment foot**, which a single rigid segment cannot
+  reproduce regardless of its axes
+- a 43% amplitude error is large enough to suggest the discrepancy is in how the
+  shank-foot relative rotation is extracted, not in the segment frames at all
+
+None of these is claimed. They are the candidates a next attempt would test, and
+the same staged approach would apply: validate against Fukuchi before touching
+anything in this repository.
+
+## Files
+
+- `scripts/vendor_matlab_code.py` — both patches; foot axis is patch 2, opt-in
+- `scripts/matlab/fukuchi_foot_ab.m`, `scripts/matlab/run_foot_ab.m` — the A/B
+- `results/phase10_angles_footA.json`, `results/phase10_angles_footB.json`
