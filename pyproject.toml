@@ -4,6 +4,10 @@ version = "0.1.0"
 description = "Injury-risk screening for runners from monocular video."
 requires-python = ">=3.11"
 dependencies = [
+    # AthletePose3D (phase 11 / B1) is distributed only as a public Google Drive
+    # folder behind a read-the-licence page, with no direct or API URL. Drive
+    # folder downloads need the confirm-token dance that plain curl cannot do.
+    "gdown>=5.2",
     "kaggle>=2.2.4",
     "matplotlib>=3.9",
     "numpy>=2.0",
@@ -11,7 +15,11 @@ dependencies = [
     # torchvision's Keypoint R-CNN (BSD-3-Clause, already present via torch) --
     # mediapipe was tried first and its native library is blocked by this
     # machine's Smart App Control. See results/phase07.md.
-    "opencv-python>=4.10",
+    # Upper bound is another Windows Smart App Control constraint, same class as
+    # the pandas pin below: opencv-python 5.0.0.93 installs its RECORD but its
+    # cv2/ native payload never lands on disk, so `import cv2` fails and
+    # tests/test_video_pipeline.py cannot even be collected.
+    "opencv-python>=4.10,<5",
     # Upper bound is a Windows Smart App Control constraint, not an API one:
     # pandas 3.0.5's tzconversion .pyd is blocked as unreputable on this machine.
     # Verified immaterial to results -- every phase 4 AUC was bit-identical
@@ -21,7 +29,24 @@ dependencies = [
     "pypdf>=5.0",
     "python-dotenv>=1.0",
     "scikit-learn>=1.9.0",
+    # The 2D->3D lifting path (phases 3, 4, 7 and video_kinematics.py). These
+    # were previously installed outside this file, so `uv sync` pruned them and
+    # broke tests/test_video_pipeline.py -- declared here so that cannot recur.
+    # CPU builds, pinned via [tool.uv.sources] below: CLAUDE.md forbids solutions
+    # REQUIRING a local GPU, and phase 3 runs on CPU in ~90 min.
+    "timm>=1.0",
+    "torch>=2.13",
+    "torchvision>=0.28",
 ]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+torchvision = { index = "pytorch-cpu" }
 
 [dependency-groups]
 dev = ["pytest>=8.0"]
