@@ -1,8 +1,8 @@
 # Overstride — review brief
 
 **For:** project owner and one reviewer with no prior exposure to this work.
-**Covers:** state as of commit `aec0cf6`, the eight commits that produced it,
-every published claim that moved, and five decisions that need a call.
+**Covers:** state as of commit `b4ecba0` — twelve phases, every published claim
+that moved, and the decisions still outstanding.
 
 This is not a status report. §7 says where the work is weakest, and §8 asks for
 decisions. Both are the point.
@@ -40,6 +40,13 @@ pre-registered bar at **0.610**.
 bottleneck — the signal is. Five independent probes confirm the ceiling is
 physiological rather than a modelling artefact.
 
+**The objection a null invites, answered.** The obvious reply to "we found almost
+nothing" is "your method finds nothing". A **positive control** (phase 8) settles
+it: injecting a known asymmetry, the design resolves **0.25°** at AUC 0.681 — far
+below anything a clinician would call an asymmetry. The ceiling is not an
+underpowered test. Read backwards, the observed 0.610 is worth about **0.17° RMS**
+of consistent asymmetry, against a between-subject spread of 2.86°.
+
 ---
 
 ## 2. What was verified
@@ -57,21 +64,41 @@ Reproducibility was checked, not assumed:
   divided, an absurd 36 mm when multiplied), the released evaluator's own
   direction, and its uniform application across all three axes.
 - **19 tests**, the first in the repository's history.
+- Phases 8–11 added four external checks the earlier work could not make:
+  a **positive control** (the design resolves a 0.25° consistent asymmetry, so
+  the 0.610 ceiling is not an underpowered test), a **second gait mode**, and two
+  **independent datasets** driven through the pipeline and the lifter.
+- A torch upgrade (2.13.0 → 2.14.0, forced by a dependency repair) was verified
+  immaterial rather than assumed: the phase 7 baseline re-ran on all 592 clips at
+  **3.428984° against 3.428984° published, difference 0.00e+00**. Same convention
+  as the earlier pandas pin.
+- `scripts/phase6_numbers.py` now reads **all 28 files in `results/`**. It
+  previously read 11, so §10's promise had quietly become half true — the script
+  still ran, which is why it went unnoticed.
 
 ---
 
-## 3. What changed this session
+## 3. The twelve phases
 
-| commit | what it did |
-|---|---|
-| `9717657` | Phase 4 — measured monocular error through the phase 2 model; real ΔAUC |
-| `4edeedb` | Phase 3B + 4B — viewpoint geometry, operating point, calibration, repeatability |
-| `9da84aa` | Phase 5B/5C — ceiling diagnostics; four further feature families |
-| `8e6311d` | Phase 5D — selective classification; multi-session averaging |
-| `4ae3a3e` | Phase 6 — README synthesis, two new figures, `CLAUDE.md` amended |
-| `038014e` | Phase 7 — inference-path hardening, video tool, first tests |
-| `27f4558` | `docs/AGENT_CONTEXT.md` — cold-start context |
-| `aec0cf6` | Checkpoint/detector mismatch fixed |
+| phase | question | outcome |
+|---|---|---|
+| 0 | Inventory; reproduce the paper's Table 1 | ✅ |
+| 1 | Injury classifier vs a demographics control | ❌ **kill criterion fired** — 0 of 60 tests survived |
+| 1A–1C | What is the signal actually made of? | provenance-only **0.775** beats physiology **0.700** |
+| 2 | Degrade to video constraints | ✅ degradation surface measured |
+| 3 / 3B | Video → 3D kinematics; viewpoint geometry | ✅ 3.4°; a unit error overturned |
+| 4 / 4B | Measured error through the model; operating point | ✅ −0.027 to −0.033 · ❌ not deployable |
+| 5 / 5B–5D | Within-subject limb ID; ceiling diagnostics | ✅ 0.610 · ❌ the ceiling is the signal |
+| 6 | ~~Demo shell~~ → methods synthesis | `README.md` (see `results/phase06.md`) |
+| 7 | Harden the inference path; the video tool | ✅ −0.25° recovered; 3.4° confirmed at 3.43° |
+| 8 | **Positive control** — inject a known asymmetry | ✅ resolves **0.25°**; the 0.610 is worth ≈0.17° RMS |
+| 9 | **A1** — the same task on walking, paired subjects | ❌ **0.547**, does not replicate |
+| 10 | **C** — Fukuchi through the same MATLAB pipeline | ✅ speed to **1.71%**, hip \|r\| 0.993 |
+| 11 | **B1** — AthletePose3D through the lifting path | ⚠️ lifter degrades **1.84×**; viewpoint measured |
+
+**Phases 8–11 all strengthened the finding rather than changing it.** The
+positive control in particular answers the strongest objection available to a null
+result — that the method simply lacks power.
 
 ---
 
@@ -102,11 +129,29 @@ changed or only a number did.**
 | Far-limb penalty status | "computed but uninformative" | measured and ~0 | Consequence of the viewpoint correction. |
 | Phase 4 residual draws | independent per limb | **paired by source clip** | Independent draws destroy the common-mode error that cancels in a left–right difference, overstating the damage. |
 
-**Nine of twelve were caught within this session**, several by deliberately
+**Nine of twelve were caught within that session**, several by deliberately
 checking a suspicious result rather than accepting it. The three conclusion-level
 corrections all made the work *more* defensible, not less: an open gap closed, a
 false-positive set of "significant" conditions removed, and an implausible
 framerate artefact eliminated.
+
+### Caught since, in phases 9–11 — six more
+
+Listed because the failure modes are the transferable part, and every one was
+found by checking a result that looked wrong rather than by a test failing.
+
+| correction | what went wrong |
+|---|---|
+| **Phase 9's "controls tighter than running's" — withdrawn** | Claimed walking's cohort was cleaner (worst deviation 0.026 vs 0.051). It does not hold: running's worst was provenance at **0.449, *below* chance**, and leakage pushes a control *above* chance, so that number was noise rather than contamination. CI widths are comparable, and it compared the maximum of four noisy estimates against the maximum of five. The defensible claim is narrower and sufficient: **every control CI in both cohorts includes 0.5**. |
+| **Phase 10's coordinate frame was hardcoded to a frame the data was never in** | The adapter targeted the Bonita frame `gait_kinematics.m` *documents* as its input (Z up). The archive actually stores the pipeline's **internal** frame (Y up) — the documented conversion happens upstream. A wrong rotation still yields smooth, physiological-looking curves; its only symptom was **1.85 m/s on a 2.5 m/s trial**. Replaced with a basis derived from the subject's own anatomy and checked against three facts it was not built from. |
+| **Phase 10's error metric conflated a sign convention with a magnitude** | A pure sign inversion makes offset-removed RMS equal **twice** the signal amplitude, so hip reported \|r\| 0.991 beside a 28° RMS — two numbers that cannot describe the same pair of curves. Sign is now resolved once per joint from the population, never per curve. |
+| **Phase 10's stance detection split single contacts** | Force-plate threshold noise broke the strict alternation that `stride = onset[i] → onset[i+2]` depends on, giving stance fractions **non-monotone in speed** (0.390 / 0.337 / 0.358) — which running forbids. A 0.05 s minimum contact gives 0.368 / 0.322 / 0.303. |
+| **Phase 11's clip matcher silently dropped half its matches** | Hashing rounded coordinates matched **1,355 of 3,067** clips, including one already verified identical by hand. Rounding splits values sitting on a boundary. A KD-tree with an explicit tolerance matches 21,529 of 22,153 at a worst accepted error of 5.53e-08. |
+| **Phase 11 nearly computed angles from a perspective representation** | AthletePose3D's `data_label` has bone-length **CV 6–12%**, which a rigid bone cannot do. Work stopped — this is the same class as the `p2mm` error above. Resolved by the right comparison: the *within-frame bone-length ratio*, where AthleticsPose's own ground truth is no better (2.4–6.5% vs 2.4–5.2%). Equal footing, so the angle comparison is fair; positional work uses `joint_3d_camera` instead. |
+
+Two of these — the hardcoded frame and the sign-convention metric — were caught
+because a number looked wrong and was chased, not because anything failed. That is
+the argument for the corrections ledger existing at all.
 
 ---
 
@@ -114,9 +159,10 @@ framerate artefact eliminated.
 
 | component | status |
 |---|---|
-| **Research pipeline** | **Complete and reproducible.** 42 scripts, 14 phase reports, every number regenerable via `scripts/phase6_numbers.py`. |
-| **The finding** | **Settled.** Degradation measured; ceiling established as the signal by five independent probes. |
-| **Video tool** | **Partial.** `scripts/video_kinematics.py` runs decode → detect → lift → angles and refuses rather than emitting when it cannot find the subject. **Never run on real footage.** |
+| **Research pipeline** | **Complete and reproducible.** 19 phase reports; every number in `results/` regenerable via `scripts/phase6_numbers.py`, which reads all 28 artifacts. |
+| **The finding** | **Settled, and now externally probed.** Degradation measured; the ceiling established as the signal by five internal probes, then by a positive control, a second gait mode and two independent datasets. |
+| **Video tool** | **Partial.** `scripts/video_kinematics.py` runs decode → detect → lift → angles and refuses rather than emitting when it cannot find the subject. **Still never run on real footage** (§7.5). It also has **no stride segmentation**, so there is no path from a video to the analysis the research phases built. |
+| **External validation** | **Attempted three ways and largely exhausted.** Fukuchi (pipeline), AthletePose3D (lifter, viewpoint), Ferber walking (gait mode). A second *injury cohort* does not publicly exist. |
 | **Tests** | 19, fast, covering the invariants that would silently corrupt results. No integration test. |
 | **Documentation** | `README.md` (the finding), `docs/AGENT_CONTEXT.md` (resuming work), this brief. `CLAUDE.md` amended with outcomes, preserving original intent. |
 
@@ -219,8 +265,13 @@ The honest soft spots, listed so review is efficient rather than a hunt.
 ## 8. Decisions needed
 
 **1. Is the project complete?**
-The research is exhausted — five independent probes say the ceiling is the
-signal. The video tool is optional.
+The research is exhausted, and the evidence is now stronger than when this was
+first asked. Five internal probes said the ceiling is the signal; since then a
+**positive control** showed the design resolves 0.25° (so the ceiling is not
+underpowered), a **second gait mode** failed to replicate it, and **two
+independent datasets** tested the pipeline and the lifter. Nothing remaining is
+both valuable and unblocked: §7.5 needs video that will not download, and §7.6's
+cohort half needs an injury cohort that does not publicly exist.
 *Recommendation: yes for the research; treat the tool as a separate question.*
 
 **2. Should phase 3's headline become 3.18°?**
@@ -229,16 +280,20 @@ ran, and rewriting it would misrepresent the record.
 *Recommendation: no — keep 3.4° with a pointer to phase 7. Reasonable people
 could disagree, so it is a decision rather than something settled quietly.*
 
-**3. Re-run the detector cost at full n?**
-~40 minutes. Removes the subsample caveat from §7.3.
-*Recommendation: yes — it is cheap and the number appears in the tool's output.*
+**3. ~~Re-run the detector cost at full n?~~ DONE.**
+Re-run on all 592 held-out clips: **+0.45°**, not the +0.54° the subsample gave.
+The subsample overstated absolute MAE by 22% while both deltas held to within
+0.09°. `scripts/video_kinematics.py` now quotes the full-n figure.
 
 **4. Close the gap between the research and the tool?**
 The tool emits continuous traces; the research models consume 101-point
 stance-normalised curves. Without stride segmentation there is **no path from a
-video to the analysis that took seven phases to build**. 1–2 days plus
-validation.
-*Recommendation: only if the tool matters beyond demonstration.*
+video to the analysis that took seven phases to build**. Confirmed still true in
+phase 11: `video_kinematics.py` performs no stance segmentation, no event
+detection and no 101-point normalisation.
+*Recommendation: still only if the tool matters beyond demonstration — and note
+that the verdict at the end of that path is the one phases 4B and 5D showed to be
+unsupportable, and that §7.5 blocks validating it on real video anyway.*
 
 **5. External write-up?**
 *Recommendation: worth serious consideration.* A null this well controlled is
@@ -254,7 +309,8 @@ the most valuable output here, more than the finding itself.
 |---|---|---|
 | **Stop.** Treat it as a completed measurement. | none | The finding stands; the repository is coherent and reproducible. |
 | **Finish the tool** — real clip, stride segmentation, detector validation. | days to weeks | An end-to-end artifact, and the two halves of the project connected. |
-| **External validation** — a second dataset or cohort. | weeks, uncertain | The only thing that would change the finding's *generality*. Everything else refines a result already established. |
+| **External validation** — a second dataset or cohort. | **largely exhausted** | Attempted three ways: Fukuchi (the pipeline transfers), AthletePose3D (the lifter degrades 1.84×; viewpoint measured), Ferber walking (does not replicate). What remains is a second *injury cohort* with per-limb waveforms, which the dataset triage established does not publicly exist. A real fix is a collaboration, not a download. |
+| **Write it up.** | days | The rigour is the most transferable output — pre-registered bars, controls re-asserted per script, a positive control with a calibrated detection floor, and an 18-entry corrections ledger. See decision 5. |
 
 ---
 
@@ -262,8 +318,8 @@ the most valuable output here, more than the finding itself.
 
 ```bash
 uv sync
-.venv/Scripts/python.exe -m pytest tests/ -q            # 19 tests, ~5 s
-.venv/Scripts/python.exe scripts/phase6_numbers.py      # every number, from results/*.json
+.venv/Scripts/python.exe -m pytest tests/ -q            # 19 tests, ~10 s
+.venv/Scripts/python.exe scripts/phase6_numbers.py      # all 28 artifacts in results/
 ```
 
 Nothing in this brief was retyped from memory — every figure traces to a JSON

@@ -122,3 +122,124 @@ m = p5d["multi_session"]
 print(f"  multi-session: single {m['single_session_accuracy']:.3f} -> "
       f"averaged {m['averaged_accuracy']:.3f} ({m['gain']:+.3f}) "
       f"over {m['n_subjects']} subjects")
+
+# ---------------------------------------------------------------------------
+# Phases 1A-1C, 7, and 8-11.
+#
+# These were added after the original script, which covered only the phases the
+# README quoted. Section 10 of docs/REVIEW.md promises a reviewer can regenerate
+# EVERY number from results/*.json, and that had quietly become half true -- the
+# script still ran, so nothing failed loudly. Every result JSON is now read.
+# ---------------------------------------------------------------------------
+
+p1a, p1b = L("phase1a_control.json"), L("phase1b_wave.json")
+p1cb, p1cw = L("phase1c_benchmark.json"), L("phase1c_waveforms.json")
+
+print("\n== PHASE 1A-1C: the provenance problem ==")
+_bc, _bp = p1a["best_control"], p1a["best_provenance"]
+print(f"  best control    {_bc:<40} {p1a['results'][_bc]['auc_mean']:.3f} "
+      f"{ci(p1a['results'][_bc]['auc_ci'])}")
+print(f"  best provenance {_bp:<40} {p1a['results'][_bp]['auc_mean']:.3f} "
+      f"{ci(p1a['results'][_bp]['auc_ci'])}")
+_cvp = p1a["control_vs_provenance"]
+print(f"  control - provenance: {_cvp['delta_mean']:+.3f} {ci(_cvp['delta_ci'])} "
+      f"{'EXCLUDES 0' if _cvp['excludes_zero'] else ''}"
+      "   <- provenance BEATS physiology")
+print("  collection wave recoverable from:")
+for w in p1b["wave_recoverability"]:
+    print(f"     {w['features']:<24} acc {w['accuracy']:.3f} "
+          f"vs baseline {w['baseline']:.3f} (lift {w['lift']:+.3f})")
+print(f"  phase 1C: {p1cb['n_dv_live']} live dv_r of {p1cb['n_dv_all']}; "
+      f"{len(p1cw['results'])} waveform models over {p1cw['n_channels']} channels, "
+      f"PCA {p1cw['pca_components']}")
+
+p7, p7f = L("phase7_inference.json"), L("phase7_inference_full.json")
+print("\n== PHASE 7: inference path ==")
+for tag, d in (("200-clip subsample", p7), ("full n", p7f)):
+    base = d["configs"][0]
+    print(f"  {tag:<20} n={d['n_clips']:<4} baseline {base['mean_mae']:.3f} deg "
+          f"| fixes {d['fix_effect_deg']:+.3f} | detector {d['generic_detector_cost_deg']:+.3f}")
+print(f"  capture rate recovered: {p7f['capture_fps']['fps_at_cadence_2.5']:.0f}"
+      f"-{p7f['capture_fps']['fps_at_cadence_3.0']:.0f} fps")
+# Environment-drift check: the baseline was re-run after uv pulled torch
+# 2.13.0 -> 2.14.0. Same convention as the pandas pin -- a version change is
+# verified immaterial rather than assumed to be.
+_p7p = L("phase7_inference_partial.json")["configs"][0]
+_base = p7f["configs"][0]["mean_mae"]
+print(f"  torch 2.14 re-run of the baseline: {_p7p['mean_mae']:.6f} vs "
+      f"{_base:.6f} published -> diff {_p7p['mean_mae'] - _base:+.2e} deg")
+
+p8 = L("phase8_positive_control.json")
+print("\n== PHASE 8: positive control ==")
+print(f"  {p8['n_sessions']} sessions / {p8['n_subjects']} subjects, "
+      f"config {p8['config']}")
+for r in p8["rows"]:
+    if r.get("summary"):
+        rms = r["rms_per_peak"]
+        print(f"  {r['shape']:<8} floor(CI excl 0.5) {r['floor_ci_excludes_half_deg']:.2f} deg peak"
+              f" | 0.610-equivalent {r['delta_at_observed_deg']:.3f} peak "
+              f"= {r['delta_at_observed_deg'] * rms:.3f} RMS")
+print(f"  between-subject SD of the limb difference: "
+      + ", ".join(f"{k} {v:.2f}" for k, v in p8["limb_difference_sd_deg"].items()) + " deg")
+
+p9c, p9 = L("phase9_cohort.json"), L("phase9_walk_limb.json")
+print("\n== PHASE 9: walking, paired dual-mode subjects ==")
+print(f"  OA excluded {p9c['n_oa_sessions_excluded']} sessions / "
+      f"{p9c['n_oa_subjects_excluded']} subjects "
+      f"({p9c['n_subjects_both_modes']} subjects in both gait modes)")
+print(f"  cohort {p9['n_sessions']} sessions / {p9['n_subjects']} subjects, "
+      f"chance {p9['chance']:.3f}")
+for k, v in p9["negative_controls"].items():
+    print(f"     NEG {k:<16} {v['auc_mean']:.3f} [{v['ci_lo']:.3f}, {v['ci_hi']:.3f}]")
+print(f"  gate: max |AUC-0.5| = {p9['nc_worst']:.3f} ({p9['nc_worst_name']}) -> "
+      f"{'PASS' if p9['nc_gate_pass'] else 'FAIL'}")
+for t, h in zip(p9["tests"], p9["holm"]):
+    print(f"     {h['name']:<16} {t['auc_mean']:.3f} "
+          f"[{t['ci_lo']:.3f}, {t['ci_hi']:.3f}]  p_holm {h['p_holm']:.4g}")
+s9 = p9.get("sensitivity", {})
+if not s9.get("skipped"):
+    print(f"  sensitivity (clean events, {s9['n_sessions']} sessions): "
+          f"{s9['auc_mean']:.3f} (delta {s9['delta_vs_primary']:+.3f})")
+
+p10s, p10a = L("phase10_speed.json"), L("phase10_angles.json")
+print("\n== PHASE 10: Fukuchi through the same MATLAB pipeline ==")
+print(f"  speed: {p10s['n_trials']} trials / {p10s['n_subjects']} subjects, "
+      f"median |rel err| {p10s['median_rel_err_pct']:.2f}% | r {p10s['correlation']:.4f} "
+      f"| slope {p10s['regression_slope']:.4f}")
+print(f"  duplicate-content trials excluded: {p10s['n_excluded_duplicates']} "
+      f"({len(p10s['duplicate_groups'])} groups)")
+print(f"  angles: {p10a['n_trials']} trials, overall |r| {p10a['overall_median_abs_r']:.3f}, "
+      f"RMS {p10a['overall_median_rms_aligned_deg']:.2f} deg -> {p10a['verdict']}")
+for j, v in p10a["per_joint"].items():
+    print(f"     {j:<6} |r| {v['median_abs_r']:.3f}  RMS {v['median_rms_aligned_deg']:.2f} deg"
+          f"  amp ratio {v['median_amp_ratio']:.3f}"
+          f"  {'(convention inverted)' if v['convention_inverted'] else ''}")
+for tag, f in (("foot axis assumed", "phase10_angles_footA.json"),
+               ("foot axis measured", "phase10_angles_footB.json")):
+    d = L(f)
+    print(f"  {tag:<20} ankle |r| {d['per_joint']['ankle']['median_abs_r']:.3f}  "
+          f"amp ratio {d['per_joint']['ankle']['median_amp_ratio']:.3f}")
+
+p11t, p11v, p11f = (L("phase11_lifter_transfer.json"), L("phase11_viewpoint.json"),
+                    L("phase11_fetch.json"))
+print("\n== PHASE 11: AthletePose3D ==")
+print(f"  ground-truth 2D input -- {p11t['measures']}")
+for nm, key in (("AthleticsPose", "athleticspose"), ("AthletePose3D", "athletepose3d")):
+    d = p11t[key]
+    per = ", ".join(f"{s} {v['mean']:.2f}" for s, v in d["per_subject"].items())
+    print(f"  {nm:<14} {d['n_clips']:>5} clips | {per} | "
+          f"across subjects {d['across_subject_mean_deg']:.2f} deg "
+          f"(sd {d['across_subject_sd_deg']:.2f})")
+print(f"  ratio {p11t['ratio']:.2f}x -> {p11t['verdict']}")
+print(f"  viewpoint: {p11v['n_clips']} clips, view ratio "
+      f"[{p11v['view_ratio_min']:.3f}, {p11v['view_ratio_max']:.3f}] "
+      f"(AthleticsPose median 0.751)")
+for q in p11v["quartiles"]:
+    print(f"     [{q['lo']:.2f},{q['hi']:.2f})  {q['n']:>4} clips  {q['mae']:.2f} deg")
+print(f"  regression slope {p11v['regression_slope']:+.3f}, r {p11v['correlation']:+.3f}"
+      f"  (phase 3B extrapolated {p11v['phase3b_extrapolated_penalty_deg']:+.2f} deg)")
+_got = [k for k, v in p11f["files"].items() if not v.get("failed")]
+_miss = [k for k, v in p11f["files"].items() if v.get("failed")]
+print(f"  fetched: {', '.join(_got)}")
+if _miss:
+    print(f"  NOT fetched (Drive refused): {', '.join(_miss)} -- REVIEW.md 7.5 stays open")
