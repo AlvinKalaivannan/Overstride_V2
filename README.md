@@ -82,11 +82,15 @@ band at 18.1°, which is what validates the setup.
 
 Two findings make the camera path *better* than expected:
 
-- **The far-limb occlusion penalty is ~0** and does not grow with viewing angle
-  (+0.07° extrapolated to a fully lateral view).
-- **Accuracy improves as the view becomes side-on** (4.66° → 2.11° across
-  view-angle quartiles) — and side-on is exactly the geometry this application
-  prescribes.
+- **The far-limb occlusion penalty is ~0** and does not grow with viewing angle.
+  Originally +0.07° *extrapolated*; **phase 11 measured it** on an independent
+  lab's four calibrated cameras, where sagittal error falls **3.50° → 1.77°**
+  monotonically as the view becomes side-on. It shrinks rather than grows.
+- **Accuracy improves as the view becomes side-on** — 4.66° → 2.11° across
+  view-angle quartiles on AthleticsPose, and **3.50° → 1.77° on AthletePose3D**,
+  a different lab with different athletes and cameras. An effect that survives
+  that change of dataset is a property of monocular lifting, not of one rig — and
+  side-on is exactly the geometry this application prescribes.
 
 ## Why no demo was built
 
@@ -129,6 +133,10 @@ guessing.
 | 5B/5C/5D | Ceiling diagnostics, feature attempts, abstention | — | ❌ ceiling is the signal |
 | 6 | Methods demo + synthesis | — | this document |
 | 7 | Harden the inference path; video → kinematics tool | — | ✅ −0.25° recovered; 3.4° confirmed at 3.43° |
+| 8 | Positive control: inject a known asymmetry, sweep it | method detects a known effect | ✅ resolves 0.25°; 0.610 ≈ 0.17° RMS |
+| 9 | A1 — the same limb task on walking, paired subjects | clears phase 5's bar | ❌ 0.547, does not replicate |
+| 10 | C — a second lab's markers (Fukuchi) through the MATLAB pipeline | sane kinematics outside the archive | ✅ speed 1.71%; hip \|r\| 0.993 |
+| 11 | B1 — AthletePose3D through the lifting path | lifter transfers; viewpoint measured | ⚠️ lifter degrades 1.84×; viewpoint 3.50°→1.77° |
 
 **Phase 1's kill criterion fired and the project continued deliberately**, onto
 the within-subject task, which met an equivalent pre-registered bar against a

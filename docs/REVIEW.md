@@ -84,7 +84,7 @@ changed or only a number did.**
 
 | claim | was | now | cause |
 |---|---|---|---|
-| **Viewpoint / occlusion** | "near-frontal views only; the side-on occlusion penalty is unmeasurable — the project's largest open gap" | **0 clips near-frontal**, 50% near-lateral, median 48.7° out of plane; penalty **+0.07°** extrapolated to fully lateral | Compared **44 pixels** against a 200–250 **mm** reference. The arrays are in pixels. |
+| **Viewpoint / occlusion** | "near-frontal views only; the side-on occlusion penalty is unmeasurable — the project's largest open gap" | **0 clips near-frontal**, 50% near-lateral, median 48.7° out of plane; penalty **+0.07°** extrapolated to fully lateral | Compared **44 pixels** against a 200–250 **mm** reference. The arrays are in pixels. **Phase 11 replaced the extrapolation with a measurement** on AthletePose3D's four calibrated cameras (view ratio 0.483–0.850 against AthleticsPose's tight cluster): MAE falls **3.50° → 1.77°** monotonically as the view becomes side-on. The penalty does not merely fail to grow — it shrinks. |
 | **Per-condition significance** | 3 of 5 injury conditions "significant" (ITBS q = 0.000) | **0 of 5 survive** | A fold-level Wilcoxon treated 25 folds — 5 seeds × 5 splits of *one* dataset — as independent. ITBS returned q = 0.000 against its own CI of [0.410, 0.986]. Replaced with a subject-level bootstrap. |
 | **Phase 4 framerate effect** | AUC appeared to **rise** as framerate fell | Artefact gone; trend monotone downward | Residuals were added at 101 points and decimated *afterwards*, so decimation low-passed away error a 30 fps camera really delivers. |
 
@@ -160,8 +160,10 @@ The honest soft spots, listed so review is efficient rather than a hunt.
    and the fix effect **−0.25°**. The subsample overstated absolute MAE by 22%
    but both deltas held to within 0.09°. What remains is narrower and still
    true: it bounds "generic COCO detector", not Keypoint R-CNN specifically.
-4. **120 fps is inferred**, from stride cadence with an assumed 2.5–3.0 strides/s.
-   The tool's rate-matching step depends on it.
+4. ~~**120 fps is inferred**, from stride cadence.~~ **CLOSED (phase 11).**
+   AthletePose3D records **120 fps in its metadata** for the running captures,
+   matching what phase 7 recovered from cadence (113–136 fps). The rate the
+   tool's matching step assumes is now documented rather than inferred.
 5. **The video tool has never seen real footage.** Exercised on synthetic video
    and on AthleticsPose keypoints only.
 6. **One dataset, one protocol.** Treadmill running, stance phase only, a single
@@ -173,6 +175,15 @@ The honest soft spots, listed so review is efficient rather than a hunt.
    running's 0.610, with all five negative controls at chance — which establishes
    that the ceiling is not a general property of gait, and establishes nothing
    about generality beyond this clinic.
+
+   **Phase 11 qualifies the ACCURACY half of this.** The lifting path was run on
+   AthletePose3D — an independent lab, different athletes, four calibrated
+   cameras. Under matched ground-truth-2D conditions it gives **1.25° on
+   AthleticsPose against 2.29° on AthletePose3D, a 1.84× degradation** with no
+   overlap between the two subject groups. The accuracy figures are therefore
+   measurably dataset-sensitive, though still small in absolute terms. The
+   *cohort* half of this soft spot — one clinic for the injury labels — is
+   untouched and remains open. See `results/phase11.md`.
 7. **Two documented protocol deviations.** The labelling rule departs from the
    dataset README (a recorded diagnosis outranks a blank severity field), and
    phase 1's kill criterion fired but work continued onto the within-subject

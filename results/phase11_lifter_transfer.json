@@ -1,0 +1,66 @@
+{
+  "checkpoint": "motionagformer-b-ath-gt-v1.ckpt",
+  "joints": [
+    "hip",
+    "knee"
+  ],
+  "input_2d": "ground truth on both datasets",
+  "measures": "lifting stage only; not the detected-2D 3.4 deg",
+  "athleticspose": {
+    "n_clips": 592,
+    "per_subject": {
+      "S11": {
+        "n_clips": 184,
+        "hip": 0.9304767956252447,
+        "knee": 1.3474684334044356,
+        "mean": 1.1389726145148402
+      },
+      "S13": {
+        "n_clips": 104,
+        "hip": 1.3947538251593294,
+        "knee": 1.208037780918422,
+        "mean": 1.3013958030388757
+      },
+      "S16": {
+        "n_clips": 304,
+        "hip": 1.2801007471280963,
+        "knee": 1.3233399093114193,
+        "mean": 1.3017203282197578
+      }
+    },
+    "across_subject_mean_deg": 1.2473629152578247,
+    "across_subject_sd_deg": 0.07664363117926239
+  },
+  "athletepose3d": {
+    "n_clips": 1872,
+    "per_subject": {
+      "S2": {
+        "n_clips": 222,
+        "hip": 1.6591669224346652,
+        "knee": 2.3763609816410685,
+        "mean": 2.0177639520378667
+      },
+      "S3": {
+        "n_clips": 693,
+        "hip": 2.0071423837852786,
+        "knee": 2.5333618097691097,
+        "mean": 2.2702520967771944
+      },
+      "S4": {
+        "n_clips": 957,
+        "hip": 2.414807742077793,
+        "knee": 2.7615643995329586,
+        "mean": 2.588186070805376
+      }
+    },
+    "across_subject_mean_deg": 2.2920673732068124,
+    "across_subject_sd_deg": 0.23338420127774875
+  },
+  "ratio": 1.837530477433708,
+  "verdict": "DEGRADES on unseen data",
+  "bands": {
+    "transfers": 1.5,
+    "degrades": 3.0
+  },
+  "ap3d_source": "Yeung et al., CVSports at CVPR 2025; non-commercial research only"
+}
