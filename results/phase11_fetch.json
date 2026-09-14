@@ -2,18 +2,20 @@
   "source": "AthletePose3D, Yeung et al., CVSports at CVPR 2025",
   "drive_folder": "10YnMJAluiscnLkrdiluIeehNetdry5Ft",
   "licence": "non-commercial scientific research only",
-  "retrieved": "2026-09-11",
+  "retrieved": "2026-09-14",
   "model_params_deliberately_not_fetched": true,
   "files": {
     "cam_param.json": {
       "drive_id": "1C6ljWV5kJyTciIKNb0ZRre3f0cNh1Ll8",
       "bytes": 24206,
-      "drive_mtime": "2025-03-12T05:01:39"
+      "drive_mtime": "2025-03-12T05:01:39",
+      "via": "folder endpoint"
     },
     "pose_3d.zip": {
       "drive_id": "1PQerwftEKoOwqG-dhvadz_gaGxZx0D2y",
       "bytes": 1460224002,
       "drive_mtime": "2025-07-11T05:20:11",
+      "via": "folder endpoint",
       "postdates_erratum": true
     },
     "pose_2d.zip": {

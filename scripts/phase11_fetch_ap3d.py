@@ -58,6 +58,17 @@ WANTED = {
     "data.zip": "1xnQDxvTjS9D9eYJMWsizbsfHSvxTnCxp",
 }
 
+FOLDER = "10YnMJAluiscnLkrdiluIeehNetdry5Ft"
+
+# Downloaded by the folder fallback but NOT usable here. model_params/ holds
+# AthletePose3D's own trained weights -- their 2D detector (moganet_b_ap2d) and
+# their lifters (motionagformer-s-ap3d, TCPFormer_ap3d). Phase 10's B0 check
+# established that this project's weights were trained on AthleticsPose, which is
+# precisely what makes AthletePose3D an independent test set. Using any AP3D-
+# trained model on AP3D data would be train-on-test and would destroy that
+# property, so these are deleted rather than left lying next to the data.
+PURGE = ("model_params",)
+
 
 def main() -> int:
     import gdown
@@ -93,6 +104,39 @@ def main() -> int:
         manifest[name] = {"drive_id": fid, "bytes": st.st_size,
                           "drive_mtime": mtime.isoformat()}
         print(f"  {name}: {st.st_size / 1e6:.1f} MB, Drive mtime {mtime.date()}")
+
+    # --- folder fallback ---------------------------------------------------
+    # Per-file download is refused for pose_2d.zip and data.zip ("Cannot retrieve
+    # the public link... or have had many accesses"), while pose_3d.zip of 1.46 GB
+    # succeeds -- so it is per-file share state, not a size or gdown limit. The
+    # folder endpoint is a different code path and does serve them.
+    missing = [n for n in WANTED if not (DEST / n).exists()
+               or (DEST / n).stat().st_size == 0]
+    if missing:
+        print(f"\n=== per-file download failed for {missing}; "
+              f"falling back to the folder endpoint ===")
+        try:
+            gdown.download_folder(url=f"https://drive.google.com/drive/folders/{FOLDER}",
+                                  output=str(DEST), quiet=False, resume=True)
+        except Exception as e:  # noqa: BLE001
+            print(f"  folder fallback also failed: {type(e).__name__}: {e}")
+        for name in WANTED:
+            out = DEST / name
+            if out.exists() and out.stat().st_size:
+                st = out.stat()
+                manifest[name] = {
+                    "drive_id": WANTED[name], "bytes": st.st_size,
+                    "drive_mtime": dt.datetime.fromtimestamp(st.st_mtime).isoformat(),
+                    "via": "folder endpoint"}
+
+    for rel in PURGE:
+        d = DEST / rel
+        if d.exists():
+            import shutil
+            n = sum(1 for _ in d.rglob("*") if _.is_file())
+            shutil.rmtree(d)
+            print(f"\npurged {rel}/ ({n} files) -- AP3D-trained weights must "
+                  f"not be used on AP3D data (train-on-test)")
 
     # --- the erratum check -------------------------------------------------
     p3 = manifest.get("pose_3d.zip")
