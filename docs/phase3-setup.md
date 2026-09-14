@@ -81,7 +81,7 @@ scope, so no new constraint.
   L_KNEE, L_ANKLE, SPINE, THORAX, NECK, HEAD, L_SHOULDER, …` — verified against
   `athleticspose/statics/joints.py`, and it matches the map in
   `scripts/phase3_angles.py` exactly.
-- **Predictions** are `.npy` `(T, 17, 3)` mirroring the input tree; **ground
+- **Estimates** are `.npy` `(T, 17, 3)` mirroring the input tree; **ground
   truth** is `.npz` under key `markers_h36m`, same shape.
 
 ### Two limits that bound what phase 3 can claim
@@ -91,7 +91,7 @@ scope, so no new constraint.
    stage. Using `marker_type=det_ft` means real detector error *is* included, but
    raw video decoding and person detection are not. The result is a **lower
    bound** on a full in-the-wild pipeline.
-2. **The predictor denormalises each clip using a scale derived from ground-truth
+2. **The estimator denormalises each clip using a scale derived from ground-truth
    3D.** A deployed system has no such scale. The reported errors are therefore
    **optimistic**, and phase 4 must not assume that scale is available.
 
@@ -131,7 +131,7 @@ whether the path is worth pursuing. Both belong in `results/phase03.md`.
   than the mocap-side one — a real limitation for phase 4, not a bug.
   (`joints.py` also defines 84- and 64-marker mocap sets which *do* include toe;
   if the release exposes those for the ground truth, ankle becomes recoverable on
-  the GT side but still not from an H36M-17 prediction.)
+  the GT side but still not from an H36M-17 estimate.)
 
 ## The convention gap that phase 4 must handle
 

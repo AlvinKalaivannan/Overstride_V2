@@ -60,7 +60,7 @@ run locally on CPU instead.** Two Kaggle runs were given neither GPU nor Interne
 (`torch 2.10.0+cpu`, `Could not resolve host: github.com`).
 
 That route being blocked does not block the phase. GPU was only ever a speed
-convenience: the quantity being measured — angular error between predicted and
+convenience: the quantity being measured — angular error between estimated and
 ground-truth 3D — is identical on CPU. `CLAUDE.md` forbids solutions *requiring*
 a local GPU; CPU inference requires none, and the Ferber archive is not involved,
 so the data-separation rule is untouched. Runtime was ~90 min for

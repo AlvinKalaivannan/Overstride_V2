@@ -318,7 +318,7 @@ def section_meta(run: pd.DataFrame, walk: pd.DataFrame) -> list[str]:
         "### Missingness is not random — it tracks the collection wave",
         "",
         "**This is the most dangerous finding in the metadata.** Whether a field was "
-        "filled in at all predicts the label, because questionnaire completeness varies "
+        "filled in at all indicates the label, because questionnaire completeness varies "
         "by study wave and the waves differ in injury mix:",
         "",
     ]

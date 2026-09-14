@@ -4,12 +4,12 @@ WHY LOCAL, NOT KAGGLE
   CLAUDE.md put phase 3 on Kaggle because CUDA was assumed necessary. Two Kaggle
   runs were given neither GPU nor Internet (the account is not phone-verified),
   so that route is blocked. But GPU was only ever a speed convenience: the
-  quantity this phase measures -- joint-angle error between predicted and
+  quantity this phase measures -- joint-angle error between estimated and
   ground-truth 3D -- is identical on CPU. CLAUDE.md forbids solutions REQUIRING a
   local GPU; CPU inference requires none, and the Ferber archive is not involved.
 
 WHAT IS MEASURED
-  MotionAGFormer lifts detected 2D markers to 3D. We compare predicted vs
+  MotionAGFormer lifts detected 2D markers to 3D. We compare estimated vs
   ground-truth sagittal hip/knee angles on held-out subjects, and report the
   error in the form phase 2 needs: split by NEAR vs FAR limb relative to the
   camera, plus a systematic/random decomposition.
@@ -106,7 +106,7 @@ def predict(model: MotionAGFormer, det2d: np.ndarray, gt3d: np.ndarray) -> np.nd
     _, gt_scale = normalize_kpts(gt3d)
 
     # Sequences longer than the 81-frame window are split into consecutive
-    # windows and stitched, as the released predictor does. Padding the tail and
+    # windows and stitched, as the released inference code does. Padding the tail and
     # trimming afterwards keeps the model input shape fixed.
     out = np.empty((t, 17, 3), dtype=np.float64)
     for start in range(0, t, CLIP):

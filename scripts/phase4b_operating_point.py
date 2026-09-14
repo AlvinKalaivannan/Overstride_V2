@@ -7,7 +7,7 @@ to it means anything, and whether the same runner gets the same answer twice.
 None of the three has been measured. Phase 6 should not start until they are.
 
   1. OPERATING POINT   sensitivity / specificity / PPV / NPV at thresholds,
-                       from out-of-fold predictions only.
+                       from out-of-fold scores only.
   2. CALIBRATION       Brier score, calibration slope and intercept, reliability
                        bins. An uncalibrated probability shown to a user is
                        worse than no probability.
@@ -56,8 +56,8 @@ def oof_predictions(frame: pd.DataFrame, y: np.ndarray, groups: np.ndarray,
     """Out-of-fold probability per session, averaged over the 5 seeds.
 
     Each session is in the test set exactly once per seed, so every session gets
-    5 genuinely out-of-fold predictions. Averaging them is the honest analogue of
-    the averaged AUC reported elsewhere -- and it never uses a prediction from a
+    5 genuinely out-of-fold scores. Averaging them is the honest analogue of
+    the averaged AUC reported elsewhere -- and it never uses a score from a
     fold where that subject was in training.
     """
     cols = list(frame.columns)
@@ -185,7 +185,7 @@ def main() -> int:
               f"baseline | calibration slope {cal['calibration_slope']:.3f} "
               f"(1.0 = perfect)")
         for b in cal["reliability_bins"]:
-            print(f"    n={b['n']:>4}  predicted {b['mean_pred']:.3f}  "
+            print(f"    n={b['n']:>4}  mean score {b['mean_pred']:.3f}  "
                   f"observed {b['observed']:.3f}")
         rep = repeatability(meta, y, p)
         print(f"  repeatability: {rep['n_session_pairs']} session pairs from "

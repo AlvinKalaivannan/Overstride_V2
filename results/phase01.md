@@ -205,7 +205,7 @@ one.
 
 ## Anything that surprised us, or looks wrong
 
-1. **File size and frame count predict injury at 0.757.** This is the single most
+1. **File size and frame count classify injury at 0.757.** This is the single most
    alarming number in the phase. It is not a subtle confound.
 2. **The provenance baseline beat the control outright.** The spec anticipated a
    tie as the bad case; losing 25/25 folds was not on the list.
@@ -218,7 +218,7 @@ one.
    confound better. Consistent with the kinematics carrying weak signal that
    regularized linear models handle better than a tree that chases noise.
 6. **The OA holdout has no uninjured sessions**, so "report OA separately" has
-   nothing to report as a model, exactly as phase 0 predicted at n=12.
+   nothing to report as a model, exactly as phase 0 anticipated at n=12.
 
 ## Reproduction
 

@@ -2,7 +2,7 @@
 phase 2 needs.
 
 Runs on Kaggle (GPU) next to the AthleticsPose checkpoints, and locally (CPU) on
-the exported predictions. Imports nothing from the Ferber pipeline, so it is
+the exported estimates. Imports nothing from the Ferber pipeline, so it is
 self-contained -- CLAUDE.md keeps the archive off any cloud environment.
 
 WHAT THIS MUST PRODUCE, and why the shape matters

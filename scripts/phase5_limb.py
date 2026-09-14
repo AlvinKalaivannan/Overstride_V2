@@ -15,7 +15,7 @@ PRE-REGISTERED BAR (fixed before fitting): mean AUC >= 0.60 AND the cross-fold
 CI excludes 0.5.
 
 BUILT-IN FALSIFICATION: demographics, provenance and file structure are constant
-within a session, so they CANNOT predict which limb is injured. They must score
+within a session, so they CANNOT indicate which limb is injured. They must score
 about 0.5. If they do not, the setup leaks and every number here is void.
 
 Run: .venv/Scripts/python.exe scripts/phase5_limb.py

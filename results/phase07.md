@@ -249,7 +249,7 @@ subsample — that skew is exactly what was being corrected for).
 
 **The absolute error moved a lot; the deltas barely moved.** The subsample
 overstated baseline MAE by 0.77° (22%) because long clips are harder, exactly as
-the original report predicted. Both deltas held to within 0.09°, so the
+the original report anticipated. Both deltas held to within 0.09°, so the
 subsample's conclusions were sound — they are now measured rather than inferred.
 
 **Precisely which caveat this closes.** The fix effect had *already* been run at

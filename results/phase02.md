@@ -187,7 +187,7 @@ rather than a preference.
    because PCA's leading modes are dominated by gross curve shape, which
    survives a smooth perturbation.
 3. **The two interact strongly, and that is the real result.** Neither axis alone
-   predicts the collapse: 30 fps alone is free, 16° alone is free, together they
+   accounts for the collapse: 30 fps alone is free, 16° alone is free, together they
    take the CI across chance. Temporal redundancy is what buys noise tolerance.
    Sweeping only to 8° — as the first run did — gave the opposite conclusion.
 4. **`limb9` at 60 fps + noise beats `limb9` at mocap.** A direct demonstration of

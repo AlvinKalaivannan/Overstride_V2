@@ -1,6 +1,6 @@
 """Phase 1B -- does kinematic data track the collection wave?
 
-Phase 1A established that collection year predicts injury at AUC 0.720, because
+Phase 1A established that collection year classifies injury at AUC 0.720, because
 the dataset concatenates studies with injury rates from 0.00 to 0.93. That makes
 provenance a laundering channel: any feature that encodes *which study* a session
 came from inherits label signal that has nothing to do with the runner.

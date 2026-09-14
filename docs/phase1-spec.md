@@ -49,7 +49,7 @@ Only the waveform result (1C) can trigger `CLAUDE.md`'s kill criterion.
 
 ## The finding that reshapes this phase
 
-**Missingness in the metadata predicts the label, and it is an artifact of data
+**Missingness in the metadata indicates the label, and it is an artifact of data
 collection, not physiology.** Measured on the phase 1 cohort:
 
 | year | sessions | injured rate | `YrsRunning` missing | `Level` missing |

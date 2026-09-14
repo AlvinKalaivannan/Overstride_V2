@@ -8,14 +8,14 @@ injured, within the same person and the same trial. The bar, fixed before any
 model was fitted, was mean AUC ≥ 0.60 with the cross-fold CI excluding 0.5.
 
 The decisive supporting fact is not the AUC. It is that **every confound that has
-dominated this project sits at chance here**, exactly as the design predicted.
+dominated this project sits at chance here**, exactly as the design requires.
 
 ---
 
 ## The negative-control gate — the strongest validation in the project
 
 Demographics, provenance and file structure are constant within a session, so
-they *cannot* predict which limb is injured. They were run as a hard gate: any
+they *cannot* indicate which limb is injured. They were run as a hard gate: any
 meaningful departure from 0.5 would mean the setup leaks and every number is
 void.
 

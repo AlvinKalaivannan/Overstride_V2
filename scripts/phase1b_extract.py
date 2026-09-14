@@ -5,7 +5,7 @@
 2. Structural metadata per session: marker-channel count, `joints` landmark
    count, sampling rate, frame count.
 
-(2) is the reason this runs first. Phase 1A found collection year predicts injury
+(2) is the reason this runs first. Phase 1A found collection year classifies injury
 at AUC 0.720 -- the dataset is a concatenation of studies with injury rates from
 0.00 to 0.93. If the marker set also tracks collection wave, then a kinematic
 model can score by detecting which lab protocol was used rather than anything

@@ -89,7 +89,7 @@ Null = any of `''`, `NaN`, `null`, `N/A`. The dataset mixes all four.
 
 ### Missingness is not random — it tracks the collection wave
 
-**This is the most dangerous finding in the metadata.** Whether a field was filled in at all predicts the label, because questionnaire completeness varies by study wave and the waves differ in injury mix:
+**This is the most dangerous finding in the metadata.** Whether a field was filled in at all indicates the label, because questionnaire completeness varies by study wave and the waves differ in injury mix:
 
 | year | sessions | injured rate | `YrsRunning` missing | `Level` missing |
 |---|---|---|---|---|

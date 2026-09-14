@@ -17,7 +17,7 @@ WHAT THIS MEASURES, AND WHAT IT DOES NOT
   That is the dominant error source for monocular 3D pose, but the result is a
   LOWER BOUND on a full in-the-wild pipeline and must be reported as one.
 
-  Second, and more important: the released predictor denormalises each clip using
+  Second, and more important: the released estimator denormalises each clip using
   a scale derived from GROUND TRUTH 3D. A deployed system has no such scale. The
   errors below are therefore optimistic, and phase 4 cannot assume this scale is
   available.
@@ -122,7 +122,7 @@ print(subprocess.run(["bash", "-lc", "cat configs/data/running.yaml; echo ---; "
                       "cat configs/prediction/from_2d_markers.yaml"],
                      capture_output=True, text=True).stdout)
 
-# %% CELL 5 -- evaluate all three checkpoints (MPJPE), then predict
+# %% CELL 5 -- evaluate all three checkpoints (MPJPE), then run inference
 # The generic-vs-fine-tuned contrast is the point: it brackets the operating
 # point instead of assuming one.
 for cfg, extra in (("default", ""),               # trained on AthleticsPose
