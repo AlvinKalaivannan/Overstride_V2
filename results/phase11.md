@@ -289,3 +289,75 @@ plausibly be larger, since a near-frontal view occludes the limbs it must find.
 
 - `scripts/phase11_viewpoint.py`
 - `results/phase11_viewpoint.json`
+
+---
+
+# Part 3 — what B1 could not do, and why
+
+## The event-reference measurement was cancelled, not skipped
+
+B1's fourth measurement was to derive foot-contact events from the metric
+`joint_3d_camera` and use them as a reference for validating a video stride
+segmenter. **There is no video stride segmenter in this project.**
+
+`scripts/video_kinematics.py` emits a per-frame joint-angle CSV, a plot and a run
+record. It performs no stance segmentation, no event detection and no 101-point
+normalisation — the stance normalisation the degradation analysis depends on comes
+from the MATLAB pipeline operating on Ferber marker data, never from video.
+
+Building a mocap event reference would therefore have produced a validated
+ground truth with nothing to validate against it. Recorded as cancelled with the
+reason, rather than done for completeness or dropped silently.
+
+## §7.5 remains open: the tool has still never run on real footage
+
+This is the soft spot B1 most wanted to close, and it did not close.
+
+AthletePose3D's raw video ships as `data.zip`. Google Drive served **3.3 GB of it
+and then stopped**, and has refused every subsequent request:
+
+```
+attempt 1  10:28   partial 3,499,098,112 bytes
+attempt 2  10:45   partial 3,499,098,112
+attempt 3  10:57   partial 3,499,098,112
+attempt 4  12:19   partial 3,499,098,112
+attempt 5  12:34   partial 3,499,098,112
+```
+
+Not one byte across five attempts. `pose_2d.zip` — the authors' own detections,
+which would at least have given a detected-2D comparison without raw video — was
+refused outright from the first attempt.
+
+`scripts/phase11_retry_fetch.sh` continues on a ten-minute interval and the `.part`
+file preserves what arrived, so this may still resolve. But the finding does not
+depend on it, and the honest position is recorded now rather than left implied:
+
+**The video tool has never been run on real footage.** The blocker is dataset
+distribution — a public Google Drive share refusing to serve a file across several
+days — not anything about the method, the tool or the data's suitability. Note the
+asymmetry: `pose_3d.zip` at 1.46 GB downloaded without difficulty, so this is
+per-file share state rather than a size or bandwidth limit.
+
+**No substitute exists.** The dataset triage behind this phase established that no
+accessible source pairs running video with 3D ground truth; AthletePose3D was the
+only candidate, which is why B1 was built around it.
+
+That is a limitation of what is obtainable, not a failure of the work, and it
+belongs in the same ledger as the one-clinic limitation: stated precisely, and not
+worked around.
+
+## What phase 11 did and did not settle
+
+**Settled.**
+- §7.4 — running is 120 fps, from metadata rather than inferred from cadence.
+- §4 — the viewpoint penalty is measured, not extrapolated, and it *shrinks*
+  toward the side-on geometry this application prescribes.
+- §7.6, accuracy half — the lifting path degrades **1.84×** on an independent lab's
+  data. Measurably dataset-sensitive, still small in absolute terms.
+
+**Not settled.**
+- §7.5 — the tool has never seen real footage. Blocked on distribution.
+- §7.6, cohort half — one clinic for the injury labels. Untouched by this phase and
+  unaddressable by any dataset found.
+- The detected-2D 3.4° remains validated only on AthleticsPose. Everything measured
+  here used ground-truth 2D and isolates the lifting stage.

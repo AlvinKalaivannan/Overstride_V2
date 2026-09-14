@@ -165,7 +165,14 @@ The honest soft spots, listed so review is efficient rather than a hunt.
    matching what phase 7 recovered from cadence (113–136 fps). The rate the
    tool's matching step assumes is now documented rather than inferred.
 5. **The video tool has never seen real footage.** Exercised on synthetic video
-   and on AthleticsPose keypoints only.
+   and on AthleticsPose keypoints only. **Phase 11 attempted to close this and
+   could not.** AthletePose3D's raw video (`data.zip`) is the only accessible
+   source pairing running video with 3D ground truth; Google Drive served 3.3 GB
+   and then refused every subsequent request — five attempts, not one further byte
+   — while `pose_3d.zip` at 1.46 GB downloaded without difficulty, so it is
+   per-file share state rather than a size limit. `pose_2d.zip` was refused
+   outright. **The blocker is dataset distribution, not the method**, and no
+   substitute exists. Treat this as open. See `results/phase11.md` Part 3.
 6. **One dataset, one protocol.** Treadmill running, stance phase only, a single
    clinic. The negative result's *generality* rests entirely on that, and no
    external validation exists. **Phase 9 does not close this.** Running the limb
