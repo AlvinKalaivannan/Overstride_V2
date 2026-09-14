@@ -328,3 +328,9 @@ each stating its split, n per group, what was excluded and why, and the
 demographics control beside every kinematic score.
 
 For resuming the work rather than reviewing it, see `docs/AGENT_CONTEXT.md`.
+
+For a reader **outside** this project — someone deciding whether the approach is
+worth copying rather than auditing this particular result — see the technical
+report, [Making a Null Trustworthy](https://claude.ai/code/artifact/3f66cc72-bf12-49d2-852b-19ed58e9a404), source at
+`docs/technical-report.html`. It leads with the method rather than the finding
+and omits the decisions this brief asks for.

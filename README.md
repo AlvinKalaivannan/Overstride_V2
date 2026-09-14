@@ -142,6 +142,11 @@ guessing.
 the within-subject task, which met an equivalent pre-registered bar against a
 stronger control set. That pivot is recorded in `results/phase02.md`.
 
+**Technical report — [Making a Null Trustworthy](https://claude.ai/code/artifact/3f66cc72-bf12-49d2-852b-19ed58e9a404)** ([source](docs/technical-report.html)).
+Written for someone outside this project: how the null was made worth believing,
+what the provenance confound was, and the corrections ledger. Start here if you
+want the method rather than the repository.
+
 Reviewing this work? See [`docs/REVIEW.md`](docs/REVIEW.md) — current state,
 every published claim that moved and why, where the work is weakest, and the
 decisions outstanding.
