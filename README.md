@@ -122,21 +122,21 @@ guessing.
 
 | # | work | gate | outcome |
 |---|---|---|---|
-| 0 | Inventory, join, verify against Table 1 | inventory exists, Table 1 reproduces | ✅ |
-| 1 | Injury classifier vs demographics control | beat the control | ❌ **kill criterion fired** — 0/60 tests |
-| 2 | Degrade to video constraints | degradation measured | ✅ interaction found; σ labels later corrected |
-| 3 | Video → 3D kinematics | MAE within published range | ✅ 3.4° fine-tuned, 18.1° generic |
-| 3B | Viewpoint geometry | — | ✅ overturned a unit error; occlusion penalty ~0 |
-| 4 | Measured error through the phase-2 model | real ΔAUC | ✅ −0.027 to −0.033 |
-| 4B | Operating point, calibration, repeatability | — | ❌ not deployable |
-| 5 | Within-subject limb identification | beat the population model | ✅ 0.610, all confounds at chance |
-| 5B/5C/5D | Ceiling diagnostics, feature attempts, abstention | — | ❌ ceiling is the signal |
+| 0 | Inventory, join, verify against Table 1 | inventory exists, Table 1 reproduces | Met |
+| 1 | Injury classifier vs demographics control | beat the control | Not met — **kill criterion fired**, 0/60 tests |
+| 2 | Degrade to video constraints | degradation measured | Met — interaction found; σ labels later corrected |
+| 3 | Video → 3D kinematics | MAE within published range | Met — 3.4° fine-tuned, 18.1° generic |
+| 3B | Viewpoint geometry | — | Met — overturned a unit error; occlusion penalty ~0 |
+| 4 | Measured error through the phase-2 model | real ΔAUC | Met — −0.027 to −0.033 |
+| 4B | Operating point, calibration, repeatability | — | Not met — not deployable |
+| 5 | Within-subject limb identification | beat the population model | Met — 0.610, all confounds at chance |
+| 5B/5C/5D | Ceiling diagnostics, feature attempts, abstention | — | Not met — ceiling is the signal |
 | 6 | Methods demo + synthesis | — | this document |
-| 7 | Harden the inference path; video → kinematics tool | — | ✅ −0.25° recovered; 3.4° confirmed at 3.43° |
-| 8 | Positive control: inject a known asymmetry, sweep it | method detects a known effect | ✅ resolves 0.25°; 0.610 ≈ 0.17° RMS |
-| 9 | A1 — the same limb task on walking, paired subjects | clears phase 5's bar | ❌ 0.547, does not replicate |
-| 10 | C — a second lab's markers (Fukuchi) through the MATLAB pipeline | sane kinematics outside the archive | ✅ speed 1.71%; hip \|r\| 0.993 |
-| 11 | B1 — AthletePose3D through the lifting path | lifter transfers; viewpoint measured | ⚠️ lifter degrades 1.84×; viewpoint 3.50°→1.77° |
+| 7 | Harden the inference path; video → kinematics tool | — | Met — −0.25° recovered; 3.4° confirmed at 3.43° |
+| 8 | Positive control: inject a known asymmetry, sweep it | method detects a known effect | Met — resolves 0.25°; 0.610 ≈ 0.17° RMS |
+| 9 | A1 — the same limb task on walking, paired subjects | clears phase 5's bar | Not met — 0.547, does not replicate |
+| 10 | C — a second lab's markers (Fukuchi) through the MATLAB pipeline | sane kinematics outside the archive | Met — speed 1.71%; hip \|r\| 0.993 |
+| 11 | B1 — AthletePose3D through the lifting path | lifter transfers; viewpoint measured | Mixed — lifter degrades 1.84×; viewpoint 3.50°→1.77° |
 
 **Phase 1's kill criterion fired and the project continued deliberately**, onto
 the within-subject task, which met an equivalent pre-registered bar against a

@@ -28,7 +28,23 @@ any output, README, docstring, or plot title. Use "detect", "classify", or
 > camera.
 >
 > **See `README.md` for the synthesis.** The rules below still bind any further
-> work on this repository; the phase table records what happened, not a plan.
+> work on this repository; phases 0–11 record what happened, not a plan.
+
+---
+
+> ## NEW TRACK OPEN: measurement and demo (phases 12–16)
+>
+> The injury question is closed and stays closed. The part of Overstride that
+> works is the **measurement**: side-on video → sagittal hip/knee/ankle angles at
+> 3.4° MAE. Phases 12–16 make that measurement more accurate, test it on datasets
+> it has never seen, and ship it as a demo that runs on real footage.
+>
+> The method is borrowed from VSCS (the vehicle scanning project): **scan** the
+> subject once to build a body model, **decompose** it into rigid segments,
+> **track** each segment on its own, and report a **per-segment confidence**.
+> In VSCS the per-component output is collision risk. Here it is *measurement
+> reliability* — how much to trust each segment's angle in each frame. It is
+> never an injury score. See [Measurement and demo track](#measurement-and-demo-track-phases-1216).
 
 ---
 
@@ -91,6 +107,38 @@ require breaking one, stop and raise it rather than proceeding.
 - **Never load all session files into memory at once.** 2,506 JSON files of
   marker trajectories will exhaust RAM. Stream, or sample and report.
 
+### Measurement track (phases 12–16)
+
+- **No injury output, in any form.** Not a score, not a flag, not a colour, not
+  a "consult a professional" nudge driven by the kinematics. Phases 4B and 5D
+  settled this. Per-segment confidence describes the *measurement*, and its
+  name, UI and docstrings must say so. The word "risk" does not appear in any
+  output, UI, docstring or plot of this track.
+- **Dataset roles are fixed before a phase starts and never change mid-phase.**
+  Every pose dataset is either *train*, *tune*, or *held-out test* (see the
+  dataset table under Data). A held-out dataset is not opened — not browsed, not
+  plotted, not used to pick a threshold — until the phase that tests on it.
+  Looking at it early turns it into a tune set; if that happens, say so in the
+  report and demote it.
+- **Splits inside every dataset are grouped by subject**, same rule as `sub_id`
+  above. A subject's clips never appear on both sides of a split.
+- **Every accuracy claim is a delta against the frozen baseline**: the phase 7
+  pipeline (`scripts/video_kinematics.py`, 3.43° sagittal MAE on AthleticsPose).
+  Report per dataset, per joint, with subject-level bootstrap CIs. A pooled
+  number alone is not reportable. If a change does not beat the baseline, say
+  so plainly and keep the baseline.
+- **Near and far limb are always reported separately.** A method that helps the
+  near limb and hides a far-limb regression inside an average is a failed method.
+- **Ground truth is what the dataset shipped.** Never fit, smooth or re-derive a
+  dataset's reference 3D before scoring against it. Unit traps like the
+  AthleticsPose `p2mm` one are checked and written into `docs/data-inventory.md`
+  for every new dataset before its first number is reported.
+- **Licenses are recorded per dataset before download** in
+  `docs/data-inventory.md`. Raw video from a research dataset is never
+  redistributed, including inside the public demo, unless its license permits
+  it. No-derivatives licenses (ND) mean nothing derived from that dataset is
+  published beyond summary metrics.
+
 ---
 
 ## Data
@@ -120,6 +168,33 @@ ric_data/<sub_id>/*.json   # raw markers + scalar summaries. No waveforms.
 and where the two disagree, **the inventory wins** — it is observed, the schema
 doc is derived from the paper.
 
+### Pose and 3D datasets (phases 12–16)
+
+The Ferber archive plays no part in the measurement track. These datasets do.
+Each one lives under `data/<name>/`, covered by `.gitignore`, with its license,
+units and coordinate conventions written into `docs/data-inventory.md` before
+use. Roles are assigned here and frozen.
+
+| Dataset | What it gives | Running? | License (verify before download) | Role |
+|---|---|---|---|---|
+| **AthleticsPose** (in use) | Video + 3D GT, athletics | yes | CC BY-NC-SA 4.0 | **tune** — the development set; phase 7 baseline lives here |
+| **AMASS** | Mocap as SMPL body models, many labs incl. CMU running | yes | MPI non-commercial research | **train** — body-shape and pose priors for the scan and the segment fitter |
+| **BEDLAM** | Synthetic video with exact SMPL-X GT; varied bodies, clothing, cameras | some | MPI non-commercial research | **train** — lifter robustness to body shape and camera; targets the phase 11 transfer gap |
+| **AddBiomechanics** | 273 subjects, 70+ h of OpenSim-processed mocap from 15 datasets / 12 labs; no video | yes | CC BY 4.0 | **train / reference** — joint-angle ranges and segment-length ratios as plausibility bounds; normal-range reference for the demo |
+| **AthletePose3D** (in use) | Video + 3D GT, independent lab, 4 calibrated cameras | yes | non-commercial research only | **held-out test** — already measured once in phase 11; re-used only as the transfer check |
+| **BML MoVi** (York University) | 90 actors, synchronized mocap + 4-view video + IMU, 21 actions incl. jogging | yes | non-commercial research; no training for commercial use | **held-out test** |
+| **Dual-system gait & fitness set** (Sci. Data 2026) | 21 subjects; OptiTrack 120 Hz + two smartphones at 30 Hz; includes running | yes | CC BY-NC-ND 4.0 | **held-out test** — closest match to the deployment camera (phone, 30 fps). ND: summary metrics only. Confirm raw video is released, not only its YOLOv8 2D keypoints |
+| **Bath synchronised video / mocap / force plate set** (Sci. Data 2024) | Synchronized video, mocap and force plates for markerless validation | **unverified** | **unverified** | candidate held-out test — confirm movements and license first |
+
+Not used, and why: **SportsPose** (activities not confirmed to include running);
+**OpenCap Monocular** (a *comparator*, not data — validated on walking, squats
+and sit-to-stand at 4.8° MAE, not running; cite it, don't train on it).
+
+**Why this mix.** The train sets teach the pipeline what bodies and running
+look like. The tune set is where decisions get made. The held-out sets are
+where the claim gets tested, and none of them has been looked at yet except
+AthletePose3D.
+
 ---
 
 ## Environments
@@ -132,6 +207,8 @@ laptop; the only thing that crosses is a feature file of roughly 10 MB.
 | 0–2 | Laptop, CPU | No GPU available and none needed |
 | 3 | ~~Kaggle Notebooks (P100/T4)~~ → **Laptop, CPU** | See deviation below |
 | 4–6 | Laptop, CPU | |
+| 12–15 | Laptop, CPU for inference and scoring; a cloud GPU notebook only for training on the *train* sets | Only pose datasets whose license permits cloud processing go to the notebook. The Ferber archive never does |
+| 16 | Browser (the demo) + laptop | The demo must run on a mid-range laptop with no GPU setup |
 
 Do not propose solutions requiring a local GPU or requiring the Ferber archive
 to be uploaded to cloud storage.
@@ -154,21 +231,26 @@ recorded in `results/`.
 
 | Phase | Work | Gate | Outcome |
 |---|---|---|---|
-| **0** | Inventory: parse, join, characterize, verify against Table 1 | `docs/data-inventory.md` exists and Table 1 reproduces | ✅ |
-| **1** | Injury classifier on all 9 mocap waveforms | Beats the demographics-only control | ❌ **kill criterion fired** (0/60 tests) |
-| **2** | Restrict to 3 sagittal waveforms, downsample, inject keypoint noise | Degradation measured — **the headline result** | ✅ (σ labels corrected in phase 4) |
-| **3** | Video → 3D kinematics via released checkpoints | Joint-angle MAE within range of published figures | ✅ 3.4° fine-tuned |
-| **3B** | Viewpoint geometry; the pixel/`p2mm` unit error | — | ✅ occlusion penalty ~0 |
-| **4** | Video-derived features through the phase 2 model | Real ΔAUC, not simulated | ✅ −0.027 to −0.033 |
-| **4B** | Operating point, calibration, repeatability | — | ❌ not deployable |
-| **5** | Personalization: `InjSide` asymmetry, within-session stride distributions | Beats the population model | ✅ 0.610 |
-| **5B–5D** | Ceiling diagnostics, further feature families, abstention | — | ❌ ceiling is the signal |
-| **6** | ~~Demo shell~~ → **Methods demo + synthesis** | — | ✅ `README.md` |
-| **7** | Harden the inference path; `video_kinematics.py` | — | ✅ −0.25° recovered; first tests in the repo |
-| **8** | Positive control: inject a known asymmetry, sweep its magnitude | Method detects an asymmetry known to be present | ✅ resolves 0.25°; 0.610 ≈ 0.17° RMS |
-| **9** | A1 — the same limb task on **walking**, paired dual-mode subjects | Clears phase 5's bar with controls at chance | ❌ **0.547**, does not replicate |
-| **10** | C — a second lab's markers (Fukuchi) through the same MATLAB pipeline | Recovers sane kinematics outside the archive | ✅ speed 1.71%; hip \|r\| 0.993; ankle weakest |
-| **11** | B1 — AthletePose3D: an independent lab through the lifting path | Lifter transfers; viewpoint penalty measured | ⚠️ lifter degrades **1.84×**; viewpoint **3.50°→1.77°** measured; §7.5 still open |
+| **0** | Inventory: parse, join, characterize, verify against Table 1 | `docs/data-inventory.md` exists and Table 1 reproduces | Met |
+| **1** | Injury classifier on all 9 mocap waveforms | Beats the demographics-only control | Not met — **kill criterion fired** (0/60 tests) |
+| **2** | Restrict to 3 sagittal waveforms, downsample, inject keypoint noise | Degradation measured — **the headline result** | Met (σ labels corrected in phase 4) |
+| **3** | Video → 3D kinematics via released checkpoints | Joint-angle MAE within range of published figures | Met — 3.4° fine-tuned |
+| **3B** | Viewpoint geometry; the pixel/`p2mm` unit error | — | Met — occlusion penalty ~0 |
+| **4** | Video-derived features through the phase 2 model | Real ΔAUC, not simulated | Met — −0.027 to −0.033 |
+| **4B** | Operating point, calibration, repeatability | — | Not met — not deployable |
+| **5** | Personalization: `InjSide` asymmetry, within-session stride distributions | Beats the population model | Met — 0.610 |
+| **5B–5D** | Ceiling diagnostics, further feature families, abstention | — | Not met — ceiling is the signal |
+| **6** | ~~Demo shell~~ → **Methods demo + synthesis** | — | Met — `README.md` |
+| **7** | Harden the inference path; `video_kinematics.py` | — | Met — −0.25° recovered; first tests in the repo |
+| **8** | Positive control: inject a known asymmetry, sweep its magnitude | Method detects an asymmetry known to be present | Met — resolves 0.25°; 0.610 ≈ 0.17° RMS |
+| **9** | A1 — the same limb task on **walking**, paired dual-mode subjects | Clears phase 5's bar with controls at chance | Not met — **0.547**, does not replicate |
+| **10** | C — a second lab's markers (Fukuchi) through the same MATLAB pipeline | Recovers sane kinematics outside the archive | Met — speed 1.71%; hip \|r\| 0.993; ankle weakest |
+| **11** | B1 — AthletePose3D: an independent lab through the lifting path | Lifter transfers; viewpoint penalty measured | Mixed — lifter degrades **1.84×**; viewpoint **3.50°→1.77°** measured; §7.5 still open |
+| **12** | **Scan** — per-subject body model from a short calibration pass | Segment lengths within the pre-registered error of mocap GT, stable across a subject's clips | Planned |
+| **13** | **Decompose & track** — segment-constrained fitting, per-segment state | Beats the 3.43° baseline on the tune set; far limb improves or holds; no transfer regression | Planned |
+| **14** | **Per-segment confidence** — calibrated measurement reliability + viewpoint-based expected error | Stated confidence matches realized error | Planned |
+| **15** | **Held-out validation** on datasets never touched | Per-dataset MAE with CIs, reported whether it wins or loses | Planned |
+| **16** | **Streaming demo** — near-real-time, browser, runs on real footage | Latency and accuracy budgets met on held-out footage; closes §7.5 | Planned |
 
 > **Phase 6 was redefined.** "Demo shell" assumed something worth demonstrating
 > to a user. Phases 4B and 5D showed a per-user limb verdict is unsupportable —
@@ -195,6 +277,102 @@ Phases 0–2 require no camera, no GPU, and no pose estimation.
 
 ---
 
+## Measurement and demo track (phases 12–16)
+
+**Goal:** a side-on running clip goes in; per-segment sagittal kinematics come
+out, each with a confidence and an expected error, fast enough to watch live.
+The claim to earn is *"more accurate than phase 7, and it holds on footage from
+labs it has never seen."*
+
+**Where the ideas come from.** VSCS scans a vehicle, isolates it into
+mechanical components, tracks each component and scores each one on its own.
+Mapped onto a runner:
+
+| VSCS | Overstride |
+|---|---|
+| Scan the vehicle | Calibration pass: 2–3 s standing side-on + the first strides |
+| Isolate components | Rigid segments: trunk, pelvis, L/R thigh, shank, foot |
+| Track each component | Segment-constrained fitting; one state per segment |
+| Per-component collision risk | Per-segment **measurement confidence** (not injury risk) |
+| Near-real-time stream | Frame-in, state-out pipeline with a latency budget |
+| Demo on existing footage | Demo runs on held-out dataset clips and phone clips |
+
+**Pre-registration.** Before each phase starts, its bars (the numbers in
+*Gate* below marked "pre-register") are written into `results/phaseNN.md`
+with the date, and are not edited once the first result exists. The proposed
+values here are starting points, not commitments.
+
+### Phase 12 — Scan
+
+- Fit a per-subject body model from a calibration window: segment lengths for
+  every segment in the table above, both sides, plus a left/right length
+  symmetry check. Start with direct 2D/3D segment measurement; an SMPL shape fit
+  using AMASS priors is the upgrade path if it measurably helps.
+- **Gate:** on the tune set, estimated segment lengths within **≤ 5%** of
+  mocap-derived lengths (pre-register), and a subject's scans agree with each
+  other to **≤ 3% CV** (pre-register). Report per segment.
+- **Kill:** if lengths from one clip are no more stable than per-frame lengths,
+  the scan adds nothing — record it and go to phase 13 without it.
+
+### Phase 13 — Decompose and track
+
+- Constrain every frame to the scanned segment lengths; the near limb's
+  lengths constrain the far limb. One filtered state per segment
+  (Kalman or one-euro, chosen on the tune set). AddBiomechanics joint ranges
+  are plausibility bounds, never a smoothing target.
+- If the lifter is retrained, BEDLAM and AMASS are the only training data.
+- **Gate:** sagittal MAE beats the **3.43°** baseline on AthleticsPose with a
+  subject-bootstrap CI excluding zero; far-limb MAE improves or stays within
+  its CI; AthletePose3D does not get worse than its phase 11 figure.
+- **Ablations are mandatory:** scan only, filter only, both. Each gets its own
+  row. A gain that only shows up combined is reported as such.
+
+### Phase 14 — Per-segment confidence
+
+- Each segment, each frame: a confidence built from keypoint visibility,
+  deviation from scanned length, and an estimated camera azimuth (from apparent
+  hip/shoulder width against the scan). Expected error per clip comes from the
+  **measured** phase 11 viewpoint curve (3.50° → 1.77°), not a new guess.
+- **Gate:** confidence ranks frames by realized error (Spearman ρ ≥ **0.3**,
+  pre-register), and stated expected error vs realized error has a calibration
+  slope in **[0.8, 1.2]** (pre-register). Same structure as phase 4B's
+  calibration check, applied to angles instead of labels.
+
+### Phase 15 — Held-out validation
+
+- Run the frozen phase 13–14 pipeline, unchanged, on MoVi jogging, the
+  dual-system running trials and (if verified) the Bath set. Tuning anything
+  after seeing these numbers invalidates them.
+- **Report:** per dataset, per joint, near/far limb, MAE with CIs, against the
+  phase 7 baseline on the same clips, plus how often the phase 14 confidence
+  flagged the frames that turned out worst. OpenCap Monocular's 4.8° (walking,
+  squat, sit-to-stand) is cited as context, not as a head-to-head.
+- **There is no pass/fail gate.** A loss on held-out data is a result and goes
+  in the README exactly as prominently as a win.
+
+### Phase 16 — Streaming demo
+
+- Refactor `video_kinematics.py` into a stream: frame in → scan state →
+  per-segment state out, with a stated latency budget per stage. The browser
+  demo gets the scan step, per-segment confidence on the overlay, and the
+  expected-error readout.
+- The demo keeps what already made it honest: it states its error budget,
+  refuses to write output when it can't find the subject, and has no injury
+  output (see Measurement track rules).
+- **Gate:** ≥ **20 fps** end to end on a mid-range laptop CPU (pre-register);
+  demo angles on held-out clips match the phase 15 offline numbers within their
+  CI. **Running it on real phone footage closes §7.5** from phase 11.
+- Demo clips come from datasets whose license allows showing them, or from
+  footage filmed for this project with the runner's consent.
+
+### Optional research follow-up
+
+- **Heterogeneous positive control** — phase 8's own suggested extension:
+  draw a per-subject asymmetry profile instead of one shared offset. Separate
+  from 12–16; it touches the Ferber data and follows the original rules above.
+
+---
+
 ## Reporting
 
 After every phase, write `results/phaseNN.md` containing:
@@ -207,6 +385,14 @@ After every phase, write `results/phaseNN.md` containing:
 
 If the split cannot be stated precisely, something went wrong — investigate
 before writing results.
+
+For phases 12–16, the report replaces the classifier items above with:
+
+- MAE per dataset, per joint, near and far limb, with subject-bootstrap CIs
+- The phase 7 baseline on the same clips, and the delta
+- The dataset role (train / tune / held-out) and the subject-grouped split
+- Which pre-registered bars were set, when, and whether they were met
+- Latency per pipeline stage, for any phase that touches the demo
 
 ---
 
@@ -264,6 +450,11 @@ before writing results.
 | Sagittal subset | The 3 flexion/extension channels recoverable from monocular side-view video |
 | Demographic control | The no-kinematics baseline model. The thing every result is measured against. |
 | Degradation | ΔAUC between full-mocap and video-constrained feature sets |
+| Scan | The per-subject calibration pass that produces the body model (phase 12) |
+| Segment | One rigid body part in the model: trunk, pelvis, thigh, shank or foot, per side |
+| Confidence | Per-segment, per-frame reliability of the *measurement*. Never an injury quantity |
+| Baseline (measurement) | The frozen phase 7 pipeline, 3.43° sagittal MAE on AthleticsPose |
+| Held-out | A dataset not opened until the phase that tests on it |
 
 ---
 
@@ -274,7 +465,12 @@ Do not propose, scaffold, or build these:
 - Injury *prediction* over time. The data does not support it.
 - Multi-person tracking or re-identification across camera cuts.
 - Any commercial framing. AthleticsPose (CC BY-NC-SA 4.0) and AthletePose3D
-  (non-commercial research only) prohibit it.
+  (non-commercial research only) prohibit it, and so do AMASS, BEDLAM, MoVi and
+  the dual-system set.
 - Fusing the kinematic score and any training-load score into a single number.
-- A mobile app, a user account system, or a database.
+- A mobile app, a user account system, or a database. The browser demo is a
+  single page that processes video locally; it stays that way.
 - Deep learning on the Ferber tabular/waveform data.
+- Using the scan, the segment model or per-segment confidence to reintroduce an
+  injury output of any kind.
+- Tuning anything on a held-out dataset.
