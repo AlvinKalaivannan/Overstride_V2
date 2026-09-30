@@ -1,6 +1,6 @@
 # Overstride
 
-**Injury-risk screening for runners from monocular video — a measurement, and a
+**Injury screening for runners from monocular video — a measurement, and a
 negative result.**
 
 The project asked one question: *how much injury-classification performance is

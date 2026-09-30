@@ -1,7 +1,7 @@
 [project]
 name = "overstride"
 version = "0.1.0"
-description = "Injury-risk screening for runners from monocular video."
+description = "Injury screening for runners from monocular video."
 requires-python = ">=3.11"
 dependencies = [
     # AthletePose3D (phase 11 / B1) is distributed only as a public Google Drive

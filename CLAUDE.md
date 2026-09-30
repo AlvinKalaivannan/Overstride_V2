@@ -1,6 +1,6 @@
 # Overstride
 
-Injury-risk screening for runners from monocular video.
+Injury screening for runners from monocular video.
 
 **The claim being tested:** how much injury-classification performance is lost
 when lower-limb kinematics are recovered from a single camera instead of a
