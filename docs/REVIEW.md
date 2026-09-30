@@ -82,19 +82,19 @@ Reproducibility was checked, not assumed:
 
 | phase | question | outcome |
 |---|---|---|
-| 0 | Inventory; reproduce the paper's Table 1 | ✅ |
-| 1 | Injury classifier vs a demographics control | ❌ **kill criterion fired** — 0 of 60 tests survived |
+| 0 | Inventory; reproduce the paper's Table 1 | Met |
+| 1 | Injury classifier vs a demographics control | Not met — **kill criterion fired**; 0 of 60 tests survived |
 | 1A–1C | What is the signal actually made of? | provenance-only **0.775** beats physiology **0.700** |
-| 2 | Degrade to video constraints | ✅ degradation surface measured |
-| 3 / 3B | Video → 3D kinematics; viewpoint geometry | ✅ 3.4°; a unit error overturned |
-| 4 / 4B | Measured error through the model; operating point | ✅ −0.027 to −0.033 · ❌ not deployable |
-| 5 / 5B–5D | Within-subject limb ID; ceiling diagnostics | ✅ 0.610 · ❌ the ceiling is the signal |
+| 2 | Degrade to video constraints | Met — degradation surface measured |
+| 3 / 3B | Video → 3D kinematics; viewpoint geometry | Met — 3.4°; a unit error overturned |
+| 4 / 4B | Measured error through the model; operating point | Met — −0.027 to −0.033 · Not met — not deployable |
+| 5 / 5B–5D | Within-subject limb ID; ceiling diagnostics | Met — 0.610 · Not met — the ceiling is the signal |
 | 6 | ~~Demo shell~~ → methods synthesis | `README.md` (see `results/phase06.md`) |
-| 7 | Harden the inference path; the video tool | ✅ −0.25° recovered; 3.4° confirmed at 3.43° |
-| 8 | **Positive control** — inject a known asymmetry | ✅ resolves **0.25°**; the 0.610 is worth ≈0.17° RMS |
-| 9 | **A1** — the same task on walking, paired subjects | ❌ **0.547**, does not replicate |
-| 10 | **C** — Fukuchi through the same MATLAB pipeline | ✅ speed to **1.71%**, hip \|r\| 0.993 |
-| 11 | **B1** — AthletePose3D through the lifting path | ⚠️ lifter degrades **1.84×**; viewpoint measured |
+| 7 | Harden the inference path; the video tool | Met — −0.25° recovered; 3.4° confirmed at 3.43° |
+| 8 | **Positive control** — inject a known asymmetry | Met — resolves **0.25°**; the 0.610 is worth ≈0.17° RMS |
+| 9 | **A1** — the same task on walking, paired subjects | Not met — **0.547**, does not replicate |
+| 10 | **C** — Fukuchi through the same MATLAB pipeline | Met — speed to **1.71%**, hip \|r\| 0.993 |
+| 11 | **B1** — AthletePose3D through the lifting path | Mixed — lifter degrades **1.84×**; viewpoint measured |
 
 **Phases 8–11 all strengthened the finding rather than changing it.** The
 positive control in particular answers the strongest objection available to a null

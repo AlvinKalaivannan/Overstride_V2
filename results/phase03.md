@@ -1,6 +1,6 @@
 # Phase 3 — monocular 3D kinematics error, measured
 
-> ## ⚠️ Corrected — see `results/phase03b.md`
+> ## Corrected — see `results/phase03b.md`
 >
 > Two errors in the original version of this report, both from the same root
 > cause: **`markers_h36m` is stored in PIXELS, not millimetres.** Each clip
@@ -84,12 +84,12 @@ Phase 2 measured where the within-subject limb signal (AUC 0.610) survives:
 
 | condition | AUC | survives |
 |---|---|---|
-| 30 fps, no noise | 0.610 | ✅ |
-| σ 2/2° at full resolution | 0.611 | ✅ |
-| σ both 8/8° at full resolution | 0.603 | ✅ |
-| 30 fps + σ 2/8° | 0.565 | ✅ |
-| **30 fps + σ 8/8°** | **0.529** | ❌ |
-| **30 fps + σ 15/15°** | **0.491** | ❌ |
+| 30 fps, no noise | 0.610 | Yes |
+| σ 2/2° at full resolution | 0.611 | Yes |
+| σ both 8/8° at full resolution | 0.603 | Yes |
+| 30 fps + σ 2/8° | 0.565 | Yes |
+| **30 fps + σ 8/8°** | **0.529** | No |
+| **30 fps + σ 15/15°** | **0.491** | No |
 
 - **Fine-tuned, 3.4°** — below every tested noise level. Survives at full
   resolution and, by interpolation between the 2/8° and 8/8° rows, at 30 fps too.
@@ -197,10 +197,10 @@ Raw rows in `results/phase3_angle_errors.json` (7,104 rows).
 
 | # | item | status |
 |---|---|---|
-| 1 | sagittal hip/knee MAE per checkpoint vs published band | ✅ generic 11.4–25.2° inside 14.1–25.8° |
-| 2 | near/far split | ✅ **resolved in phase 3B** — measured on oblique-to-lateral views; penalty ~0 and flat in view angle |
-| 3 | systematic vs random decomposition | ✅ bias reported per joint/limb |
-| 4 | placement on the phase 2 surface | ⚠️ **too optimistic** — see `results/phase04.md`; phase 2's nominal σ is not the error reaching the classifier |
+| 1 | sagittal hip/knee MAE per checkpoint vs published band | Met — generic 11.4–25.2° inside 14.1–25.8° |
+| 2 | near/far split | Met — **resolved in phase 3B**: measured on oblique-to-lateral views; penalty ~0 and flat in view angle |
+| 3 | systematic vs random decomposition | Met — bias reported per joint/limb |
+| 4 | placement on the phase 2 surface | Caution — **too optimistic**: see `results/phase04.md`; phase 2's nominal σ is not the error reaching the classifier |
 
 Item 2 was recorded as the phase's one gap. It was not a gap — it was a unit
 error, and phase 3B closes it. Item 4's placement was superseded by phase 4's

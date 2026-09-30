@@ -84,25 +84,25 @@ recover. Noisy conditions run 2 seeded realizations; spread is across them.
 
 | condition | AUC | spread | 95% CI | CI > 0.5 | Δ vs mocap |
 |---|---|---|---|---|---|
-| **mocap (101 pts), no noise** | **0.610** | — | [0.532, 0.686] | ✅ | — |
-| 240 fps (71 pts) | 0.610 | 0.000 | [0.532, 0.685] | ✅ | +0.000 |
-| 120 fps (35 pts) | 0.610 | 0.000 | [0.533, 0.686] | ✅ | +0.000 |
-| 60 fps (18 pts) | 0.610 | 0.000 | [0.533, 0.685] | ✅ | −0.000 |
-| **30 fps (9 pts)** | **0.610** | 0.000 | [0.535, 0.686] | ✅ | +0.000 |
-| σ near/far 2/2° | 0.611 | 0.002 | [0.529, 0.691] | ✅ | +0.003 |
-| σ near/far 2/4° | 0.611 | 0.011 | [0.517, 0.679] | ✅ | −0.004 |
-| **σ near/far 2/8°** | **0.613** | 0.017 | [0.514, 0.678] | ✅ | −0.005 |
-| σ near/far 2/12° | 0.611 | 0.016 | [0.510, 0.673] | ✅ | −0.007 |
-| σ near/far 2/16° | 0.607 | 0.015 | [0.508, 0.670] | ✅ | −0.010 |
-| **σ near/far 2/20°** | **0.603** | 0.011 | [0.507, 0.662] | ✅ | −0.012 |
-| σ both 8/8° | 0.603 | 0.006 | [0.526, 0.676] | ✅ | −0.009 |
-| σ both 15/15° | 0.590 | 0.013 | [0.524, 0.644] | ✅ | −0.026 |
-| 120 fps + σ 2/2° | 0.608 | 0.005 | [0.538, 0.675] | ✅ | −0.004 |
-| 60 fps + σ 2/4° | 0.614 | 0.016 | [0.523, 0.678] | ✅ | +0.012 |
-| 30 fps + σ 2/8° | 0.565 | 0.014 | [0.509, 0.636] | ✅ | −0.038 |
-| **30 fps + σ 2/16°** | **0.536** | 0.020 | [0.491, 0.603] | ❌ | −0.064 |
-| **30 fps + σ 8/8°** | **0.529** | 0.021 | [0.452, 0.576] | ❌ | −0.091 |
-| **30 fps + σ 15/15°** | **0.491** | 0.039 | [0.410, 0.544] | ❌ | −0.138 |
+| **mocap (101 pts), no noise** | **0.610** | — | [0.532, 0.686] | Yes | — |
+| 240 fps (71 pts) | 0.610 | 0.000 | [0.532, 0.685] | Yes | +0.000 |
+| 120 fps (35 pts) | 0.610 | 0.000 | [0.533, 0.686] | Yes | +0.000 |
+| 60 fps (18 pts) | 0.610 | 0.000 | [0.533, 0.685] | Yes | −0.000 |
+| **30 fps (9 pts)** | **0.610** | 0.000 | [0.535, 0.686] | Yes | +0.000 |
+| σ near/far 2/2° | 0.611 | 0.002 | [0.529, 0.691] | Yes | +0.003 |
+| σ near/far 2/4° | 0.611 | 0.011 | [0.517, 0.679] | Yes | −0.004 |
+| **σ near/far 2/8°** | **0.613** | 0.017 | [0.514, 0.678] | Yes | −0.005 |
+| σ near/far 2/12° | 0.611 | 0.016 | [0.510, 0.673] | Yes | −0.007 |
+| σ near/far 2/16° | 0.607 | 0.015 | [0.508, 0.670] | Yes | −0.010 |
+| **σ near/far 2/20°** | **0.603** | 0.011 | [0.507, 0.662] | Yes | −0.012 |
+| σ both 8/8° | 0.603 | 0.006 | [0.526, 0.676] | Yes | −0.009 |
+| σ both 15/15° | 0.590 | 0.013 | [0.524, 0.644] | Yes | −0.026 |
+| 120 fps + σ 2/2° | 0.608 | 0.005 | [0.538, 0.675] | Yes | −0.004 |
+| 60 fps + σ 2/4° | 0.614 | 0.016 | [0.523, 0.678] | Yes | +0.012 |
+| 30 fps + σ 2/8° | 0.565 | 0.014 | [0.509, 0.636] | Yes | −0.038 |
+| **30 fps + σ 2/16°** | **0.536** | 0.020 | [0.491, 0.603] | No | −0.064 |
+| **30 fps + σ 8/8°** | **0.529** | 0.021 | [0.452, 0.576] | No | −0.091 |
+| **30 fps + σ 15/15°** | **0.491** | 0.039 | [0.410, 0.544] | No | −0.138 |
 
 `limb9` (9 channels) reference: mocap 0.603, 60 fps 0.604, 60 fps + σ 2/4° 0.614.
 
@@ -208,9 +208,9 @@ Seeds fixed (far/near draw 20260810; noise 900, 901). Per-fold AUCs in
 
 | # | item | status |
 |---|---|---|
-| 1 | null condition reproduces phase 5 | ✅ 0.610, and `degrade` is exact identity at k=101, σ=0 |
-| 2 | negative controls at chance, re-asserted | ✅ max dev 0.051 |
-| 3 | heavy degradation does not beat mocap | ✅ 0.565 < 0.610 (but see non-monotonicity above) |
-| 4 | `check_no_group_leakage` every fold | ✅ |
-| 5 | far/near independent of `InjSide` | ✅ max dev 0.010, asserted |
-| 6 | no `data/` paths tracked | ✅ |
+| 1 | null condition reproduces phase 5 | Met — 0.610, and `degrade` is exact identity at k=101, σ=0 |
+| 2 | negative controls at chance, re-asserted | Met — max dev 0.051 |
+| 3 | heavy degradation does not beat mocap | Met — 0.565 < 0.610 (but see non-monotonicity above) |
+| 4 | `check_no_group_leakage` every fold | Met |
+| 5 | far/near independent of `InjSide` | Met — max dev 0.010, asserted |
+| 6 | no `data/` paths tracked | Met |

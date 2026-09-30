@@ -1,6 +1,6 @@
 # Phase 3 — setup on Kaggle
 
-> ## ⚠️ SUPERSEDED — this route was abandoned. Phase 3 ran locally on CPU.
+> ## SUPERSEDED — this route was abandoned. Phase 3 ran locally on CPU.
 >
 > Two Kaggle runs were given neither GPU nor Internet: the account is not
 > phone-verified and Kaggle withholds both silently (`torch 2.10.0+cpu`,

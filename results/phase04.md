@@ -9,21 +9,21 @@ Error is not what is limiting it.**
 
 | bank | fps | realized error | AUC | spread | 95% CI | CI > 0.5 | mean ≥ 0.60 | Δ vs clean |
 |---|---|---|---|---|---|---|---|---|
-| **clean mocap** | — | 0° | **0.615** | — | [0.533, 0.693] | ✅ | ✅ | — |
-| all views | mocap | 3.29° | 0.586 | 0.032 | [0.535, 0.636] | ✅ | ❌ | −0.029 |
-| all views | 60 fps | 2.94° | 0.588 | 0.033 | [0.538, 0.635] | ✅ | ❌ | −0.028 |
-| all views | 30 fps | 2.86° | 0.587 | 0.023 | [0.535, 0.631] | ✅ | ❌ | −0.029 |
-| **side-on only** | mocap | 2.24° | 0.587 | 0.018 | [0.517, 0.642] | ✅ | ❌ | −0.028 |
-| **side-on only** | 60 fps | 2.04° | 0.588 | 0.014 | [0.518, 0.640] | ✅ | ❌ | −0.027 |
-| **side-on only** | **30 fps** | **1.94°** | **0.583** | 0.023 | [0.515, 0.631] | ✅ | ❌ | −0.033 |
+| **clean mocap** | — | 0° | **0.615** | — | [0.533, 0.693] | Yes | Yes | — |
+| all views | mocap | 3.29° | 0.586 | 0.032 | [0.535, 0.636] | Yes | No | −0.029 |
+| all views | 60 fps | 2.94° | 0.588 | 0.033 | [0.538, 0.635] | Yes | No | −0.028 |
+| all views | 30 fps | 2.86° | 0.587 | 0.023 | [0.535, 0.631] | Yes | No | −0.029 |
+| **side-on only** | mocap | 2.24° | 0.587 | 0.018 | [0.517, 0.642] | Yes | No | −0.028 |
+| **side-on only** | 60 fps | 2.04° | 0.588 | 0.014 | [0.518, 0.640] | Yes | No | −0.027 |
+| **side-on only** | **30 fps** | **1.94°** | **0.583** | 0.023 | [0.515, 0.631] | Yes | No | −0.033 |
 
 **`wave3_hk` — the optimistic control (clean ankle a camera cannot deliver):**
 
 | bank | fps | realized error | AUC | 95% CI | mean ≥ 0.60 | Δ vs clean |
 |---|---|---|---|---|---|---|
-| clean mocap | — | 0° | 0.610 | [0.532, 0.686] | ✅ | — |
-| all views | mocap / 60 / 30 | 2.19 / 2.00 / 2.08° | 0.608 / 0.610 / 0.607 | — | ✅ | −0.002 / +0.000 / −0.002 |
-| side-on only | mocap / 60 / 30 | 1.49 / 1.40 / 1.47° | 0.599 / 0.599 / 0.595 | — | ❌ | −0.011 / −0.010 / −0.014 |
+| clean mocap | — | 0° | 0.610 | [0.532, 0.686] | Yes | — |
+| all views | mocap / 60 / 30 | 2.19 / 2.00 / 2.08° | 0.608 / 0.610 / 0.607 | — | Yes | −0.002 / +0.000 / −0.002 |
+| side-on only | mocap / 60 / 30 | 1.49 / 1.40 / 1.47° | 0.599 / 0.599 / 0.595 | — | No | −0.011 / −0.010 / −0.014 |
 
 The last row matters: **under the realistic side-on bank, even the optimistic
 feature set falls below the bar.** `wave3_hk` only cleared 0.60 when it was fed
@@ -300,12 +300,12 @@ repository depends on the pandas version.
 
 | # | item | status |
 |---|---|---|
-| 1 | measured (not assumed) error injected | ✅ 1,184 empirical residual curves, 3.32° |
-| 2 | real ΔAUC reported | ✅ −0.027 to −0.033 for wave2; no delta CI excludes zero |
-| 3 | honest set separated from optimistic one | ✅ wave2 vs wave3_hk, gap quantified |
-| 4 | negative controls re-asserted | ✅ max \|AUC−0.5\| = 0.051, asserted in-script |
-| 5 | occlusion penalty under real error | ✅ **resolved** — side-on bank run; phase 3B shows the penalty is ~0 and flat in view angle |
-| 6 | verdict against the pre-registered bar | ❌ **fails the mean ≥ 0.60 leg in every condition** |
+| 1 | measured (not assumed) error injected | Met — 1,184 empirical residual curves, 3.32° |
+| 2 | real ΔAUC reported | Met — −0.027 to −0.033 for wave2; no delta CI excludes zero |
+| 3 | honest set separated from optimistic one | Met — wave2 vs wave3_hk, gap quantified |
+| 4 | negative controls re-asserted | Met — max \|AUC−0.5\| = 0.051, asserted in-script |
+| 5 | occlusion penalty under real error | Met — **resolved**: side-on bank run; phase 3B shows the penalty is ~0 and flat in view angle |
+| 6 | verdict against the pre-registered bar | Not met — **fails the mean ≥ 0.60 leg in every condition** |
 
 **Item 6 is the headline, and item 5 no longer softens it.** The signal survives
 contact with real monocular error — every CI excludes chance, at every framerate,

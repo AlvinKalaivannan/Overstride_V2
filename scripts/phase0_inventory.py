@@ -578,7 +578,7 @@ def section_table1(run: pd.DataFrame, union: pd.DataFrame) -> list[str]:
             n_total += 1
             n_pass += ok
             g_pass += ok and i < 6
-            cells.append(f"{fmt(p, places)} → {fmt(o, places)} {'✓' if ok else '**✗**'}")
+            cells.append(f"{fmt(p, places)} → {fmt(o, places)} {'match' if ok else '**differs**'}")
         rows.append(cells)
         # Speeds miss almost everywhere for a systematic reason (see below), so the
         # informative score is the six subject/session fields.

@@ -82,7 +82,7 @@ def main() -> int:
     ]
     phase_html = "\n".join(
         f'      <tr><td class="ph">{n}</td><td>{w}</td>'
-        f'<td class="gate {s}">{"✓" if s == "ok" else "✕"} {o}</td></tr>'
+        f'<td class="gate {s}">{"Met" if s == "ok" else "Not met"} — {o}</td></tr>'
         for n, w, s, o in phases)
 
     ceiling_rows = [

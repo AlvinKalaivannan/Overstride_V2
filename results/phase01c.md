@@ -228,9 +228,9 @@ Seeds fixed throughout. Per-fold AUCs in `results/phase1c_benchmark.json` and
 
 | # | plan item | status |
 |---|---|---|
-| 1 | `CONTROL_CLEAN` defined once, imported | ✅ `phase1_cohort.py` |
-| 2 | computed `DISCRETE_VARIABLES` match stored `dv_r` | ✅ **1,745/1,745** |
-| 3 | `waveforms_mean.npy` is `(n, 54, 101)`, reconciles | ✅ 1,745, 0 skipped |
-| 4 | no group leakage, incl. LOWO | ✅ asserted every fold |
-| 5 | sagittal subset verified against `dv_r` | ✅ **plane 2**, |r| ≥ 0.99 |
-| 6 | no `data/` paths tracked by git | ✅ |
+| 1 | `CONTROL_CLEAN` defined once, imported | Met — `phase1_cohort.py` |
+| 2 | computed `DISCRETE_VARIABLES` match stored `dv_r` | Met — **1,745/1,745** |
+| 3 | `waveforms_mean.npy` is `(n, 54, 101)`, reconciles | Met — 1,745, 0 skipped |
+| 4 | no group leakage, incl. LOWO | Met — asserted every fold |
+| 5 | sagittal subset verified against `dv_r` | Met — **plane 2**, \|r\| ≥ 0.99 |
+| 6 | no `data/` paths tracked by git | Met |

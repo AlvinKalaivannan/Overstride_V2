@@ -238,12 +238,12 @@ drift apart.
 
 | # | spec gate item | status |
 |---|---|---|
-| 1 | control AUC + CI reported | ✅ 0.700 [0.642, 0.753] |
-| 2 | control clearly beats provenance | ❌ **loses**, 0/25 folds |
-| 3 | `dv_r` table reconciles to 1,745 | ✅ 1,745/1,745, 0 failures |
-| 4 | marker-set-vs-wave check | ✅ **confound confirmed** |
-| 5 | paired ΔAUC per kinematic model | ✅ reported above |
-| 6 | go/no-go on waveform generation | ⬜ **decision required** |
+| 1 | control AUC + CI reported | Met — 0.700 [0.642, 0.753] |
+| 2 | control clearly beats provenance | Not met — **loses**, 0/25 folds |
+| 3 | `dv_r` table reconciles to 1,745 | Met — 1,745/1,745, 0 failures |
+| 4 | marker-set-vs-wave check | Met — **confound confirmed** |
+| 5 | paired ΔAUC per kinematic model | Met — reported above |
+| 6 | go/no-go on waveform generation | Pending — **decision required** |
 
 The `CLAUDE.md` phase 1 gate ("beats the demographics-only control") is
 **ill-posed as written** — the control is not a valid benchmark. It is not

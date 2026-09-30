@@ -195,9 +195,9 @@ Seeds fixed. Per-fold AUCs and every one of the 60 tests in
 
 | # | item | status |
 |---|---|---|
-| 1 | per-condition cohorts, other-diagnosis excluded | ✅ counts above, 24 low-stride drops named |
-| 2 | `check_no_group_leakage` on every fold | ✅ all conditions |
-| 3 | SD/asym arrays reconcile to the index | ✅ 1,721 of 1,745, drops named |
-| 4 | asymmetry never references `InjSide` | ✅ grep: docstring only, no code use |
-| 5 | sagittal = plane 2 | ✅ `phase1c_verify_sagittal.py` PASS |
-| 6 | no `data/` paths tracked | ✅ |
+| 1 | per-condition cohorts, other-diagnosis excluded | Met — counts above, 24 low-stride drops named |
+| 2 | `check_no_group_leakage` on every fold | Met — all conditions |
+| 3 | SD/asym arrays reconcile to the index | Met — 1,721 of 1,745, drops named |
+| 4 | asymmetry never references `InjSide` | Met — grep: docstring only, no code use |
+| 5 | sagittal = plane 2 | Met — `phase1c_verify_sagittal.py` PASS |
+| 6 | no `data/` paths tracked | Met |

@@ -111,11 +111,11 @@ magnitude is scaled and the verdict re-measured (side-on bank, 30 fps):
 
 | scale | realized error | AUC | 95% CI | survives |
 |---|---|---|---|---|
-| 0.5× | 1.01° | 0.599 | [0.519, 0.665] | ✅ |
-| **1.0×** | **1.94°** | **0.583** | [0.515, 0.631] | ✅ |
-| 1.5× | 2.90° | 0.567 | [0.510, 0.609] | ✅ |
-| 2.0× | 3.87° | 0.554 | [0.505, 0.597] | ✅ |
-| 3.0× | 5.83° | 0.534 | [0.494, 0.580] | ❌ CI touches chance |
+| 0.5× | 1.01° | 0.599 | [0.519, 0.665] | Yes |
+| **1.0×** | **1.94°** | **0.583** | [0.515, 0.631] | Yes |
+| 1.5× | 2.90° | 0.567 | [0.510, 0.609] | Yes |
+| 2.0× | 3.87° | 0.554 | [0.505, 0.597] | Yes |
+| 3.0× | 5.83° | 0.534 | [0.494, 0.580] | Not met — CI touches chance |
 
 **The conclusion is robust to a 2× error in the convention transfer and breaks at
 about 3×.** Note also that even at 0.5× — half the measured error — AUC only

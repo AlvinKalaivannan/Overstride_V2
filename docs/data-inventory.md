@@ -249,13 +249,13 @@ Applying the README recipe verbatim. Counts must match exactly, means to within 
 
 | group | M | F | age | height | mass | sessions | walk spd | run spd |
 |---|---|---|---|---|---|---|---|---|
-| **No Injury (age 18-49)** | 137 → 137 ✓ | 171 → 171 ✓ | 32.52 → 32.52 ✓ | 172.19 → 172.20 ✓ | 69.54 → 69.53 ✓ | 558 → 560 **✗** | 1.210 → 1.207 ✓ | 2.800 → 2.795 ✓ |
-| **No Injury (age 50+)** | 39 → 39 ✓ | 49 → 48 **✗** | 55.80 → 55.85 **✗** | 165.33 → 165.45 **✗** | 69.89 → 70.04 **✗** | 130 → 128 **✗** | 1.180 → 1.151 **✗** | 2.580 → 2.518 **✗** |
-| **achilles tendonitis** | 30 → 30 ✓ | 22 → 22 ✓ | 42.62 → 42.62 ✓ | 190.19 → 190.19 ✓ | 77.20 → 77.20 ✓ | 68 → 68 ✓ | 1.300 → 1.284 **✗** | 2.680 → 2.682 ✓ |
-| **itb syndrome** | 39 → 39 ✓ | 61 → 61 ✓ | 35.21 → 35.21 ✓ | 171.99 → 171.99 ✓ | 67.76 → 67.76 ✓ | 128 → 127 **✗** | 1.260 → 1.256 ✓ | 2.640 → 2.615 **✗** |
-| **osteoarthritis** | 91 → 91 ✓ | 156 → 156 ✓ | 56.36 → 56.32 **✗** | 167.40 → 166.70 **✗** | 76.36 → 75.99 **✗** | 422 → 422 ✓ | 1.110 → 1.105 ✓ | 2.410 → 2.227 **✗** |
-| **patellofemoral pain syndrome** | 61 → 61 ✓ | 76 → 76 ✓ | 35.78 → 35.74 **✗** | 178.20 → 178.19 ✓ | 69.95 → 69.95 ✓ | 142 → 142 ✓ | 1.230 → 1.213 **✗** | 2.620 → 2.596 **✗** |
-| **plantar fasciitis** | 20 → 20 ✓ | 34 → 34 ✓ | 45.76 → 45.76 ✓ | 170.93 → 170.93 ✓ | 77.79 → 77.79 ✓ | 59 → 59 ✓ | 1.220 → 1.174 **✗** | 2.500 → 2.432 **✗** |
+| **No Injury (age 18-49)** | 137 → 137 match | 171 → 171 match | 32.52 → 32.52 match | 172.19 → 172.20 match | 69.54 → 69.53 match | 558 → 560 **differs** | 1.210 → 1.207 match | 2.800 → 2.795 match |
+| **No Injury (age 50+)** | 39 → 39 match | 49 → 48 **differs** | 55.80 → 55.85 **differs** | 165.33 → 165.45 **differs** | 69.89 → 70.04 **differs** | 130 → 128 **differs** | 1.180 → 1.151 **differs** | 2.580 → 2.518 **differs** |
+| **achilles tendonitis** | 30 → 30 match | 22 → 22 match | 42.62 → 42.62 match | 190.19 → 190.19 match | 77.20 → 77.20 match | 68 → 68 match | 1.300 → 1.284 **differs** | 2.680 → 2.682 match |
+| **itb syndrome** | 39 → 39 match | 61 → 61 match | 35.21 → 35.21 match | 171.99 → 171.99 match | 67.76 → 67.76 match | 128 → 127 **differs** | 1.260 → 1.256 match | 2.640 → 2.615 **differs** |
+| **osteoarthritis** | 91 → 91 match | 156 → 156 match | 56.36 → 56.32 **differs** | 167.40 → 166.70 **differs** | 76.36 → 75.99 **differs** | 422 → 422 match | 1.110 → 1.105 match | 2.410 → 2.227 **differs** |
+| **patellofemoral pain syndrome** | 61 → 61 match | 76 → 76 match | 35.78 → 35.74 **differs** | 178.20 → 178.19 match | 69.95 → 69.95 match | 142 → 142 match | 1.230 → 1.213 **differs** | 2.620 → 2.596 **differs** |
+| **plantar fasciitis** | 20 → 20 match | 34 → 34 match | 45.76 → 45.76 match | 170.93 → 170.93 match | 77.79 → 77.79 match | 59 → 59 match | 1.220 → 1.174 **differs** | 2.500 → 2.432 **differs** |
 
 **2 of 7 groups reproduce on all six subject and session counts** (M, F, age, height, mass, sessions): `achilles tendonitis`, `plantar fasciitis`. The recipe in the README is therefore substantially correct.
 

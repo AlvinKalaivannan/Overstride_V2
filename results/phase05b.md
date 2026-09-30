@@ -7,9 +7,9 @@ there is no representation of this data that rescues the injured-limb task.
 
 | diagnostic | result | verdict |
 |---|---|---|
-| **D1 severity dose-response** (primary) | ρ = **+0.044** [−0.038, +0.130], p = 0.228 | ❌ **fails** — direction not supported |
-| **D2 `dv_r` clinical probe** | **0.610** vs reference **0.610**, ΔAUC +0.000 [−0.067, +0.071] | ❌ no headroom from a different modality |
-| **D3 learning curve** | 0.585 → 0.599 → 0.608 → **0.610** | ❌ saturated; final increment +0.001 |
+| **D1 severity dose-response** (primary) | ρ = **+0.044** [−0.038, +0.130], p = 0.228 | Not met — direction not supported |
+| **D2 `dv_r` clinical probe** | **0.610** vs reference **0.610**, ΔAUC +0.000 [−0.067, +0.071] | Not met — no headroom from a different modality |
+| **D3 learning curve** | 0.585 → 0.599 → 0.608 → **0.610** | Not met — saturated; final increment +0.001 |
 
 Reference: `limbsag_mean` AUC **0.610** [0.532, 0.686], the phase 5 winner,
 reproduced here exactly.

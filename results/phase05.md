@@ -79,15 +79,15 @@ asserted ankle/knee/hip set.
 
 | feature set | AUC | 95% CI | CI excludes 0.5 |
 |---|---|---|---|
-| **limbsag_mean [matched]** | **0.610** | [0.532, 0.686] | ✅ |
-| limb9_mean [matched] | 0.603 | [0.522, 0.699] | ✅ |
-| limb15_mean [matched] | 0.602 | [0.504, 0.677] | ✅ |
-| limbsag_mean | 0.602 | [0.536, 0.677] | ✅ |
-| limb15_mean | 0.601 | [0.501, 0.694] | ✅ |
-| limb9_dist (stride quartiles) | 0.599 | [0.510, 0.677] | ✅ |
-| limb9_mean | 0.598 | [0.515, 0.674] | ✅ |
-| limb9_all (mean+SD+quartiles) | 0.593 | [0.500, 0.679] | ✗ |
-| **limb9_sd (variability)** | **0.505** | [0.440, 0.589] | ✗ |
+| **limbsag_mean [matched]** | **0.610** | [0.532, 0.686] | Yes |
+| limb9_mean [matched] | 0.603 | [0.522, 0.699] | Yes |
+| limb15_mean [matched] | 0.602 | [0.504, 0.677] | Yes |
+| limbsag_mean | 0.602 | [0.536, 0.677] | Yes |
+| limb15_mean | 0.601 | [0.501, 0.694] | Yes |
+| limb9_dist (stride quartiles) | 0.599 | [0.510, 0.677] | Yes |
+| limb9_mean | 0.598 | [0.515, 0.674] | Yes |
+| limb9_all (mean+SD+quartiles) | 0.593 | [0.500, 0.679] | No |
+| **limb9_sd (variability)** | **0.505** | [0.440, 0.589] | No |
 
 **The evidence is the consistency, not the maximum.** Reporting only the best of
 nine sets would inflate the result. Of the eight mean- or quantile-based sets,
@@ -191,9 +191,9 @@ Seeds fixed. Per-fold AUCs in `results/phase5_limb.json`.
 
 | # | item | status |
 |---|---|---|
-| 1 | negative controls ≈0.5 (hard gate) | ✅ max dev 0.051, PASS |
-| 2 | mirror signs derived and asserted vs anatomy | ✅ |
-| 3 | cohort reconciles, bilateral excluded | ✅ 818 / 675, 300 excluded |
-| 4 | `check_no_group_leakage` every fold | ✅ |
-| 5 | phase 1D `asym9` bug quantified | ✅ 6 of 9 channels were summing |
-| 6 | no `data/` paths tracked | ✅ |
+| 1 | negative controls ≈0.5 (hard gate) | Met — max dev 0.051, PASS |
+| 2 | mirror signs derived and asserted vs anatomy | Met |
+| 3 | cohort reconciles, bilateral excluded | Met — 818 / 675, 300 excluded |
+| 4 | `check_no_group_leakage` every fold | Met |
+| 5 | phase 1D `asym9` bug quantified | Met — 6 of 9 channels were summing |
+| 6 | no `data/` paths tracked | Met |

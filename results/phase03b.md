@@ -122,7 +122,7 @@ Reads `results/phase3_angle_errors.json` and the AthleticsPose ground-truth
 ## Consequences recorded elsewhere
 
 - `results/phase03.md` — MPJPE corrected to true mm (51.7 / 135.2 / 142.9);
-  gate item 2 changed from ⚠️ open to ✅ resolved.
+  gate item 2 changed from open to resolved.
 - `results/phase04.md` — the "side-on occlusion penalty is unmeasured" caveat is
   withdrawn, and a **lateral-only error bank** is now run as its own condition.
 - **All joint-angle results are unaffected.** `sagittal_angles` works in the
