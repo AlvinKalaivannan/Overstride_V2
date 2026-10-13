@@ -150,6 +150,28 @@ def main() -> int:
                  "gt_anatomical_median_mm": float(np.median(gt_a)) if gt_a
                  else float("nan")}
 
+    # ------------------------------------------------- shape bias in mm -----
+    # Why the ratios fail. Per subject then across, never pooled: a median of
+    # est over all clips divided by a median of gt over all clips is a different
+    # estimator and gives a different answer.
+    bias: dict[str, dict] = {}
+    for s in segments:
+        by_subj = defaultdict(list)
+        for row in rows:
+            e = (row.get("est_mm") or {}).get(s)
+            g = row["gt_h36m_mm"].get(s)
+            if e is not None and g:
+                by_subj[row["subject"]].append(100.0 * (e - g) / g)
+        per_subj = [_mean(v) for v in by_subj.values()]
+        lo, hi = subject_bootstrap_ci(per_subj)
+        bias[s] = {"bias_pct": _mean(per_subj), "ci": [lo, hi],
+                   "sd_across_subjects": float(np.std(
+                       [x for x in per_subj if np.isfinite(x)], ddof=1))
+                   if len(per_subj) > 1 else float("nan"),
+                   "n_subjects": len(per_subj)}
+    _limb = [s for s in segments if s.startswith(("thigh", "shank"))]
+    bias["_limb_mean_pct"] = _mean([bias[s]["bias_pct"] for s in _limb])
+
     # --------------------------------------------- L/R symmetry in the GT ---
     sym = {}
     for subj in d["subjects"]:
@@ -172,7 +194,8 @@ def main() -> int:
                  "source": "results/phase12.md, pre-registered 2026-10-13"},
         "n_clips": len(rows), "n_subjects": d["n_subjects"], "groups": d["groups"],
         "accuracy": acc, "near_far": nf, "stability": stab,
-        "kill_criterion": kill, "absolute_mm": mm, "gt_lr_asymmetry_pct": sym,
+        "kill_criterion": kill, "absolute_mm": mm, "shape_bias_pct": bias,
+        "gt_lr_asymmetry_pct": sym,
         "verdict": {
             "accuracy_ratios_meeting_bar": f"{n_acc}/{len(ratios)}",
             "stability_ratios_meeting_bar": f"{n_stab}/{len(ratios)}",
@@ -215,7 +238,15 @@ def main() -> int:
         v = mm[s]
         print(f"  {s:10} {v['est_median_mm']:8.1f} {v['gt_h36m_median_mm']:9.1f} "
               f"{v['gt_anatomical_median_mm']:9.1f}")
-    print(f"\nmocap L/R asymmetry, flagged above 5%")
+    print("\nshape bias vs H36M GT, per subject then across (why the ratios fail)")
+    print(f"  {'segment':10} {'bias%':>8} {'95% CI':>18} {'sd across subj':>15}")
+    for s_ in segments:
+        v = bias[s_]
+        print(f"  {s_:10} {v['bias_pct']:+8.2f} "
+              f"[{v['ci'][0]:+7.2f},{v['ci'][1]:+7.2f}] "
+              f"{v['sd_across_subjects']:15.2f}")
+    print(f"  limb segments mean: {bias['_limb_mean_pct']:+.2f}%")
+    print("\nmocap L/R asymmetry, flagged above 5%")
     for seg, per in sorted(sym.items()):
         bad = {k: round(x, 1) for k, x in sorted(per.items()) if x > 5.0}
         print(f"  {seg:6} max {max(per.values()):5.1f}%   over 5%: {bad or 'none'}")

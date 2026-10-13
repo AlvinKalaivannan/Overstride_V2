@@ -243,3 +243,37 @@ _miss = [k for k, v in p11f["files"].items() if v.get("failed")]
 print(f"  fetched: {', '.join(_got)}")
 if _miss:
     print(f"  NOT fetched (Drive refused): {', '.join(_miss)} -- REVIEW.md 7.5 stays open")
+
+p12 = L("phase12_gate.json")
+print("\n== PHASE 12: scan ==")
+print(f"  {p12['n_clips']} clips, {p12['n_subjects']} subjects, "
+      f"groups={p12['groups']}, bars {p12['bars']['accuracy_pct']}% / "
+      f"{p12['bars']['cv_pct']}% CV (pre-registered)")
+_acc = p12["accuracy"]
+_worst = max(_acc.values(), key=lambda v: v["mean_err_pct"])
+_best = min(_acc.values(), key=lambda v: v["mean_err_pct"])
+print(f"  accuracy {p12['verdict']['accuracy_ratios_meeting_bar']} ratios meet the bar"
+      f" -- best {_best['mean_err_pct']:.2f}% {ci(_best['ci'])}, "
+      f"worst {_worst['mean_err_pct']:.2f}% {ci(_worst['ci'])}")
+_st = [v["cv_across_trials_pct"] for v in p12["stability"].values()]
+_cam = [v["cv_across_cameras_pct"] for v in p12["stability"].values()]
+print(f"  stability {p12['verdict']['stability_ratios_meeting_bar']} ratios meet the bar"
+      f" -- across trials {min(_st):.2f}-{max(_st):.2f}%, "
+      f"across cameras {min(_cam):.2f}-{max(_cam):.2f}%")
+for limb in ("near", "far"):
+    v = p12["near_far"][limb]
+    print(f"  {limb:<5} {v['mean_err_pct']:.2f}% {ci(v['ci'])}")
+_k = p12["kill_criterion"]
+print(f"  kill: across-trial {_k['across_trial_cv_pct_mean']:.2f}% vs within-clip "
+      f"{_k['within_clip_cv_pct_mean']:.2f}% -> scan adds nothing: "
+      f"{_k['scan_adds_nothing']}")
+_b = p12["shape_bias_pct"]
+print(f"  shape (not scale), per subject then across: "
+      f"limbs {_b['_limb_mean_pct']:+.2f}%, "
+      f"pelvis {_b['pelvis']['bias_pct']:+.2f}% {ci(_b['pelvis']['ci'])}, "
+      f"trunk {_b['trunk']['bias_pct']:+.2f}% {ci(_b['trunk']['ci'])}")
+_excl = [s for s, v in _b.items() if s != "_limb_mean_pct"
+         and v["ci"][0] * v["ci"][1] > 0]
+print(f"  segments whose bias CI excludes zero: {', '.join(_excl) or 'none'} "
+      f"(of {len(_b) - 1}) -- the decomposition is an explanation, not a result")
+print(f"  gate met: {p12['verdict']['gate_met']}")

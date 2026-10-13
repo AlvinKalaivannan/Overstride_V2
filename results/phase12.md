@@ -248,30 +248,42 @@ Ratios are scale-invariant by construction, so no per-clip scale factor can move
 them. The ratio error is therefore a **shape** error, and the absolute
 millimetre figures say what shape:
 
-| segment | bias vs H36M GT % | sd across subjects |
-|---|---|---|
-| thigh, L | −3.66 | 7.79 |
-| thigh, R | −3.02 | 9.61 |
-| shank, L | −4.59 | 8.70 |
-| shank, R | −5.98 | 7.78 |
-| **limb segments, mean** | **−4.31** | |
-| pelvis width | **+3.48** | 8.77 |
-| trunk | −0.26 | 9.08 |
+| segment | bias vs H36M GT % | 95% CI | sd across subjects |
+|---|---|---|---|
+| thigh, L | −3.66 | [−6.99, +0.69] | 7.79 |
+| thigh, R | −3.02 | [−6.95, +2.39] | 9.61 |
+| shank, L | −4.59 | [−8.07, +0.21] | 8.70 |
+| shank, R | −5.98 | [−9.27, −1.75] | 7.78 |
+| **limb segments, mean** | **−4.31** | | |
+| pelvis width | **+3.48** | [−0.26, +8.34] | 8.77 |
+| trunk | −0.26 | [−4.02, +4.72] | 9.08 |
 
-**The lifter compresses the limbs and widens the pelvis, and the two errors have
-opposite signs.** That explains the ordering in the accuracy table exactly:
+**Read these intervals before the means.** Only `shank_r` has a bias CI that
+excludes zero. Across 15 subjects the per-segment sd is 7.8–9.6 points, larger
+than the biases themselves, so **no individual segment's bias is established
+here**. What *is* established is the ratio error in the table above, because that
+is an absolute error and does not average away.
+
+So the decomposition below is an explanation consistent with the data, not a
+second measured result. Stated at that strength: the mean biases point the same
+way in all six segments — limbs negative, pelvis positive — and that pattern
+reproduces the ordering of the accuracy table arithmetically:
 
 - `shank/pelvis` and `thigh/pelvis` are worst (6.7–9.2%) because the errors
   compound — numerator down ~4%, denominator up ~3.5%, so the ratio is off about
   7.5%, which is what was measured.
 - `thigh/shank` is best (4.6–5.5%) because both ends are compressed together and
   only the difference between them (−3.3% vs −5.3%) survives.
-- Trunk is recovered almost exactly (−0.26%), and pelvis width in absolute terms
-  lands on 197.7 mm against a ground truth of 197.6 mm.
+- Trunk sits nearest zero (−0.26%), and pooled over all clips the median pelvis
+  width lands on 197.7 mm against a ground truth of 197.6 mm. That pooled
+  agreement is a descriptive coincidence, not a precision claim — the
+  per-subject interval is [−0.26, +8.34].
 
-So this is not diffuse noise. It is a specific, reproducible distortion of the
-body's proportions, consistent with a lifter regressing toward a mean pose and
-foreshortening the out-of-plane limb extent.
+What the data supports, then, is that **the ratio errors are real and large, and
+a differential distortion of proportions is the natural explanation** — limbs
+foreshortened relative to pelvis width, as a lifter regressing toward a mean
+pose would produce. Establishing that distortion segment by segment needs more
+subjects than the 15 here.
 
 ### What this means for phase 13
 
@@ -295,16 +307,19 @@ be made downstream.**
 
 ### What surprised, and what looks wrong
 
-- **Pelvis width is recovered to 0.1 mm in the median while limbs are off 4–6%.**
-  Both come from the same lifter and the same frames. The pelvis is the one
-  segment that is nearly always close to the image plane in a side-on view,
-  which is consistent with the compression being an out-of-plane effect, but
-  this phase did not test that and it stays an observation.
-- **Between-subject scatter is large** — sd of the per-segment bias is 7.8–9.6
-  points across 15 subjects, which is bigger than the bias itself. The
-  distortion is reproducible *within* a subject and varies a lot *between* them.
-  That is the pattern that makes a population correction factor useless and a
-  per-subject one unidentifiable without ground truth.
+- **Pelvis width is the one segment that comes back near-unbiased**, while limbs
+  are short by 3–6%. Both come from the same lifter and the same frames. The
+  pelvis is also the segment nearly always closest to the image plane in a
+  side-on view, which fits an out-of-plane foreshortening account — but this
+  phase did not test that, and the per-subject interval on pelvis bias is wide,
+  so it stays an observation rather than a finding.
+- **Between-subject scatter is large, and it is the headline caveat** — sd of the
+  per-segment bias is 7.8–9.6 points across 15 subjects, bigger than the biases
+  themselves. Stability says the distortion is reproducible *within* a subject;
+  this says it varies a lot *between* them. That combination is what makes a
+  single population correction factor useless and a per-subject one
+  unidentifiable without ground truth, which is precisely what a deployed scan
+  would not have.
 - **Two mocap subjects carry implausible L/R asymmetry**: S19 at 9.9% and S16 at
   7.3% on the thigh, with S19 also 5.3% on the shank. A 10% femur-length
   difference is not normal anatomy. This is in the *ground truth*, not the
