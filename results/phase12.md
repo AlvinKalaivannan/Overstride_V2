@@ -169,5 +169,161 @@ against the tool.
 
 ## Results
 
-*Not yet run. This file was committed with the bars above and no numbers, so
-that the pre-registration is verifiable in `git log` rather than asserted.*
+Run 2026-10-13. **1,674 clips** of the 1,686 available (12 dropped: fewer than
+25 frames, or no matching mocap trial), **15 subjects**, grouped by subject.
+Regenerate with `scripts/phase12_scan.py` then `scripts/phase12_aggregate.py`;
+per-clip rows are in `results/phase12_scan.json`, the verdict in
+`results/phase12_gate.json`.
+
+> ### Verdict: the accuracy bar fails, the stability bar passes, the kill does not fire
+>
+> **Accuracy 0 of 8 ratios.** Errors run 4.46–9.17%, every CI clear of the 3%
+> bar. The scan does not recover a subject's proportions.
+>
+> **Stability 8 of 8 ratios.** Across-trial CV 1.53–1.93%, comfortably inside
+> the 3% bar. Film the same runner again and the scan returns the same numbers.
+>
+> **The kill criterion does not fire.** A clip's median is **1.68%** CV across
+> trials against **14.52%** frame-to-frame within a clip — the scan is about
+> **8.6x** more stable than reading a length off one frame. So the scan is worth
+> keeping; it just is not anthropometry.
+>
+> In one line: **the scan is precise and biased.**
+
+### Accuracy — gate not met
+
+Mean absolute ratio error, computed per subject then averaged across the 15,
+with a subject-level bootstrap CI (2,000 resamples, seed 11).
+
+| ratio | error % | 95% CI | bar (3%) |
+|---|---|---|---|
+| thigh/shank, L | 4.64 | [3.80, 5.61] | Not met |
+| thigh/shank, R | 5.49 | [4.39, 6.82] | Not met |
+| thigh/pelvis, L | 6.94 | [6.09, 7.93] | Not met |
+| thigh/pelvis, R | 6.71 | [5.28, 8.41] | Not met |
+| shank/pelvis, L | 8.00 | [6.72, 9.53] | Not met |
+| shank/pelvis, R | 9.17 | [7.71, 10.73] | Not met |
+| trunk/thigh, L | 5.05 | [3.79, 6.56] | Not met |
+| trunk/thigh, R | 4.46 | [3.13, 6.34] | Not met |
+
+**The tightened bar is not what failed it.** The bar was moved from the 5% in
+`CLAUDE.md` to 3% before anything was computed, so it is fair to ask whether the
+original would have passed. It would not: at 5% two of eight ratios pass, and it
+takes a **7%** bar to get six of eight. The result is robust to that choice.
+
+### Near and far limb
+
+| limb | error % | 95% CI |
+|---|---|---|
+| near | 6.03 | [5.26, 6.90] |
+| far | 6.58 | [5.79, 7.46] |
+
+The far limb is nominally worse by 0.55 points, but the intervals overlap across
+most of their range. **There is no near/far split worth claiming here** — which
+is consistent with phases 3B and 11, where the far-limb occlusion penalty was
+also about zero.
+
+### Stability — gate met
+
+| ratio | CV across trials % | CV across cameras % | bar (3%) |
+|---|---|---|---|
+| thigh/shank, L | 1.93 | 3.99 | Met |
+| thigh/shank, R | 1.72 | 4.30 | Met |
+| thigh/pelvis, L | 1.65 | 3.87 | Met |
+| thigh/pelvis, R | 1.54 | 4.11 | Met |
+| shank/pelvis, L | 1.53 | 4.85 | Met |
+| shank/pelvis, R | 1.62 | 5.22 | Met |
+| trunk/thigh, L | 1.83 | 2.92 | Met |
+| trunk/thigh, R | 1.63 | 3.03 | Met |
+
+**Across cameras is consistently worse than across trials** — 2.92–5.22% against
+1.53–1.93%. Viewpoint moves the scan more than the runner's own
+trial-to-trial variation does. That is a direct argument for the phase 14
+viewpoint term, and it means a scan should be taken from a known view rather
+than averaged over arbitrary ones.
+
+### Why it fails: the error is shape, not scale
+
+Ratios are scale-invariant by construction, so no per-clip scale factor can move
+them. The ratio error is therefore a **shape** error, and the absolute
+millimetre figures say what shape:
+
+| segment | bias vs H36M GT % | sd across subjects |
+|---|---|---|
+| thigh, L | −3.66 | 7.79 |
+| thigh, R | −3.02 | 9.61 |
+| shank, L | −4.59 | 8.70 |
+| shank, R | −5.98 | 7.78 |
+| **limb segments, mean** | **−4.31** | |
+| pelvis width | **+3.48** | 8.77 |
+| trunk | −0.26 | 9.08 |
+
+**The lifter compresses the limbs and widens the pelvis, and the two errors have
+opposite signs.** That explains the ordering in the accuracy table exactly:
+
+- `shank/pelvis` and `thigh/pelvis` are worst (6.7–9.2%) because the errors
+  compound — numerator down ~4%, denominator up ~3.5%, so the ratio is off about
+  7.5%, which is what was measured.
+- `thigh/shank` is best (4.6–5.5%) because both ends are compressed together and
+  only the difference between them (−3.3% vs −5.3%) survives.
+- Trunk is recovered almost exactly (−0.26%), and pelvis width in absolute terms
+  lands on 197.7 mm against a ground truth of 197.6 mm.
+
+So this is not diffuse noise. It is a specific, reproducible distortion of the
+body's proportions, consistent with a lifter regressing toward a mean pose and
+foreshortening the out-of-plane limb extent.
+
+### What this means for phase 13
+
+Phase 13 planned to constrain every frame to the scanned lengths and to let the
+near limb's lengths constrain the far limb. This result splits that plan in two:
+
+- **Not usable as anthropometry.** Imposing lengths that are 4–9% wrong in shape
+  as if they were true would push the skeleton into the wrong proportions. The
+  far-limb-from-near-limb idea is the weakest part: it assumes the near limb's
+  measured length is right, and it is not.
+- **Usable as a consistency constraint.** The honest version of the constraint is
+  *"whatever this subject's proportions are, hold them constant"*, and that is
+  worth something precise: frame-to-frame length CV falls from **14.52%** to
+  **1.68%**. Joint angles are scale-invariant, so a constant proportional bias
+  does not move them the way a fluctuating one does.
+
+Phase 13's mandatory ablation (scan only / filter only / both) is what separates
+these, and it must now be reported with the scan labelled a stabiliser rather
+than a measurement. **No claim that the scan recovers true segment lengths may
+be made downstream.**
+
+### What surprised, and what looks wrong
+
+- **Pelvis width is recovered to 0.1 mm in the median while limbs are off 4–6%.**
+  Both come from the same lifter and the same frames. The pelvis is the one
+  segment that is nearly always close to the image plane in a side-on view,
+  which is consistent with the compression being an out-of-plane effect, but
+  this phase did not test that and it stays an observation.
+- **Between-subject scatter is large** — sd of the per-segment bias is 7.8–9.6
+  points across 15 subjects, which is bigger than the bias itself. The
+  distortion is reproducible *within* a subject and varies a lot *between* them.
+  That is the pattern that makes a population correction factor useless and a
+  per-subject one unidentifiable without ground truth.
+- **Two mocap subjects carry implausible L/R asymmetry**: S19 at 9.9% and S16 at
+  7.3% on the thigh, with S19 also 5.3% on the shank. A 10% femur-length
+  difference is not normal anatomy. This is in the *ground truth*, not the
+  estimate, so it is a marker-placement or short-trial artifact in
+  AthleticsPose. It is left in — excluding subjects after seeing the numbers
+  would be exactly the kind of choice this project does not make — but any
+  phase 13 result that leans on per-side lengths should report with and without
+  S19.
+- **Foot was reported, never estimated.** Mocap gives 200–206 mm heel-to-toe;
+  H36M-17 has no toe keypoint so there is no estimate to compare, and none was
+  invented.
+
+### Honest limits
+
+- **One dataset, one lab, 15 subjects**, 6 of them running and 9 sprinting.
+- **The scan is one short trial**, 0.23–1.74 s. The standing calibration pass
+  that `CLAUDE.md` describes was never tested, because no such footage exists
+  here. A standing pass could plausibly do better; that is untested, not denied.
+- **Detected 2D only.** Everything above used `det_markers2d_by_cam_coco` with
+  the matching checkpoint, which is the deployable path. The split between
+  lifting error and detection error was not measured in this phase.
+- Nothing here is an injury quantity, and nothing here supports one.

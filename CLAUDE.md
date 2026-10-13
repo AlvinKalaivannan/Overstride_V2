@@ -247,7 +247,7 @@ recorded in `results/`.
 | **9** | A1 — the same limb task on **walking**, paired dual-mode subjects | Clears phase 5's bar with controls at chance | Not met — **0.547**, does not replicate |
 | **10** | C — a second lab's markers (Fukuchi) through the same MATLAB pipeline | Recovers sane kinematics outside the archive | Met — speed 1.71%; hip \|r\| 0.993; ankle weakest |
 | **11** | B1 — AthletePose3D: an independent lab through the lifting path | Lifter transfers; viewpoint penalty measured | Mixed — lifter degrades **1.84×**; viewpoint **3.50°→1.77°** measured; §7.5 still open |
-| **12** | **Scan** — per-subject body model from a short calibration pass | Segment lengths within the pre-registered error of mocap GT, stable across a subject's clips | Planned |
+| **12** | **Scan** — per-subject body model from a short calibration pass | Segment lengths within the pre-registered error of mocap GT, stable across a subject's clips | Mixed — stability met (CV 1.7%), accuracy **not met** (0/8 ratios at 3%, errors 4.5–9.2%). The scan is precise but biased: limbs compressed 4.3%, pelvis widened 3.5%. Kill did not fire — keep it as a stabiliser, not anthropometry |
 | **13** | **Decompose & track** — segment-constrained fitting, per-segment state | Beats the 3.43° baseline on the tune set; far limb improves or holds; no transfer regression | Planned |
 | **14** | **Per-segment confidence** — calibrated measurement reliability + viewpoint-based expected error | Stated confidence matches realized error | Planned |
 | **15** | **Held-out validation** on datasets never touched | Per-dataset MAE with CIs, reported whether it wins or loses | Planned |

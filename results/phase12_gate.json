@@ -1,0 +1,289 @@
+{
+ "bars": {
+  "accuracy_pct": 3.0,
+  "cv_pct": 3.0,
+  "source": "results/phase12.md, pre-registered 2026-10-13"
+ },
+ "n_clips": 1674,
+ "n_subjects": 15,
+ "groups": "subject",
+ "accuracy": {
+  "thigh/shank_l": {
+   "mean_err_pct": 4.640211506191884,
+   "ci": [
+    3.804140165981697,
+    5.6115934124553775
+   ],
+   "n_subjects": 15,
+   "meets_bar": false
+  },
+  "thigh/shank_r": {
+   "mean_err_pct": 5.493407134514146,
+   "ci": [
+    4.393803553497118,
+    6.82406896610094
+   ],
+   "n_subjects": 15,
+   "meets_bar": false
+  },
+  "thigh/pelvis_l": {
+   "mean_err_pct": 6.943400194223153,
+   "ci": [
+    6.0857787055921095,
+    7.928887222606804
+   ],
+   "n_subjects": 15,
+   "meets_bar": false
+  },
+  "thigh/pelvis_r": {
+   "mean_err_pct": 6.712823577088435,
+   "ci": [
+    5.2824060497370855,
+    8.414396722087249
+   ],
+   "n_subjects": 15,
+   "meets_bar": false
+  },
+  "shank/pelvis_l": {
+   "mean_err_pct": 7.999282419557045,
+   "ci": [
+    6.722993345416282,
+    9.532968510955003
+   ],
+   "n_subjects": 15,
+   "meets_bar": false
+  },
+  "shank/pelvis_r": {
+   "mean_err_pct": 9.167350050212864,
+   "ci": [
+    7.713142602230862,
+    10.733454269798113
+   ],
+   "n_subjects": 15,
+   "meets_bar": false
+  },
+  "trunk/thigh_l": {
+   "mean_err_pct": 5.04760350522851,
+   "ci": [
+    3.7891129027677866,
+    6.564232415566289
+   ],
+   "n_subjects": 15,
+   "meets_bar": false
+  },
+  "trunk/thigh_r": {
+   "mean_err_pct": 4.4567441213203995,
+   "ci": [
+    3.1280331501255016,
+    6.338429984793816
+   ],
+   "n_subjects": 15,
+   "meets_bar": false
+  }
+ },
+ "near_far": {
+  "near": {
+   "mean_err_pct": 6.034491352582856,
+   "ci": [
+    5.257187910720975,
+    6.903708918300267
+   ],
+   "n_subjects": 15
+  },
+  "far": {
+   "mean_err_pct": 6.580714274501253,
+   "ci": [
+    5.793282301908648,
+    7.456681566646245
+   ],
+   "n_subjects": 15
+  }
+ },
+ "stability": {
+  "thigh/shank_l": {
+   "cv_across_trials_pct": 1.9286662390074427,
+   "ci": [
+    1.5222007155588728,
+    2.379729590873607
+   ],
+   "n_subjects": 15,
+   "cv_across_cameras_pct": 3.9935104733010336,
+   "meets_bar": true
+  },
+  "thigh/shank_r": {
+   "cv_across_trials_pct": 1.7152359591338684,
+   "ci": [
+    1.4936388509349057,
+    1.9552332666521894
+   ],
+   "n_subjects": 15,
+   "cv_across_cameras_pct": 4.29775291040296,
+   "meets_bar": true
+  },
+  "thigh/pelvis_l": {
+   "cv_across_trials_pct": 1.6508071599057443,
+   "ci": [
+    1.2891114691981411,
+    2.043569899792461
+   ],
+   "n_subjects": 15,
+   "cv_across_cameras_pct": 3.87101705827956,
+   "meets_bar": true
+  },
+  "thigh/pelvis_r": {
+   "cv_across_trials_pct": 1.5426683782860555,
+   "ci": [
+    1.2695883601662645,
+    1.8384491981368063
+   ],
+   "n_subjects": 15,
+   "cv_across_cameras_pct": 4.11233401557125,
+   "meets_bar": true
+  },
+  "shank/pelvis_l": {
+   "cv_across_trials_pct": 1.527231879806341,
+   "ci": [
+    1.1580648525310981,
+    1.9479907552610587
+   ],
+   "n_subjects": 15,
+   "cv_across_cameras_pct": 4.852176894946675,
+   "meets_bar": true
+  },
+  "shank/pelvis_r": {
+   "cv_across_trials_pct": 1.6223957384654286,
+   "ci": [
+    1.347620146494533,
+    1.8667965353139797
+   ],
+   "n_subjects": 15,
+   "cv_across_cameras_pct": 5.223423094241263,
+   "meets_bar": true
+  },
+  "trunk/thigh_l": {
+   "cv_across_trials_pct": 1.8286855949384075,
+   "ci": [
+    1.3629230688038432,
+    2.384946961764834
+   ],
+   "n_subjects": 15,
+   "cv_across_cameras_pct": 2.917418015692714,
+   "meets_bar": true
+  },
+  "trunk/thigh_r": {
+   "cv_across_trials_pct": 1.631265744239141,
+   "ci": [
+    1.3726792880146073,
+    1.8732963509140725
+   ],
+   "n_subjects": 15,
+   "cv_across_cameras_pct": 3.0314623416228432,
+   "meets_bar": true
+  }
+ },
+ "kill_criterion": {
+  "within_clip_per_frame_cv_pct": {
+   "thigh_l": 14.587253543834402,
+   "thigh_r": 14.62511754320862,
+   "shank_l": 16.751839226962666,
+   "shank_r": 16.918333672988613,
+   "pelvis": 10.41982356422641,
+   "trunk": 13.790713281023333
+  },
+  "across_trial_cv_pct_mean": 1.6808695867228036,
+  "within_clip_cv_pct_mean": 14.515513472040674,
+  "scan_adds_nothing": false
+ },
+ "absolute_mm": {
+  "thigh_l": {
+   "est_median_mm": 449.14377293028406,
+   "gt_h36m_median_mm": 480.83206023903034,
+   "gt_anatomical_median_mm": 402.9849882073122
+  },
+  "thigh_r": {
+   "est_median_mm": 448.12014603277083,
+   "gt_h36m_median_mm": 458.3830112886719,
+   "gt_anatomical_median_mm": 387.98698017057137
+  },
+  "shank_l": {
+   "est_median_mm": 377.09969556179124,
+   "gt_h36m_median_mm": 393.306524061321,
+   "gt_anatomical_median_mm": 393.306524061321
+  },
+  "shank_r": {
+   "est_median_mm": 378.86506063310264,
+   "gt_h36m_median_mm": 409.3574133527671,
+   "gt_anatomical_median_mm": 409.3574133527671
+  },
+  "pelvis": {
+   "est_median_mm": 197.67920540826157,
+   "gt_h36m_median_mm": 197.5980452557908,
+   "gt_anatomical_median_mm": 207.68109718218432
+  },
+  "trunk": {
+   "est_median_mm": 448.9642471680918,
+   "gt_h36m_median_mm": 460.03694763042347,
+   "gt_anatomical_median_mm": 513.0577922841134
+  }
+ },
+ "gt_lr_asymmetry_pct": {
+  "thigh": {
+   "S04": 2.033792588807574,
+   "S06": 2.6416696837437637,
+   "S07": 1.7594352964621074,
+   "S08": 2.9296672989493246,
+   "S09": 0.6191926364553928,
+   "S11": 0.4428165879064045,
+   "S12": 1.2053591580466798,
+   "S13": 2.3097170485486753,
+   "S14": 2.203299509295763,
+   "S15": 0.7458881526770482,
+   "S16": 7.324703370239616,
+   "S19": 9.925661217884748,
+   "S21": 1.611658277798698,
+   "S22": 1.2806148291952366,
+   "S23": 0.19654239191359202
+  },
+  "shank": {
+   "S04": 1.2850922899768327,
+   "S06": 2.5009286727732545,
+   "S07": 2.300145967757046,
+   "S08": 3.2527676359423867,
+   "S09": 2.3124713853877568,
+   "S11": 0.5059882236578908,
+   "S12": 2.076847255968608,
+   "S13": 1.8662480638391048,
+   "S14": 0.6112689594796329,
+   "S15": 0.978365014021561,
+   "S16": 4.283461789381919,
+   "S19": 5.324480546955851,
+   "S21": 0.6271375233441691,
+   "S22": 3.121598134126663,
+   "S23": 1.3863211293565274
+  },
+  "foot": {
+   "S04": 3.7208545144499503,
+   "S06": 2.654224201146761,
+   "S07": 2.442186889073834,
+   "S08": 3.7664467244982567,
+   "S09": 0.018185765886461463,
+   "S11": 2.6202191493620846,
+   "S12": 7.702982818301453,
+   "S13": 0.40289999695431333,
+   "S14": 5.048941303979488,
+   "S15": 0.24596352445735728,
+   "S16": 3.9973343459924284,
+   "S19": 2.3488291135158854,
+   "S21": 3.5681513924707398,
+   "S22": 5.326475819008684,
+   "S23": 0.684710559197146
+  }
+ },
+ "verdict": {
+  "accuracy_ratios_meeting_bar": "0/8",
+  "stability_ratios_meeting_bar": "8/8",
+  "undefined_accuracy": 0,
+  "undefined_stability": 0,
+  "gate_met": false
+ }
+}
