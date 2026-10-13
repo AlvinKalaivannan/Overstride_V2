@@ -390,6 +390,194 @@ None. Every sampled file parsed as valid JSON.
 
 ---
 
+## 8. Pose and 3D datasets (measurement track, phases 12–16)
+
+Sections 1–7 describe the Ferber archive. The measurement track uses a different
+set of datasets, and `CLAUDE.md` requires each one's licence, units and
+coordinate conventions recorded **here**, before its first number is reported.
+
+That rule was written in phase 12, after phases 3–11 had already reported
+numbers from the two datasets below, so **these two sections are retrospective**.
+Every dataset added from here on gets its section before first use.
+
+Everything below was measured on 2026-10-13 from the files on disk. Nothing is
+copied from the papers.
+
+### 8.1 AthleticsPose — role: **tune**
+
+| | |
+|---|---|
+| Source | Suzuki, Tanaka, Yeung & Fujii (2025) — arXiv 2507.12905 |
+| Licence | **CC BY-NC-SA 4.0**, SPDX `CC-BY-NC-SA-4.0` — `data/athleticspose/data/LICENSE-DATASET` |
+| Redistribution | Non-commercial, share-alike. **Source video is not released** — keypoints and derived metrics only |
+| On disk | `data/athleticspose/` — 2.3 GB, extracted |
+| Capture rate | **100 Hz** (`Timebase.Frequency`, all 14 QTM exports; cameras are Qualisys Miqus Video) |
+| Subjects | **24**, `S00`–`S23` |
+| Cameras | **8**, indices 0–7 |
+| Trials / clips | **500** trials; **3,998** per-camera clips (two of 4,000 absent) |
+| Grouping key | **subject** — see the warning below |
+| Role | **tune**. The development set; the frozen phase 7 baseline lives here |
+
+**Events, subjects and clips.** Eight events. The phase 3/7/12 action set is
+`running` + `sprint`, which is 15 distinct subjects.
+
+| event | subjects | clips | subject ids |
+|---|---|---|---|
+| discus | 2 | 144 | S00 S02 |
+| hurdle | 4 | 688 | S01 S17 S18 S20 |
+| javelin | 1 | 112 | S03 |
+| racewalk | 2 | 312 | S05 S10 |
+| running | 6 | 1,272 | S07 S09 S11 S13 S16 S19 |
+| sd | 9 | 912 | S04 S06 S08 S12 S14 S15 S21 S22 S23 |
+| shotput | 3 | 144 | S00 S02 S03 |
+| sprint | 9 | 414 | S04 S06 S08 S12 S14 S15 S21 S22 S23 |
+
+> **Subjects are not nested within event, and grouping by event leaks.** S00 and
+> S02 appear in both `discus` and `shotput`, S03 in both `javelin` and
+> `shotput`, and the `sd` and `sprint` cohorts are the *same nine subjects*.
+> Group by **subject**. Grouping by trial also leaks, because 8 cameras share one
+> trial.
+
+**Directory layout and array shapes.**
+
+```
+data/athleticspose/data/AthleticsPoseDataset/
+  camera_params/              14 .json    QTM export, 8 cameras each
+  det_markers2d_by_cam_coco/  3,998 .npy  (T, 17, 3) float32
+  det_markers2d_by_cam_ft/    3,998 .npy  (T, 17, 3) float32
+  gt_bboxes2d_by_cam/         3,998 .npy  (T, 4)     float64
+  gt_markers2d_by_cam/        3,998 .npy  (T, 17, 3) float64
+  gt_markers3d_by_cam/        3,998 .npz  keys: markers_h36m (T,17,3), p2mm (T,)
+  raw_markers_in_world/         500 .npy  (T, 84, 3) float64
+```
+
+Naming is `<modality>/<event>/<Snn>/<YYYYMMDD>_<trial>_<cam>.{npy,npz}`.
+`raw_markers_in_world` has no camera index — it is one file per trial.
+
+**Units, and the `p2mm` trap.** `markers_h36m` is in **PIXELS**, not
+millimetres. Each clip carries a per-frame `p2mm` factor and the released
+evaluator *divides* by it, uniformly on all three axes
+(`linghtning_module.py`: `y_sample / p2mm_sample[:, None, None]`). Reading the
+raw values as mm understates MPJPE about 3x and makes side-on views look
+near-frontal. **This cost two wrong claims across two reports** — see
+`results/phase03b.md`. Joint *angles* are unaffected, being scale-invariant.
+
+`raw_markers_in_world` is **float64 world millimetres**, zero NaN, with **z
+vertical** (one running trial spans z = 1.6 to 1793.9 mm, floor to head). It
+needs no `p2mm` and is the only metric 3D in the dataset.
+
+**The 84-marker mocap set is fully labelled** in the vendored upstream code:
+`data/athleticspose/repo/athleticspose/statics/joints.py:3-88` names all 84, and
+`joint_index_h36m_to_mocap` (same file, lines 177-195) gives the 84 → H36M-17
+mapping that `mocap_to_h36m()` (`athleticspose/utils.py:53-71`) applies.
+
+Three facts about that mapping, measured rather than assumed:
+
+- **`RKNE`/`LKNE` and `RANK`/`LANK` are already joint centres** — exactly the
+  midpoints of their medial/lateral pairs, to 0.000 mm. So knee and ankle carry
+  no convention ambiguity, and shank length is identical in both conventions.
+- **The hip does not match.** H36M defines the hip as `mean(RASI, RPSI)`, an
+  iliac-surface midpoint. The lab's own hip joint centre (`RHIP`/`LHIP`) sits
+  **81.07 mm** away, and the offset is rigid within the pelvis (max deviation
+  equals mean deviation across frames).
+- **That offset inflates the femur by +18.2%.** Anatomical femur measures
+  413.4 mm (R) / 420.7 mm (L) on one trial — inside the 390–460 mm anatomical
+  range — while the same trial in H36M convention gives 488.7 / 497.3 mm.
+  **This explains the 479 mm femur recorded as unexplained in
+  `results/phase03b.md`.** It is a definitional offset, not an error. Any
+  comparison of lifter output to mocap lengths must use the H36M convention on
+  both sides, or it charges the method for a convention mismatch.
+
+Across the 15 running + sprint subjects, anatomical femur spans **344–421 mm**,
+tibia **367–423 mm**, ASIS width **278–310 mm**.
+
+**Trial and clip lengths — there is no calibration window.**
+
+| | trials | frames (min / median / max) | seconds at 100 Hz |
+|---|---|---|---|
+| `running` raw trials | 159 | 40 / 73 / 174 | 0.40 / 0.73 / 1.74 |
+| `sprint` raw trials | 52 | 23 / 69 / 89 | 0.23 / 0.69 / 0.89 |
+| `running` per-camera clips | 1,272 | 25 / 68 / 174 | 0.25 / 0.68 / 1.74 |
+| `sprint` per-camera clips | 414 | 10 / 48 / 89 | 0.10 / 0.48 / 0.89 |
+
+> **No trial reaches 2 s.** `CLAUDE.md`'s phase 12 describes the scan as "2–3 s
+> standing side-on + the first strides". No such footage exists in this dataset —
+> these are short athletic efforts, not calibration passes. Phase 12 therefore
+> defines a scan as **one whole trial** and records the deviation. A standing
+> calibration pass cannot be validated on this dataset at all.
+
+**Open discrepancy — capture rate.** This dataset is **100 Hz**, but
+`scripts/video_kinematics.py:61` sets `MODEL_FPS = 120.0` and resamples input
+video to it, commented as "the rate the lifter was trained at". The lifter was
+trained on this dataset. `docs/AGENT_CONTEXT.md` lists the 120 figure as inferred
+from stride cadence and "not documented anywhere" — it *is* documented, here, as
+100 Hz. Phases 3 and 7 are unaffected: neither `phase3_infer.py` nor
+`phase7_inference_fix.py` resamples at all, so **the 3.4° / 3.43° / 3.18°
+figures do not depend on this**. Only the video tool's path does.
+
+### 8.2 AthletePose3D — role: **tune** (demoted from held-out, 2026-10-13)
+
+| | |
+|---|---|
+| Source | AthletePose3D — independent lab, 4 calibrated cameras |
+| Licence | **Non-commercial research only** |
+| On disk | `data/athletepose3d/` — 4.7 GB, **partial** |
+| Role | **tune**, demoted from held-out test |
+
+**Why it was demoted.** `CLAUDE.md` says a held-out dataset is not opened until
+the phase that tests on it, and that "looking at it early turns it into a tune
+set; if that happens, say so in the report and demote it." Phase 11 built a
+22,153-clip index over it and ran two measurements on it. By the rule's own
+logic it has been opened, so it is recorded here as tune. Phase 15's held-out
+claim rests on MoVi, the dual-system set and Bath — none of which has been
+opened or downloaded.
+
+**What is on disk, and what is missing.**
+
+```
+pose_3d.zip               1.46 GB   complete; read in place, never extracted
+data.zip*.part            3.26 GB   TRUNCATED — the raw video. 17 attempts, zero progress
+cam_param.json              24 KB   complete
+(pose_2d.zip)                       refused outright from the first attempt
+(model_params/)                      deliberately purged — AP3D weights would be train-on-test
+```
+
+The video never arrived, which is why **§7.5 of `results/phase11.md` is still
+open: the video tool has never run on real footage.** The blocker is Google
+Drive per-file share state, not size — `pose_3d.zip` downloaded without trouble.
+
+**Units trap.** Clip records carry `data_input` and `data_label`, and
+`data_label` is **image-normalised perspective 3D** — usable for angles, not for
+positions or lengths. The metric alternative is `joint_3d_camera` in the
+per-frame records of `train.pkl` / `valid.pkl` inside the same zip; phase 11
+measured thigh 503 mm and shank 337 mm from it. No code reads it yet —
+`scripts/phase11_clip_index.py` loads only `joint_3d_image`.
+
+**Running cohort** (`results/phase11.md`, index at
+`data/derived/ap3d_clip_index.json`): 1,872 clips over **3 subjects** at 120 fps
+— S2 222, S3 693, S4 957. Content-matched at worst per-coordinate error
+5.53e-08 against a 1e-05 tolerance; 21,529 of 22,153 clips matched.
+
+### 8.3 Datasets named but not present
+
+`CLAUDE.md`'s dataset table lists eight. Checked 2026-10-13:
+
+| dataset | role | on disk |
+|---|---|---|
+| AthleticsPose | tune | yes, complete |
+| AthletePose3D | tune (demoted) | partial — 3D yes, video no |
+| AMASS | train | no |
+| BEDLAM | train | no |
+| AddBiomechanics | train / reference | no |
+| BML MoVi | held-out test | no |
+| Dual-system gait & fitness | held-out test | no |
+| Bath synchronised set | candidate held-out | no; licence and content still unverified |
+
+Licences for the six absent sets are to be recorded here **before** download,
+per the standing rule.
+
+---
+
 ## Deferred to later phases
 
 - ~~**Generating the waveforms** from raw markers via the MATLAB pipeline.~~ **Done in phase 1C** — the vendored pipeline reproduces the archive's own `dv_r` exactly, so the 101-point curves it emits are verified. See `results/phase01c.md`.

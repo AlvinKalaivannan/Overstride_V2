@@ -181,7 +181,7 @@ use. Roles are assigned here and frozen.
 | **AMASS** | Mocap as SMPL body models, many labs incl. CMU running | yes | MPI non-commercial research | **train** — body-shape and pose priors for the scan and the segment fitter |
 | **BEDLAM** | Synthetic video with exact SMPL-X GT; varied bodies, clothing, cameras | some | MPI non-commercial research | **train** — lifter robustness to body shape and camera; targets the phase 11 transfer gap |
 | **AddBiomechanics** | 273 subjects, 70+ h of OpenSim-processed mocap from 15 datasets / 12 labs; no video | yes | CC BY 4.0 | **train / reference** — joint-angle ranges and segment-length ratios as plausibility bounds; normal-range reference for the demo |
-| **AthletePose3D** (in use) | Video + 3D GT, independent lab, 4 calibrated cameras | yes | non-commercial research only | **held-out test** — already measured once in phase 11; re-used only as the transfer check |
+| **AthletePose3D** (in use) | Video + 3D GT, independent lab, 4 calibrated cameras | yes | non-commercial research only | **tune** — demoted from held-out in phase 12: phase 11 indexed and measured it twice, so by the rule above it has been opened. Raw video never downloaded |
 | **BML MoVi** (York University) | 90 actors, synchronized mocap + 4-view video + IMU, 21 actions incl. jogging | yes | non-commercial research; no training for commercial use | **held-out test** |
 | **Dual-system gait & fitness set** (Sci. Data 2026) | 21 subjects; OptiTrack 120 Hz + two smartphones at 30 Hz; includes running | yes | CC BY-NC-ND 4.0 | **held-out test** — closest match to the deployment camera (phone, 30 fps). ND: summary metrics only. Confirm raw video is released, not only its YOLOv8 2D keypoints |
 | **Bath synchronised video / mocap / force plate set** (Sci. Data 2024) | Synchronized video, mocap and force plates for markerless validation | **unverified** | **unverified** | candidate held-out test — confirm movements and license first |
@@ -191,9 +191,10 @@ Not used, and why: **SportsPose** (activities not confirmed to include running);
 and sit-to-stand at 4.8° MAE, not running; cite it, don't train on it).
 
 **Why this mix.** The train sets teach the pipeline what bodies and running
-look like. The tune set is where decisions get made. The held-out sets are
-where the claim gets tested, and none of them has been looked at yet except
-AthletePose3D.
+look like. The tune sets are where decisions get made. The held-out sets are
+where the claim gets tested, and **none of them has been opened** — MoVi, the
+dual-system set and Bath are all still untouched, and all three are still
+undownloaded, so phase 15 depends on at least one of them arriving.
 
 ---
 
