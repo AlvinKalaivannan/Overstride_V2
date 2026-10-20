@@ -33,17 +33,47 @@ measurement that states its own reliability is worth more than one that is
 
 The same decomposition as phase 12, from the H36M-17 skeleton the lifter emits:
 
-| segment | direction | available? |
+| segment | direction | a sagittal error exists? |
 |---|---|---|
-| thigh, L and R | hip → knee | yes |
-| shank, L and R | knee → ankle | yes |
-| pelvis | l_hip → r_hip | yes |
-| trunk | pelvis → thorax | yes |
+| thigh, L and R | hip → knee | **yes — gated** |
+| shank, L and R | knee → ankle | **yes — gated** |
+| pelvis | l_hip → r_hip | no — it *is* the frame's medio-lateral axis |
+| trunk | pelvis → thorax | no — it *is* the frame's vertical axis |
 | **foot** | heel → toe | **no — H36M-17 has no toe keypoint** |
 
-Foot is reported as unavailable, not approximated — the precedent set by
-`sagittal_angles` returning NaN ankle angles rather than faking them, and
-followed by phase 12.
+**Second correction to this pre-registration, also 2026-10-19 and also before
+any result.** Phase 12's segment list was taken over without checking it against
+the quantity being measured. Only four of its segments have a sagittal direction
+error at all.
+
+The body frame is built *from* the pelvis and the trunk: `up` is
+`unit(thorax - pelvis)` re-orthogonalised and `ml` is `unit(r_hip - l_hip)`
+(`phase3_angles.sagittal_angles`). Expressed in that frame, the trunk direction
+is the vertical by construction and the pelvis has no sagittal component at all,
+so their "error" is identically zero in every frame of both skeletons. It is not
+small, it is definitionally absent — the frame cannot measure its own axes.
+
+Measuring them for real would need a shared world frame, and there is none: the
+lifter's output is scale-free and root-relative with no gravity, which is exactly
+why the frame is self-referential in the first place. **So pelvis and trunk are
+reported as not measurable against this ground truth, with that reason, in the
+same way foot is reported as unavailable** — the precedent `sagittal_angles` set
+by returning NaN ankle angles rather than faking them, and phase 12 followed.
+
+The gated set is therefore **four segments: thigh and shank, near and far**. That
+is the same information the hip and knee angles carry, which is the honest extent
+of what this skeleton supports, and the demo overlay may claim confidence for
+those four and nothing else.
+
+**What this buys, stated as a check rather than a hope.** Because
+`hip_flex = wrap(seg_angle(thigh) - 180)` and
+`knee_flex = wrap(seg_angle(shank) - seg_angle(thigh))`, the thigh's segment
+error must equal the hip angle error *exactly*, and the knee angle error must be
+the difference of the shank and thigh segment errors. Both identities are
+asserted in tests before any confidence is fitted. They are what make the
+per-segment decomposition a decomposition rather than a relabelling: a knee
+angle that looks fine because a thigh error and a shank error cancelled is a
+case this phase can see and the phase 7 report could not.
 
 ### Realized error, per segment, per frame
 
@@ -60,9 +90,8 @@ realized_error(segment, frame)
           proj = projection into the sagittal plane (normal = medio-lateral)
 ```
 
-This is the quantity the confidence must rank. It is defined for every segment
-above, including the ones no published joint angle covers (pelvis, trunk), and
-two adjacent segment errors bound the joint angle error between them.
+This is the quantity the confidence must rank, for the four gated segments. Two
+adjacent segment errors bound the joint angle error between them.
 
 ### Confidence inputs — and the rule that constrains them
 
