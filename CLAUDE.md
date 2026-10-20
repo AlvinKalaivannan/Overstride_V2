@@ -132,9 +132,15 @@ require breaking one, stop and raise it rather than proceeding.
   the tool runs is not the one that was being quoted:
   - **3.43°** — *historical*. Fine-tuned detections, zero padding, consecutive
     windows: exactly what phase 3 ran. Quote it only as that.
-  - **3.51°** — **deployable, and the one phases 13–16 are measured against.**
-    Generic COCO detections, edge padding, overlapped windows — what
-    `scripts/video_kinematics.py:241,244` actually loads and runs.
+  - **3.51° near limb / 3.62° far limb** — **deployable, and the one phases
+    13–16 are measured against.** Generic COCO detections, edge padding,
+    overlapped windows — what `scripts/video_kinematics.py:241,244` actually
+    loads and runs. Subject-level, 3.45° [3.27, 3.69] near and 3.56°
+    [3.13, 3.90] far (`results/phase7_baseline_ci.json`). **The far limb is the
+    larger of the two on this path**, and gates are read on the *paired*
+    per-subject difference, not on overlapping marginal intervals. With three
+    held-out subjects the resolution floor is about **0.2°**; below that, a real
+    improvement cannot be shown here.
   - **3.18°** — *not deployable*. It needs AthleticsPose's fine-tuned
     detections, which no real video can produce. A gate passed by switching to
     them has measured nothing, so **every gate names its detector.**

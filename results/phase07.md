@@ -281,3 +281,92 @@ made consistent.
 
 **n = 33 is small** for the fps estimate and the cadence assumption is still the
 weak link. The claim remains a range, not a number.
+
+---
+
+## Update, 2026-10-19 — the baseline with intervals, and the far limb
+
+**Nothing above this line changed.** The ablation was re-run over the same 592
+clips to emit per-clip rows, and every mean reproduced **bit-identically** to six
+decimal places, `capture_fps` included. The re-run adds two things the original
+could not supply, both of which the phase 13 gate asks for by name.
+
+### 1. The far limb, which was never measured
+
+The harness scored only the limb nearer the camera. The measurement track
+forbids pooling the two, and the phase 13 gate asks the far limb to "improve or
+stay within its CI" — against a figure that did not exist. It does now:
+
+| configuration | detector | near mean | far mean |
+|---|---|---|---|
+| baseline (phase 3) | fine-tuned | 3.4290° | **3.3066°** |
+| edge padding | fine-tuned | 3.3029° | **3.0166°** |
+| overlapped windows | fine-tuned | 3.2741° | **3.1917°** |
+| both fixes | fine-tuned | 3.1761° | **2.9259°** |
+| generic COCO | COCO | 3.8765° | **3.9518°** |
+| **generic COCO + fixes (deployable)** | COCO | **3.5093°** | **3.6177°** |
+
+**The sign of the near/far gap flips with the detector.** On fine-tuned
+detections the far limb is *better* than the near limb, by 0.12° at baseline and
+0.25° with both fixes. On generic COCO detections it is *worse*, by 0.08°
+without the fixes and 0.11° with them. Phase 3B measured the occlusion penalty
+as approximately zero and phase 11 measured error *falling* as the view becomes
+side-on; both of those used the fine-tuned path, and this says the far limb's
+apparent immunity does not survive a generic detector. That is a detector
+property, not a geometry property: the far limb is where a weaker 2D detector's
+keypoints are least certain.
+
+It also means the deployable configuration's honest headline is **two numbers,
+3.51° near and 3.62° far**, and the far one is the larger.
+
+### 2. Intervals, and what they say about what is measurable
+
+`scripts/phase7_baseline_ci.py` re-aggregates the rows: per-subject means first,
+then a percentile interval over 2,000 **subject** bootstraps
+(`subject_bootstrap_ci`, seed 11). Clips are not independent — 8 cameras share a
+trial — so resampling clips would understate the interval badly.
+
+AthleticsPose holds out **three** subjects (S11, S13, S16), so these intervals
+rest on three numbers and are reported as such. The subject-level mean also
+differs slightly from the published pooled clip mean, because subjects contribute
+unequal numbers of clips; both are in `results/phase7_baseline_ci.json`.
+
+Deployable configuration, subject-level:
+
+| limb | hip | knee | mean | 95% CI | pooled |
+|---|---|---|---|---|---|
+| near | 2.83° | 4.07° | 3.45° | [3.27, 3.69] | 3.51° |
+| far | 3.02° | 4.10° | 3.56° | [3.13, 3.90] | 3.62° |
+
+**The marginal intervals overlap for every configuration**, which is the expected
+result at n=3 and the reason the gate must be read on a *paired* comparison:
+every configuration is scored on the same clips, so the difference can be taken
+per subject before the interval is formed.
+
+Paired against the deployable configuration, negative meaning better:
+
+| comparison | limb | delta | 95% CI | |
+|---|---|---|---|---|
+| the two inference fixes, on the COCO path (COCO vs COCO + fixes) | near | **+0.43°** | [+0.19, +0.74] | excludes 0 |
+| | far | **+0.42°** | [+0.23, +0.80] | excludes 0 |
+| fine-tuned detections + both fixes | near | −0.36° | [−0.70, +0.04] | spans 0 |
+| | far | −0.69° | [−0.80, −0.52] | excludes 0 |
+| fine-tuned detections, phase 3 config | near | −0.09° | [−0.24, +0.09] | spans 0 |
+| | far | −0.24° | [−0.53, −0.04] | excludes 0 |
+
+### 3. What this fixes about the phase 13 gate
+
+Three consequences, and the third is the one that matters most for planning.
+
+1. **The gate now has the interval it demanded.** It can be stated against
+   3.5093° near / 3.6177° far, paired, per limb.
+2. **The far limb is the harder half on the deployable path**, so a method
+   reported as a single pooled improvement is hiding the half that needs it.
+3. **There is a resolution floor, and it is about 0.2°.** The smallest paired
+   difference whose interval excludes zero anywhere in this table is 0.24°
+   (far limb); on the **near** limb nothing below 0.43° separates. A phase 13
+   change worth 0.1° is therefore unmeasurable here no matter how real it is —
+   not because the effect is absent, but because three subjects cannot resolve
+   it. Any phase 13 arm should be budgeted against that floor before it is
+   built, and the detector replacement (+0.43° near, +0.42° far, both excluding
+   zero) is the one candidate already known to sit above it.
