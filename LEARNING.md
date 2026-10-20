@@ -89,3 +89,24 @@ that opened this file, not a backfill.
 - Go deeper: any projective-geometry text on cross-ratios — the general lesson is
   that a scale-invariant quantity must be built from measurements that transform
   differently under the nuisance parameter.
+
+## 2026-10-19 — A permutation control tells you *which level* your model works at
+
+- What it is: phase 14's confidence scored Spearman 0.37 against realized error.
+  Shuffling the stated error **within each clip** — destroying frame-level
+  ordering while leaving each clip's overall level untouched — still scored 0.28.
+  So the model ranks *clips*, and the per-frame information is worth only ~0.09
+  of the 0.37.
+- Where it shows up here: `scripts/phase14_confidence.py` (the `perm` block) and
+  the control table in `results/phase14.md`.
+- Gap I had: reading a single correlation as evidence of frame-level skill. A
+  correlation computed over pooled frames absorbs *every* level of variation at
+  once — between subjects, between clips, within a clip — and the headline number
+  cannot tell you which one it came from. The fix is cheap: shuffle within the
+  grouping you want to rule out and re-score.
+- This is the same idea as the project's subject-grouped splits, applied to the
+  *estimator* instead of the split: both exist to stop coarse-grained variation
+  masquerading as fine-grained skill.
+- Go deeper: Anselin's spatial-lag intuition, or more practically the
+  within/between decomposition behind mixed-effects models — a pooled
+  correlation is a weighted blend of a within-group and a between-group one.
