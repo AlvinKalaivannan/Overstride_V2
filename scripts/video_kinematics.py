@@ -11,7 +11,8 @@ WHAT THIS IS NOT
   results/phase05d.md. Do not add one.
 
 THE PIPELINE
-  decode -> Keypoint R-CNN COCO-17 -> temporal smoothing -> resample to the
+  decode -> Keypoint R-CNN COCO-17 -> temporal smoothing -> REORDER TO
+  H36M-17 -> resample to the
   model's capture rate -> MotionAGFormer 2D-to-3D lift -> sagittal angles
 
   Three things here differ from the research path in scripts/phase3_infer.py, all
@@ -86,11 +87,66 @@ def decode(path: Path, every: int, max_frames: int) -> tuple[list, float]:
     return frames, fps / every
 
 
+# COCO-17, as torchvision emits it.
+COCO = {"nose": 0, "l_eye": 1, "r_eye": 2, "l_ear": 3, "r_ear": 4,
+        "l_shoulder": 5, "r_shoulder": 6, "l_elbow": 7, "r_elbow": 8,
+        "l_wrist": 9, "r_wrist": 10, "l_hip": 11, "r_hip": 12,
+        "l_knee": 13, "r_knee": 14, "l_ankle": 15, "r_ankle": 16}
+
+
+def coco17_to_h36m17(kp: np.ndarray) -> np.ndarray:
+    """Reorder COCO-17 into the H36M-17 convention the lifter actually reads.
+
+    THIS WAS THE BUG. `detect_coco17`'s docstring used to claim COCO order "is
+    already exactly what the lifter expects". It is not. The released
+    `det_markers2d_by_cam_*` files -- the ones every published figure here was
+    measured from, and the only thing the checkpoint has ever been fed -- are in
+    H36M-17 order: joints 3 and 6 are the ankles (lowest in the image), 8, 9 and
+    10 are thorax, neck and head (highest), and joint 0 is the pelvis. Upstream
+    does no reordering either (`datasets/dynamic_dataset.py.__getitem__` feeds
+    the loaded array straight to the model), so the file order *is* the model's
+    input convention. Feeding COCO order put a nose where a pelvis belongs.
+
+    Pelvis, spine, thorax, neck and head have no COCO equivalent and are
+    constructed the standard way (mid-hip, mid-shoulder, and midpoints between
+    them). Only joints 0-6 and 8 matter for sagittal hip and knee angles, since
+    `sagittal_angles` builds its frame from pelvis, thorax and the two hips.
+
+    kp: (n, 17, 3) x, y, score in COCO order -> (n, 17, 3) in H36M order.
+    """
+    c, out = COCO, np.zeros_like(kp)
+    pelvis = 0.5 * (kp[:, c["l_hip"]] + kp[:, c["r_hip"]])
+    thorax = 0.5 * (kp[:, c["l_shoulder"]] + kp[:, c["r_shoulder"]])
+    out[:, 0] = pelvis
+    out[:, 1] = kp[:, c["r_hip"]]
+    out[:, 2] = kp[:, c["r_knee"]]
+    out[:, 3] = kp[:, c["r_ankle"]]
+    out[:, 4] = kp[:, c["l_hip"]]
+    out[:, 5] = kp[:, c["l_knee"]]
+    out[:, 6] = kp[:, c["l_ankle"]]
+    out[:, 7] = 0.5 * (pelvis + thorax)          # spine
+    out[:, 8] = thorax
+    out[:, 9] = 0.5 * (thorax + kp[:, c["nose"]])  # neck
+    out[:, 10] = kp[:, c["nose"]]                  # head
+    out[:, 11] = kp[:, c["l_shoulder"]]
+    out[:, 12] = kp[:, c["l_elbow"]]
+    out[:, 13] = kp[:, c["l_wrist"]]
+    out[:, 14] = kp[:, c["r_shoulder"]]
+    out[:, 15] = kp[:, c["r_elbow"]]
+    out[:, 16] = kp[:, c["r_wrist"]]
+    # a constructed joint is only as confident as the joints it came from
+    out[:, 0, 2] = np.minimum(kp[:, c["l_hip"], 2], kp[:, c["r_hip"], 2])
+    out[:, 8, 2] = np.minimum(kp[:, c["l_shoulder"], 2], kp[:, c["r_shoulder"], 2])
+    out[:, 7, 2] = np.minimum(out[:, 0, 2], out[:, 8, 2])
+    out[:, 9, 2] = np.minimum(out[:, 8, 2], kp[:, c["nose"], 2])
+    return out
+
+
 def detect_coco17(frames: list) -> tuple[np.ndarray, dict]:
     """COCO-17 keypoints per frame from torchvision Keypoint R-CNN.
 
-    Its keypoint order is already exactly what the lifter expects: nose, eyes,
-    ears, shoulders, elbows, wrists, hips, knees, ankles.
+    Returned in COCO order. `coco17_to_h36m17` converts; the lifter must never
+    be handed this array directly.
     """
     from torchvision.models.detection import (KeypointRCNN_ResNet50_FPN_Weights,
                                               keypointrcnn_resnet50_fpn)
@@ -257,6 +313,8 @@ def main() -> int:
               "throughout.")
         return 2
     kp = smooth(kp, fps)
+    kp = coco17_to_h36m17(kp)
+    print("reordered COCO-17 -> H36M-17 (the lifter's input convention)")
 
     n_model = max(81, int(round(len(kp) * MODEL_FPS / fps)))
     print(f"resampling {len(kp)} frames @ {fps:.0f} fps -> {n_model} @ "

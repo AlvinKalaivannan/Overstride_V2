@@ -47,3 +47,45 @@ that opened this file, not a backfill.
 - Go deeper: Wu & Cavanagh, "ISB recommendations for standardization in the
   reporting of kinematic data" (J. Biomech. 1995) — segment coordinate systems,
   and what a joint angle is actually relative to.
+
+## 2026-10-19 — A bug lives in the seam between two validated halves
+
+- What it is: `video_kinematics.py` fed torchvision's **COCO-17** keypoints into
+  a lifter whose input convention is **H36M-17** — a nose where a pelvis belongs.
+  The detector half had a test (torchvision emits COCO-17: true) and the lifting
+  half had a test (angles from AthleticsPose keypoints: true). Neither test
+  crossed the join, and that is where the defect was.
+- Where it shows up here: `scripts/video_kinematics.py:coco17_to_h36m17` (the
+  fix) and
+  `tests/test_video_pipeline.py::test_the_lifters_input_convention_is_h36m_read_from_the_released_data`.
+- Gap I had: trusting a docstring's claim about a data convention. The order was
+  knowable from the data in three ways — which joints are lowest in the image,
+  per-joint agreement with 2D ground truth, and whether upstream reorders before
+  the model. A comment is not evidence.
+- Also: **a plausibility range cannot catch this.** The lifter is a learned
+  prior, so it returns a human-shaped pose for almost any input, and hip ∈
+  [−40°, 60°] passes happily on a scrambled skeleton. Plausible is not correct.
+- Go deeper: MotionBERT's `coco2h36m` in `lib/utils/utils_data.py` is the
+  canonical version of this mapping — worth diffing against the one written
+  here, particularly its neck and head construction.
+
+## 2026-10-19 — Self-normalisation can cancel the very thing you are measuring
+
+- What it is: to estimate camera azimuth from video, phase 14's frozen protocol
+  divided the **apparent 2D hip width** by the **lifter's own 3D hip width**.
+  But the lifter's 3D comes from that same 2D, so the camera's compression
+  appears in numerator and denominator and divides out. Measured against the
+  ground-truth viewpoint metric the feature scored Spearman **−0.02**; the raw 2D
+  ratio, divided instead by a *population* anthropometric constant, reaches
+  Pearson **−0.973** over the same 592 clips.
+- Where it shows up here: `scripts/phase14_confidence.py:features_from_video`,
+  `R_POP`, and the diagnosis section of `results/phase14.md`.
+- Gap I had: treating "divide by something to cancel the unknown scale" as
+  automatically safe. The denominator has to be *independent* of the effect being
+  measured. Here the geometry is explicit: `w_2d = s·W·|cos θ|` and
+  `t_2d = s·T`, so `w_2d/t_2d = (W/T)·|cos θ|` — the trunk cancels the image
+  scale `s` precisely because the trunk is **not** affected by azimuth, and the
+  estimate's own width is affected, which is why it fails.
+- Go deeper: any projective-geometry text on cross-ratios — the general lesson is
+  that a scale-invariant quantity must be built from measurements that transform
+  differently under the nuisance parameter.

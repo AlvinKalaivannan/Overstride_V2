@@ -370,3 +370,56 @@ Three consequences, and the third is the one that matters most for planning.
    it. Any phase 13 arm should be budgeted against that floor before it is
    built, and the detector replacement (+0.43° near, +0.42° far, both excluding
    zero) is the one candidate already known to sit above it.
+
+### 4. A joint-ordering bug in the tool, found 2026-10-19
+
+While looking for a way to bound what a better 2D detector could buy, the
+released 2D files turned out not to be in the convention the tool assumed.
+
+`detect_coco17`'s docstring claimed torchvision's COCO-17 order "is already
+exactly what the lifter expects". **It is not.** The released
+`det_markers2d_by_cam_{coco,ft}` and `gt_markers2d_by_cam` arrays — the only
+2D the checkpoint has ever been fed, and the source of every figure in this
+report — are in **H36M-17** order. Three independent checks, all on the files
+themselves rather than on documentation:
+
+| check | result |
+|---|---|
+| lowest joints in the image (max mean *y*) | **3 and 6** — the H36M ankles. In COCO those indices are an ear and a shoulder |
+| highest joints (min mean *y*) | **10, 9, 8** — H36M head, neck, thorax |
+| per-joint distance, detections vs 2D ground truth | **3–28 px for all 17 joints**. A permuted order would put hundreds of pixels on most of them |
+| upstream code | `datasets/dynamic_dataset.py.__getitem__` loads the array and feeds it to the model **with no reordering**, so the file order *is* the input convention |
+
+That last table row also incidentally confirms the hip definition phase 12
+found: the four largest 2D errors are joints 0, 1, 4 and 7 — pelvis, both hips
+and spine, 24–28 px — while knees and ankles sit at 3–5 px. The hips are
+*defined* differently, they are not badly detected.
+
+**What was affected, and what was not.**
+
+- **No published number moves.** Phases 3, 3B, 7, 11 and 12 all read the released
+  H36M-ordered files directly. 3.4290°, 3.5093°, 3.1761°, the viewpoint curves
+  and the phase 12 scan are untouched.
+- **The video tool's output was invalid.** `scripts/video_kinematics.py` passed
+  torchvision's COCO-ordered keypoints straight into the lifter, so the model
+  received a nose where it expected a pelvis. Anyone running it on their own
+  footage got angles computed from a scrambled skeleton. Fixed by
+  `coco17_to_h36m17`, with pelvis, spine, thorax and neck constructed the
+  standard way from mid-hip, mid-shoulder and the nose.
+- **§7.5 is the reason this was survivable.** The tool has never been run on
+  real footage, so nothing was ever reported from it. The one claim that must be
+  withdrawn is implicit: this report's "the pipeline has been exercised on
+  synthetic video ... and on AthleticsPose keypoints" is exactly the shape of
+  the hole. Each half was exercised; **the seam between them was not**, and the
+  bug lived in the seam.
+
+**Why the guards did not catch it.** The tool checks hip ∈ [−40°, 60°] and knee
+∈ [−170°, 20°] and refuses to write output when it cannot find a subject. A
+scrambled skeleton still produces angles inside a plausible range, because the
+lifter is a learned prior that returns a human-shaped pose for almost any input.
+Plausibility is not correctness, and a range check cannot tell the difference.
+The test that should have caught it asserted the wrong half of the contract —
+that *torchvision* emits COCO-17 — which was true and irrelevant. It has been
+replaced by one that reads the lifter's input convention **out of the released
+data**, the same principle as the `MODEL_FPS` test: never pin a second constant
+beside the first, read it from the thing it describes.

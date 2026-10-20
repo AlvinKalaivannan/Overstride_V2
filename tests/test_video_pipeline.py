@@ -12,13 +12,75 @@ COCO17 = ["nose", "left_eye", "right_eye", "left_ear", "right_ear",
           "left_knee", "right_knee", "left_ankle", "right_ankle"]
 
 
-def test_detector_keypoint_order_matches_what_the_lifter_expects():
-    """torchvision emits COCO-17; the lifter consumes COCO-17. If torchvision
-    ever reorders, every angle silently becomes wrong."""
+def test_torchvision_still_emits_the_coco_order_the_mapping_assumes():
+    """The mapping is index arithmetic over this exact list. If torchvision ever
+    reorders its output, the mapping silently sends every joint somewhere else.
+
+    This test used to also claim "the lifter consumes COCO-17". It does not, and
+    the claim is why `video_kinematics.py` fed it a permuted skeleton -- see the
+    two tests below.
+    """
     torchvision = pytest.importorskip("torchvision")
     from torchvision.models.detection import KeypointRCNN_ResNet50_FPN_Weights
     names = KeypointRCNN_ResNet50_FPN_Weights.DEFAULT.meta["keypoint_names"]
     assert list(names) == COCO17
+
+
+def test_the_lifters_input_convention_is_h36m_read_from_the_released_data():
+    """Not from a comment, and not from a dataset card: from the files the
+    checkpoint was actually fed.
+
+    In H36M-17 the ankles are joints 3 and 6 and the head is joint 10, so in a
+    standing or running frame the ankles are the lowest points in the image and
+    the head the highest. In COCO-17 those indices are an ear, a shoulder and a
+    wrist. Upstream does no reordering between loading these files and the
+    model (`datasets/dynamic_dataset.py.__getitem__`), so the file order *is*
+    the model's input convention.
+    """
+    from conftest import DATASET
+
+    root = DATASET / "det_markers2d_by_cam_coco" / "running"
+    files = sorted(root.glob("*/*.npy")) if root.is_dir() else []
+    if not files:
+        pytest.skip(f"AthleticsPose detections not on disk at {root}")
+    a = np.load(files[0]).astype(float)
+    y = a[:, :, 1].mean(axis=0)                      # image y grows downward
+    assert set(np.argsort(-y)[:2]) == {3, 6}, "joints 3 and 6 should be ankles"
+    assert int(np.argmin(y)) == 10, "joint 10 should be the head"
+
+
+def test_coco_to_h36m_puts_every_joint_where_the_lifter_looks_for_it():
+    """A round trip over the joints that correspond one-to-one, which is where a
+    permutation bug lives. The constructed joints -- pelvis, spine, thorax, neck
+    -- are checked against their definitions instead, since mocap's pelvis is
+    not the mid-hip and never was (phase 12 measured that offset)."""
+    from phase3_angles import H36M
+    from video_kinematics import COCO, coco17_to_h36m17
+
+    rng = np.random.default_rng(11)
+    h = rng.normal(size=(30, 17, 3)) * 100.0
+    h[:, :, 2] = rng.uniform(0.4, 1.0, size=(30, 17))
+
+    # the same skeleton written out in COCO order
+    coco = np.zeros_like(h)
+    for name, ci in COCO.items():
+        if name in H36M:
+            coco[:, ci] = h[:, H36M[name]]
+    coco[:, COCO["nose"]] = h[:, H36M["head"]]
+
+    got = coco17_to_h36m17(coco)
+    for name in ("r_hip", "r_knee", "r_ankle", "l_hip", "l_knee", "l_ankle",
+                 "l_shoulder", "l_elbow", "l_wrist",
+                 "r_shoulder", "r_elbow", "r_wrist", "head"):
+        assert np.allclose(got[:, H36M[name], :2], h[:, H36M[name], :2]), name
+    assert np.allclose(got[:, H36M["pelvis"], :2],
+                       0.5 * (h[:, H36M["l_hip"], :2] + h[:, H36M["r_hip"], :2]))
+    assert np.allclose(got[:, H36M["thorax"], :2],
+                       0.5 * (h[:, H36M["l_shoulder"], :2]
+                              + h[:, H36M["r_shoulder"], :2]))
+    # and it is not a no-op: feeding COCO order straight in moves 15 of 17
+    moved = ~np.all(np.isclose(got[:, :, :2], coco[:, :, :2]), axis=(0, 2))
+    assert moved.sum() >= 15, f"only {moved.sum()} joints moved"
 
 
 def test_edge_padding_replicates_rather_than_zeroing():

@@ -62,8 +62,15 @@ SEGMENTS = {"thigh_l": ("l_hip", "l_knee"), "thigh_r": ("r_hip", "r_knee"),
 COCO = {"l_shoulder": 5, "r_shoulder": 6, "l_hip": 11, "r_hip": 12,
         "l_knee": 13, "r_knee": 14, "l_ankle": 15, "r_ankle": 16}
 
+# Hip width over trunk length, in 3D, from the TWENTY-ONE subjects that are not
+# held out (S00-S23 minus S11, S13, S16), 98 clips, median 0.4663, sd 0.027.
+# A population constant, not this clip's ground truth: it is what turns an
+# apparent 2D width into an angle without needing depth. The 5.8% between-
+# subject spread is the price, and it is small against the range azimuth covers.
+R_POP = 0.4663
+
 FEATURES = ["score_prox", "score_dist", "score_min", "len_dev", "lr_asym",
-            "ml_compression", "view_proxy_deg", "blend_weight", "speed",
+            "ml_2d_ratio", "view_proxy_deg", "blend_weight", "speed",
             "is_far", "is_shank"]
 # AthleticsPose holds out THREE subjects (S11, S13, S16 -- phase3_infer.py:53),
 # and the other 21 trained the lifter, so its error on them is training error and
@@ -131,23 +138,30 @@ def features_from_video(det2d: np.ndarray, est: np.ndarray,
     n = len(est)
     xy, score = det2d[:, :, :2], det2d[:, :, 2]
 
-    # Camera azimuth, video-only: the medio-lateral axis as the camera sees it
-    # against the same axis as the body model has it. Azimuth compresses ml and
-    # leaves the sagittal plane roughly intact, so dividing by a sagittal length
-    # cancels the image scale and the subject's size alike.
-    mid_hip_2d = 0.5 * (xy[:, COCO["l_hip"]] + xy[:, COCO["r_hip"]])
+    # Camera azimuth, video-only.
+    #
+    #   w_2d  =  s * W * |cos(theta)|          apparent hip separation
+    #   t_2d  =  s * T                         apparent trunk length, which the
+    #                                          camera does not foreshorten: the
+    #                                          trunk is vertical and the camera
+    #                                          roughly horizontal
+    #   w_2d / t_2d  =  (W / T) * |cos(theta)|  =  R_POP * |cos(theta)|
+    #
+    # so the unknown image scale s cancels and what remains is an angle, given a
+    # population value for the anthropometric ratio W/T.
+    #
+    # THE FROZEN PROTOCOL DIVIDED BY THE ESTIMATE'S OWN 3D WIDTH INSTEAD, and
+    # that is self-cancelling: the estimate's x,y come from the same detections,
+    # so the compression appears in numerator and denominator and divides out.
+    # Measured: the frozen feature correlates with the ground-truth viewpoint
+    # metric at Spearman -0.02, while this ratio alone reaches Pearson -0.973
+    # over the same 592 clips. See results/phase14.md.
     mid_sho_2d = 0.5 * (xy[:, COCO["l_shoulder"]] + xy[:, COCO["r_shoulder"]])
+    mid_hip_2d = 0.5 * (xy[:, COCO["l_hip"]] + xy[:, COCO["r_hip"]])
     ml_2d = np.linalg.norm(xy[:, COCO["l_hip"]] - xy[:, COCO["r_hip"]], axis=-1)
     trunk_2d = np.linalg.norm(mid_sho_2d - mid_hip_2d, axis=-1)
-    apparent_ml = ml_2d / np.maximum(trunk_2d, 1e-9)
-
-    mid_sho_3d = 0.5 * (est[:, H36M["l_shoulder"]] + est[:, H36M["r_shoulder"]])
-    ml_3d = np.linalg.norm(est[:, H36M["l_hip"]] - est[:, H36M["r_hip"]], axis=-1)
-    trunk_3d = np.linalg.norm(mid_sho_3d - est[:, H36M["pelvis"]], axis=-1)
-    # the scan: one ratio for the clip, the median over its frames
-    scanned_ml = float(np.median(ml_3d / np.maximum(trunk_3d, 1e-9)))
-    ml_compression = apparent_ml / max(scanned_ml, 1e-9)
-    view_proxy_deg = np.degrees(np.arccos(np.clip(ml_compression, 0.0, 1.0)))
+    ml_2d_ratio = ml_2d / np.maximum(trunk_2d, 1e-9)
+    view_proxy_deg = np.degrees(np.arccos(np.clip(ml_2d_ratio / R_POP, 0.0, 1.0)))
 
     # motion: how far the lower-body keypoints moved since the previous frame,
     # in units of trunk length so it does not depend on the image scale
@@ -183,7 +197,7 @@ def features_from_video(det2d: np.ndarray, est: np.ndarray,
             "len_dev": np.abs(lengths[name] - med) / max(med, 1e-9),
             "lr_asym": (np.abs(lengths[name] - lengths[partner])
                         / np.maximum(pair_mean, 1e-9)),
-            "ml_compression": ml_compression,
+            "ml_2d_ratio": ml_2d_ratio,
             "view_proxy_deg": view_proxy_deg,
             "blend_weight": blend,
             "speed": disp,
@@ -275,7 +289,14 @@ def fit_oof(X: np.ndarray, y: np.ndarray, groups: np.ndarray) -> np.ndarray:
         pipe = make_pipeline(StandardScaler(),
                              RidgeCV(alphas=np.logspace(-3, 3, 13)))
         pipe.fit(X[tr], y[tr])
-        oof[te] = pipe.predict(X[te])
+        # Duan's smearing estimator. exp() of a least-squares fit in log space
+        # predicts the GEOMETRIC mean, which is below the arithmetic mean the
+        # calibration bar is stated against -- the frozen protocol stated 2.0
+        # deg against 3.8 deg realized largely for this reason. The correction
+        # is the mean of exp(residual), and it is estimated on the TRAINING fold
+        # only, like every other fitted quantity here.
+        smear = float(np.mean(np.exp(y[tr] - pipe.predict(X[tr]))))
+        oof[te] = pipe.predict(X[te]) + np.log(max(smear, 1e-12))
     return oof
 
 
