@@ -196,9 +196,9 @@ use. Roles are assigned here and frozen.
 | **BEDLAM** | Synthetic video with exact SMPL-X GT; varied bodies, clothing, cameras | some | MPI non-commercial research | **train** — lifter robustness to body shape and camera; targets the phase 11 transfer gap |
 | **AddBiomechanics** | 273 subjects, 70+ h of OpenSim-processed mocap from 15 datasets / 12 labs; no video | yes | CC BY 4.0 | **train / reference** — joint-angle ranges and segment-length ratios as plausibility bounds; normal-range reference for the demo |
 | **AthletePose3D** (in use) | Video + 3D GT, independent lab, 4 calibrated cameras | yes | non-commercial research only | **tune** — demoted from held-out in phase 12: phase 11 indexed and measured it twice, so by the rule above it has been opened. Raw video never downloaded |
-| **BML MoVi** (York University) | 90 actors, synchronized mocap + 4-view video + IMU, 21 actions incl. jogging | yes | non-commercial research; no training for commercial use | **held-out test** |
-| **Dual-system gait & fitness set** (Sci. Data 2026) | 21 subjects; OptiTrack 120 Hz + two smartphones at 30 Hz; includes running | yes | CC BY-NC-ND 4.0 | **held-out test** — closest match to the deployment camera (phone, 30 fps). ND: summary metrics only. Confirm raw video is released, not only its YOLOv8 2D keypoints |
-| **Bath synchronised video / mocap / force plate set** (Sci. Data 2024) | Synchronized video, mocap and force plates for markerless validation | **unverified** | **unverified** | candidate held-out test — confirm movements and license first |
+| **BML MoVi** (York University) | 90 actors, synchronized mocap (Qualisys, 120 Hz) + 4-view video + IMU. 21 actions: **jogging yes; movement 3 is _running in place_**, which is not running gait | **jogging only** | non-commercial research; no redistribution; no training for commercial use. `doi:10.5683/SP2/JRHDRN` | **held-out test** — **do first.** 2 hand-held iPhone 7 + 2 FLIR, all 800×600 **30 fps**, synchronised to mocap: real consumer footage *with* ground truth, which is what §7.5 needs. No frame of it may be published |
+| **Dual-system gait & fitness set** (Zenodo `10.5281/zenodo.19720803`, v3) | 21 subjects; OptiTrack 7-cam 120 Hz + two smartphones at 30 Hz; includes running | yes | **CC BY 4.0** — verified 2026-10-19, *not* NC-ND as previously recorded | **held-out test** — closest match to the deployment camera, and the **only one whose video may appear in the demo** (attribution only). 1.1 GB. Still open: whether `03_markerless_data.zip` holds video or only 2D keypoints — answerable by a filename listing at the start of phase 15 |
+| **Bath BioCV** (Sci. Data 2024, `doi:10.15125/BATH-01258`) | 15 subjects; 9-camera HD video at **200 fps**, 15-camera optical mocap, force plates, photogrammetry. CMJ, walking, **running** | **yes** | **All Rights Reserved**; access on request, record marked restricted; biomechanics / machine-vision research only; not to be shared outside the dataset | **held-out test** — verified 2026-10-19. Highest-quality reference and furthest from a phone. ~15 GB **per participant**, ≈225 GB total, so take participants singly. Ships `c3d` marker tracks, not joint angles. No published footage |
 
 Not used, and why: **SportsPose** (activities not confirmed to include running);
 **OpenCap Monocular** (a *comparator*, not data — validated on walking, squats
@@ -206,9 +206,19 @@ and sit-to-stand at 4.8° MAE, not running; cite it, don't train on it).
 
 **Why this mix.** The train sets teach the pipeline what bodies and running
 look like. The tune sets are where decisions get made. The held-out sets are
-where the claim gets tested, and **none of them has been opened** — MoVi, the
-dual-system set and Bath are all still untouched, and all three are still
-undownloaded, so phase 15 depends on at least one of them arriving.
+where the claim gets tested, and **none of them has been opened.**
+
+The 2026-10-19 acquisition spike established that all three exist, what each
+licence actually says, and that two of the three release raw video — see
+`docs/data-inventory.md` §8.4, which carries the accessions, the blockers and
+the order to take them in. Establishing existence and licence is **not** opening
+a held-out set; browsing or plotting its contents would be, and none of that
+happened, so all three keep their role. What the spike did not settle, because it
+cannot be settled from outside the data, is whether any camera in MoVi or the
+dual-system set is **side-on** to the direction of travel — the geometry this
+project prescribes, and the one phase 11 measured error falling 3.50° → 1.77°
+towards. Phase 15 answers that first, and reports it even if the answer weakens
+the test.
 
 ---
 

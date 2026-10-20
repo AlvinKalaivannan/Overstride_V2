@@ -588,10 +588,85 @@ measured thigh 503 mm and shank 337 mm from it. No code reads it yet —
 | AddBiomechanics | train / reference | no |
 | BML MoVi | held-out test | no |
 | Dual-system gait & fitness | held-out test | no |
-| Bath synchronised set | candidate held-out | no; licence and content still unverified |
+| Bath synchronised set | candidate held-out | no; licence and content **now verified — see 8.4** |
 
 Licences for the six absent sets are to be recorded here **before** download,
-per the standing rule.
+per the standing rule. **Done for the three held-out candidates in 8.4** (2026-10-19); AMASS, BEDLAM and AddBiomechanics are still outstanding and are train-side, so they block nothing until a retrain is proposed.
+
+---
+
+### 8.4 The three candidate held-out sets — the acquisition spike, 2026-10-19
+
+`CLAUDE.md` names MoVi, the dual-system set and Bath as the held-out tests, and
+nothing in the repository recorded a URL, a DOI, an accession id or a download
+attempt for any of them: the only record of their existence was that table. This
+section is the bounded spike that fixes that, run before any download, per the
+standing rule that a licence is recorded here first.
+
+**None of these datasets was opened.** Establishing that a dataset exists, what
+its licence says, and whether it contains running is not browsing its contents;
+nothing was downloaded, listed, plotted or measured, so all three keep their
+held-out status.
+
+| | **BML MoVi** | **Dual-system gait & fitness** | **Bath BioCV** |
+|---|---|---|---|
+| Exists? | **yes** | **yes** | **yes** |
+| Accession | Scholars Portal Dataverse, `doi:10.5683/SP2/JRHDRN` | Zenodo, `doi:10.5281/zenodo.19720803`, v3, 2026-01-26 | Bath Research Data Archive, `doi:10.15125/BATH-01258` |
+| Paper | PLoS ONE 2021, `10.1371/journal.pone.0253157`; arXiv 2003.01888 | **none linked** — no related identifier on the record | Sci. Data 2024, `10.1038/s41597-024-04077-3` |
+| Licence | non-commercial scientific research only; no copying, sharing, distributing or re-selling; **also prohibits training methods for commercial use** | **CC BY 4.0** | **All Rights Reserved**, access on request, record marked *restricted* |
+| Running? | **jogging yes; "running" is _running in place_** | **yes** — one of seven movements | **yes** — CMJ, walking, running |
+| Raw video? | **yes** — 2× hand-held iPhone 7 and 2× FLIR Grasshopper, all 800×600, 30 fps | **unconfirmed** — `03_markerless_data.zip`, 486 MB, contents not stated | **yes** — 9 machine-vision cameras, HD, 200 fps |
+| Reference 3D | Qualisys, 15 cameras, 120 Hz; also released as SMPL meshes | OptiTrack, 7 cameras, 120 Hz | 15-camera optical; `raw.c3d`, `markers.c3d`, `led.c3d` per trial — **marker tracks, not joint angles** |
+| Size | 9 h mocap + 17 h video + 6.6 h IMU | 1.1 GB in four archives | ~15 GB **per participant** × 15 ≈ 225 GB |
+| Publishable demo footage? | **no** — no distribution | **yes**, with attribution | **no** — "not to be shared outwith the dataset itself" |
+
+**Three corrections to `CLAUDE.md`'s table follow from this.**
+
+1. **The dual-system set is CC BY 4.0, not CC BY-NC-ND 4.0.** The table's "ND:
+   summary metrics only" restriction does not exist. Attribution is the only
+   condition, and derivatives — including published demo frames — are permitted.
+   This is the *only* one of the three whose video could appear in a public demo.
+   Re-read the record at download time before relying on it.
+2. **Bath is no longer "unverified".** It contains running, and its licence is
+   the most restrictive of the three: All Rights Reserved, access by request,
+   reuse limited to biomechanics and machine-vision research, and no sharing
+   outside the dataset. It is usable as a held-out *test*, and it can never
+   supply a frame for the demo.
+3. **MoVi's "21 actions incl. jogging" needs the qualifier.** Movement (2) is
+   Jogging and movement (3) is **Running in place** (arXiv 2003.01888, §2.1).
+   Running in place is not running gait — there is no flight-phase translation —
+   so MoVi's usable running content is jogging across a 15-camera lab volume,
+   which is a small number of strides per trial. How many is unknown until the
+   phase that opens it.
+
+**What this changes about phase 15.** It is no longer blocked on whether its
+datasets exist; all three do, two have raw video confirmed and the third is one
+filename listing away from an answer. The ordering it implies:
+
+- **MoVi first.** Its video is 30 fps 800×600 from a *hand-held iPhone*, which is
+  the deployment camera almost exactly, and it is synchronised to 120 Hz
+  Qualisys mocap. That combination is what §7.5 of `results/phase11.md` has been
+  waiting for since phase 11: real consumer footage **with** ground truth.
+  Phase 16A's consented clip has no ground truth and cannot settle the same
+  question. The cost is that jogging is not sprinting and the camera is shaky,
+  both of which are the point rather than a defect.
+- **The dual-system set second**, and first if its video is confirmed: it is
+  1.1 GB against MoVi's tens of hours, it is CC BY, and its 30 Hz smartphone
+  pairing matches the deployment case equally well. The open question is
+  answerable at the start of phase 15 by listing the archive's filenames, which
+  is a file listing and not a reading of contents.
+- **Bath last.** 200 fps HD from 9 calibrated cameras is the highest-quality
+  reference of the three and the furthest from a phone, 225 GB will not fit the
+  laptop as a whole (a per-participant archive will), and `c3d` marker tracks
+  need the processing step that phases 1C and 10 already built for Fukuchi.
+
+**Not resolved, and left to phase 15 deliberately:** whether any camera in MoVi
+or the dual-system set is side-on to the direction of travel. Neither source
+states camera azimuth relative to the subject, and MoVi's floor plan is a figure
+in the paper rather than a table. Side-on is the geometry this project
+prescribes, and phase 11 measured error falling 3.50° → 1.77° as a view
+approaches it, so a frontal-only dataset would be a weak test. Answering it
+requires looking at the data, which is what phase 15 is for.
 
 ---
 
