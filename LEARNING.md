@@ -136,3 +136,48 @@ that opened this file, not a backfill.
   reference for predicting the hip centre from pelvic landmarks) and note that
   markerless and marker-based kinematics are therefore compared with a stated
   offset rather than expected to agree. Verify the reference before citing it.
+
+## 2026-10-19 — A low-pass helps only where the noise beats the signal
+
+- What it is: I pre-registered the expectation that filtering the 2D could remove
+  about **1.39 px** of the 16.34 px error, by decomposing the *error* signal into
+  a constant bias (13.21 px), a low-frequency part (6.45 px) and a
+  high-frequency part above 10 Hz (4.49 px). Measured, filtering made the 2D
+  error **worse**: 12.195 px unfiltered, 13.075 at 10 Hz, 15.591 at 6 Hz.
+- Gap I had: I measured the numerator and assumed the denominator. A low-pass
+  removes everything above the cutoff — error *and* signal — so it only helps
+  where the error's high-frequency energy exceeds the **true trajectory's**
+  high-frequency energy. A running ankle at 100 Hz has real content up there:
+  foot strike is near-impulsive, and smoothing it smears genuine motion. The
+  quantity that decides this is the per-band SNR, not the error spectrum alone.
+- Where it shows up here: the expectation in `results/phase13.md`, the
+  measurement in `scripts/phase13_filter.py`, and the correction in that report's
+  Results.
+- Go deeper: the Wiener filter makes this explicit — the optimal gain in each
+  band is `S/(S+N)`, so it keeps a band when signal dominates and suppresses it
+  when noise does. A fixed-cutoff Gaussian is that filter with the SNR assumed
+  rather than measured.
+
+## 2026-10-19 — A model learns its input pipeline, not just its task
+
+- What it is: the lifter was trained on one detector's 2D, and it has absorbed
+  that detector's error distribution. Three independent measurements, all the
+  same day, all pointing the same way:
+  1. perfect ground-truth 2D into the shipped checkpoint: **3.51° → 5.16°**,
+     *worse*, and monotone as the input is moved toward truth;
+  2. the same input into a checkpoint trained on it: **1.47°**, far better;
+  3. smoothing the 2D before lifting: worse at every cutoff, monotone again.
+- So "improve the input" is not automatically "improve the system". Anything
+  that changes the input distribution — a better detector, a filter, a different
+  resolution, int8 quantisation — is a **pairing** change, and the model has to
+  come with it.
+- Where it shows up here: `results/phase07.md` §§5–6, `results/phase13.md`, and
+  the `CKPT_FOR` table in `scripts/phase7_inference_fix.py` that phase 7 added
+  for this reason.
+- Why it matters beyond this project: it is why the free speed-ups taken in
+  phase 16 were chosen specifically to **not** touch the weights or the keypoint
+  distribution — native resolution and a person crop change how the detector is
+  *called*, not what it outputs.
+- Go deeper: this is dataset shift, and specifically covariate shift between
+  training and deployment inputs. Quiñonero-Candela et al., *Dataset Shift in
+  Machine Learning* (2009) is the standard reference.
