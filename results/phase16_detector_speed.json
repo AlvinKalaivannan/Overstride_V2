@@ -1,0 +1,74 @@
+{
+  "budget_ms": 50.0,
+  "lifter_ms": 11.2,
+  "threads": 16,
+  "frames_per_config": 6,
+  "note": "synthetic frames; detector cost tracks input size, not content. Keypoint accuracy is NOT measured here -- AthleticsPose releases no video, so it cannot be.",
+  "rows": [
+    {
+      "config": "current path, 640x480 frame (min_size=800)",
+      "ms_per_frame": 1054.6530833356276,
+      "fps": 0.9481790892197723,
+      "x_over_budget": 27.18178049834092,
+      "note": "torchvision upscales the shortest side to 800"
+    },
+    {
+      "config": "current path, 1280x720 frame (min_size=800)",
+      "ms_per_frame": 1252.0160499989288,
+      "fps": 0.7987118056520566,
+      "x_over_budget": 32.26845489687961,
+      "note": ""
+    },
+    {
+      "config": "native resolution, 640x480 (min_size=480)",
+      "ms_per_frame": 464.0791999991052,
+      "fps": 2.1548046109412535,
+      "x_over_budget": 11.960804123688279,
+      "note": "same weights, no upscaling"
+    },
+    {
+      "config": "half resolution, 320x240 input (min_size=320)",
+      "ms_per_frame": 332.0177166654806,
+      "fps": 3.0118874680640455,
+      "x_over_budget": 8.557157646017542,
+      "note": ""
+    },
+    {
+      "config": "tight person crop, 192x256 (min_size=256)",
+      "ms_per_frame": 248.15268333380422,
+      "fps": 4.029777097573607,
+      "x_over_budget": 6.395687714788769,
+      "note": "box found once and tracked, keypoints on the crop"
+    },
+    {
+      "config": "crop + batch of 4",
+      "ms_per_frame": 237.8637624988187,
+      "fps": 4.204087203089484,
+      "x_over_budget": 6.13050934275306,
+      "note": ""
+    },
+    {
+      "config": "crop, 4 threads",
+      "ms_per_frame": 469.60643333295593,
+      "fps": 2.1294427184539644,
+      "x_over_budget": 12.103258591055566,
+      "note": ""
+    },
+    {
+      "config": "crop, 8 threads",
+      "ms_per_frame": 264.7753833322592,
+      "fps": 3.776786147619804,
+      "x_over_budget": 6.824107817841733,
+      "note": ""
+    },
+    {
+      "config": "crop, 16 threads",
+      "ms_per_frame": 206.7244166658687,
+      "fps": 4.837357947979182,
+      "x_over_budget": 5.327948883140946,
+      "note": ""
+    }
+  ],
+  "speedup_vs_current": 5.101734475034349,
+  "best": "crop, 16 threads"
+}

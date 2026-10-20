@@ -502,3 +502,51 @@ release. It cannot: the blend curve measures out-of-distribution degradation of 
 fixed checkpoint, which runs the *opposite* way to detector quality. Placing a
 candidate detector still requires either a matched checkpoint or a dataset with
 video and 3D ground truth, which is phase 15's job.
+
+### 6. The 20 fps gate is unreachable with these weights, 2026-10-19
+
+`scripts/phase16_detector_speed.py` holds `keypointrcnn_resnet50_fpn` and its
+weights fixed and varies only **how it is called**, so everything it finds is
+free: no retraining, no distribution shift, no new dependency. Synthetic frames,
+16 threads, 6 frames per configuration.
+
+| configuration | ms/frame | fps | over the detector's 39 ms share |
+|---|---|---|---|
+| **current path, 640×480** (`min_size=800`) | **1,055** | 0.95 | **27×** |
+| current path, 1280×720 | 1,252 | 0.80 | 32× |
+| native resolution (`min_size=480`) | 464 | 2.15 | 12× |
+| half resolution (`min_size=320`) | 332 | 3.01 | 8.6× |
+| tight person crop, 192×256 | 248 | 4.03 | 6.4× |
+| crop + batch of 4 | 238 | 4.20 | 6.1× |
+| **crop, 16 threads** | **207** | **4.84** | **5.3×** |
+
+**A 5.1× speed-up is sitting in the call path.** The single largest item is that
+torchvision resizes every frame so its shortest side is `min_size=800` before
+the backbone sees it: a 640×480 frame is silently upscaled to 1067×800, 2.8× the
+pixels, and the tool never overrode it. Running at native resolution is 2.3× on
+its own; a tight person crop — the standard top-down pose pipeline, box found
+once and tracked — takes it to 5.1×.
+
+**And it is still 5.3× short.** 207 ms against the ~39 ms the detector may have
+if the 11.2 ms lifter is to fit inside a 50 ms frame. A two-stage ResNet50
+Keypoint R-CNN does not reach 39 ms on a laptop CPU; ONNX Runtime and int8
+quantisation might find another 2–3×, which still leaves it short, and int8 would
+perturb the keypoints that §5 showed the lifter is sensitive to.
+
+**So phase 16's pre-registered ≥ 20 fps gate cannot be met without changing the
+architecture, and §5 showed changing the architecture costs up to +1.65° unless
+the lifter is retrained to match it.** Those two facts together are a real
+decision, not an implementation detail, and the decision is recorded in
+`CLAUDE.md` rather than taken quietly here.
+
+**A measurement discrepancy, recorded rather than reconciled away.** The figures
+this track has been planning against — 2,790 ms at 640×480 and 3,280 ms at
+1280×720 — were timed ad hoc in an earlier session. This script measures 1,055
+and 1,252 ms for the same two cases. The ratio between the two resolutions
+agrees (1.19 against 1.18), so the *shape* reproduces and only the level differs;
+the likely cause is background load on the laptop at the time, since both runs
+used 16 threads on the same machine. **The 1,055 ms figure supersedes the
+2,790 ms one**, because it comes from a script in the repository that anyone can
+re-run, and because the relative comparisons that matter here are internal to a
+single run. The conclusion is unchanged either way: 27× or 56× over, the gate
+needs a different architecture.
