@@ -47,3 +47,27 @@ def test_resample_is_linear_on_a_ramp():
     seq = np.arange(30, dtype=float)[:, None]
     got = resample(seq, 59)[:, 0]
     assert np.allclose(got, np.linspace(0, 29, 59), atol=1e-9)
+
+
+def test_model_fps_matches_the_training_set_declared_capture_rate():
+    """MODEL_FPS is not a free parameter: it is the rate the lifter's training
+    data was captured at, and AthleticsPose declares it in every QTM export.
+    The previous value, 120.0, was inferred from stride cadence instead -- the
+    documented figure outranks the inference, and nothing may silently drift
+    back. Read from the dataset, never from a second hardcoded constant."""
+    import json
+
+    from conftest import DATASET
+    from video_kinematics import MODEL_FPS
+
+    params = sorted((DATASET / "camera_params").glob("*.json"))
+    if not params:
+        pytest.skip(f"AthleticsPose camera_params not on disk at {DATASET}")
+    rates = {}
+    for p in params:
+        rates[p.name] = json.loads(p.read_text(encoding="utf-8"))["Timebase"]["Frequency"]
+    assert len(set(rates.values())) == 1, f"mixed capture rates: {rates}"
+    declared = next(iter(set(rates.values())))
+    assert MODEL_FPS == declared, (
+        f"MODEL_FPS={MODEL_FPS} but the lifter's training set was captured at "
+        f"{declared} Hz across {len(rates)} QTM exports")

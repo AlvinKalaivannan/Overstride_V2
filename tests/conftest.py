@@ -7,3 +7,4 @@ sys.path.insert(0, str(REPO / "data" / "athleticspose" / "repo"))
 
 DERIVED = REPO / "data" / "derived"
 CKPT = REPO / "data" / "athleticspose" / "checkpoints"
+DATASET = REPO / "data" / "athleticspose" / "data" / "AthleticsPoseDataset"

@@ -25,10 +25,15 @@ THE PIPELINE
                      2, so seams matter far more here. Windows overlap 50% and
                      blend with a triangular weight.
   RATE MATCHING      the model's receptive field is 81 FRAMES, and the capture
-                     rate it was trained on is ~120 fps (recovered from stride
-                     cadence in phase 7A). A 30 fps clip has 4x the motion per
-                     frame. Keypoints are interpolated up to the model rate
-                     before lifting, and angles resampled back afterwards.
+                     rate it was trained on is 100 fps -- AthleticsPose's own
+                     Timebase.Frequency, in all 14 QTM exports (see
+                     docs/data-inventory.md 8.1). Phase 7A's ~120 fps was
+                     inferred from stride cadence and superseded by that
+                     documented figure: 0.0221 strides/frame is 2.21 strides/s
+                     at 100 Hz, plausible for these efforts, against 2.65 at
+                     120 Hz. A 30 fps clip has 3.3x the motion per frame.
+                     Keypoints are interpolated up to the model rate before
+                     lifting, and angles resampled back afterwards.
 
   Lifting is SCALE-FREE. phase 3 denormalised with a scale derived from
   ground-truth 3D, which real video does not have -- but the angles are computed
@@ -58,7 +63,7 @@ from phase3_angles import sagittal_angles  # noqa: E402
 from phase3_infer import load_model  # noqa: E402
 from phase7_inference_fix import lift  # noqa: E402
 
-MODEL_FPS = 120.0          # phase 7A, recovered from stride cadence
+MODEL_FPS = 100.0          # AthleticsPose Timebase.Frequency; docs/data-inventory.md 8.1
 PERSON_SCORE = 0.90
 LOWPASS_HZ = 10.0          # matches the Ferber pipeline's own filter
 PLAUSIBLE = {"hip": (-40.0, 60.0), "knee": (-170.0, 20.0)}
@@ -171,8 +176,12 @@ def check(angles: dict, kp: np.ndarray, meta: dict, n: int) -> list[str]:
 
 
 def error_budget() -> list[str]:
-    b = ["lifting error 3.4 deg mean sagittal MAE -- measured on AthleticsPose "
-         "held-out subjects, ITS OWN fine-tuned detections, a track capture rig"]
+    # The budget must quote the configuration THIS tool runs, which is the
+    # generic COCO checkpoint with edge padding and overlapped windows -- not
+    # phase 3's fine-tuned-detection row. Quoting phase 3's 3.43 deg and then
+    # adding the generic-detector penalty on top double-counts: the deployable
+    # figure already contains both the penalty and the two inference fixes.
+    b = []
     # Prefer the full-n measurement. The 200-clip file is a long-weighted
     # subsample kept for the record; quoting it here would overstate the cost.
     p7 = next((f for f in (REPO / "results" / "phase7_inference_full.json",
@@ -180,10 +189,30 @@ def error_budget() -> list[str]:
                if f.exists()), None)
     if p7 is not None:
         d = json.loads(p7.read_text(encoding="utf-8"))
-        b.append(f"+ generic COCO detector penalty "
-                 f"{d['generic_detector_cost_deg']:+.2f} deg -- measured in "
-                 "phase 7A by swapping the fine-tuned detections for generic "
-                 f"COCO ones on the same {d['n_clips']} clips")
+        by = {c["config"]: c for c in d["configs"]}
+        dep = by.get("generic COCO + fixes")
+        hist = by.get("baseline (phase 3)")
+        if dep is not None:
+            b.append(f"lifting error {dep['mean_mae']:.2f} deg mean sagittal MAE, "
+                     f"NEAR limb -- this exact configuration (generic COCO "
+                     f"detections, edge padding, overlapped windows) on "
+                     f"{d['n_clips']} AthleticsPose held-out clips, a track "
+                     "capture rig")
+            if dep.get("far_mean_mae") is not None:
+                b.append(f"far limb {dep['far_mean_mae']:.2f} deg -- reported "
+                         "separately, never averaged into the near limb")
+            if hist is not None:
+                b.append(f"for reference {hist['mean_mae']:.2f} deg is the "
+                         "historical phase 3 configuration, which used this "
+                         "dataset's own fine-tuned detections; real video cannot "
+                         "produce those, so the generic-detector penalty "
+                         f"({d['generic_detector_cost_deg']:+.2f} deg) is already "
+                         "inside the figure above, as is what the inference "
+                         "fixes recover")
+        else:
+            b.append("lifting error 3.51 deg mean sagittal MAE -- generic COCO "
+                     "detections with the phase 7 inference fixes, which is "
+                     "what this tool runs")
     b += ["+ UNQUANTIFIED Keypoint R-CNN error on your footage -- AthleticsPose "
           "does not release its source videos, so there is no video with ground "
           "truth to measure this against",
