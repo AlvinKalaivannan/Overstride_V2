@@ -280,7 +280,7 @@ recorded in `results/`.
 | **10** | C — a second lab's markers (Fukuchi) through the same MATLAB pipeline | Recovers sane kinematics outside the archive | Met — speed 1.71%; hip \|r\| 0.993; ankle weakest |
 | **11** | B1 — AthletePose3D: an independent lab through the lifting path | Lifter transfers; viewpoint penalty measured | Mixed — lifter degrades **1.84×**; viewpoint **3.50°→1.77°** measured; §7.5 still open |
 | **12** | **Scan** — per-subject body model from a short calibration pass | Segment lengths within the pre-registered error of mocap GT, stable across a subject's clips | Mixed — stability met (CV 1.7%), accuracy **not met** (0/8 ratios at 3%, errors 4.5–9.2%). The scan is precise but biased: limbs compressed 4.3%, pelvis widened 3.5%. Kill did not fire — keep it as a stabiliser, not anthropometry |
-| **13** | **Decompose & track** — segment-constrained fitting, per-segment state | Beats the **3.51° deployable** baseline on the tune set, same detector both sides; far limb improves or holds; no transfer regression | Planned |
+| **13** | **Decompose & track** — three arms: filter only, scan as a *consistency* constraint, both. Detector replacement first | Beats **3.51° near / 3.62° far** on the tune set, same detector both sides, paired per subject; near and far judged separately; no transfer regression | Planned — re-cut 2026-10-19 |
 | **14** | **Per-segment confidence** — calibrated measurement reliability + viewpoint-based expected error | Stated confidence matches realized error | Planned |
 | **15** | **Held-out validation** on datasets never touched | Per-dataset MAE with CIs, reported whether it wins or loses | Planned |
 | **16** | **Streaming demo** — near-real-time, browser, runs on real footage | Latency and accuracy budgets met on held-out footage; closes §7.5 | Planned |
@@ -349,18 +349,48 @@ values here are starting points, not commitments.
 
 ### Phase 13 — Decompose and track
 
-- Constrain every frame to the scanned segment lengths; the near limb's
-  lengths constrain the far limb. One filtered state per segment
-  (Kalman or one-euro, chosen on the tune set). AddBiomechanics joint ranges
-  are plausibility bounds, never a smoothing target.
+> **Re-cut 2026-10-19, before any of it was built.** The original plan rested on
+> "the near limb's lengths constrain the far limb". Phase 12 undermined exactly
+> that half: the scanned lengths are *precise* (across-trial CV 1.7%) and
+> *biased* (ratio error 4.5–9.2%, 0 of 8 ratios at the 3% bar), so propagating a
+> near-limb length to the far limb propagates the bias. The scan survives as a
+> **consistency constraint**, not as anthropometry, and the far-limb-from-near-
+> limb idea is dropped unless arm 2 shows the constraint is worth anything at
+> all. Two further facts, both measured rather than assumed, set the order:
+>
+> * the largest **quantified** term left is the 2D detector, +0.43° near and
+>   +0.42° far, both excluding zero (`results/phase7_baseline_ci.json`);
+> * with three held-out subjects the **resolution floor is about 0.2°** — below
+>   that nothing can be shown here, however real it is. Any arm whose expected
+>   gain is smaller than the floor is not worth building yet, and must say so
+>   instead of being run and reported as "no effect".
+
+Three arms, cheapest first, each stopping early if it clears the gate. Every arm
+is a separate row; a gain that only appears in combination is reported as such.
+
+1. **Filter only** — one filtered state per segment (Kalman or one-euro, chosen
+   on the tune set), no scan, no new data. The cheap half of the mandatory
+   ablation. AddBiomechanics joint ranges are plausibility bounds, never a
+   smoothing target.
+2. **Scan as a consistency constraint** — hold a subject's proportions fixed
+   across frames (14.5% frame-to-frame length wander down to 1.7%), with **no
+   claim that the lengths are true**. Reported in those words.
+3. **Both**, only if either arm moves the number.
+
+**Prerequisite, not part of this phase:** the detector replacement. It is the
+largest quantified accuracy term, the whole of phase 16's speed problem, and the
+only unquantified error in the tool's budget — one change on three problems — so
+it is measured first, and phase 13's arms are measured on top of whatever
+detector wins. Pairing a new detector with the right checkpoint is phase 7's own
+lesson (`CKPT_FOR` in `scripts/phase7_inference_fix.py`).
+
 - If the lifter is retrained, BEDLAM and AMASS are the only training data.
-- **Gate:** sagittal MAE beats the **3.51° deployable** baseline on
-  AthleticsPose — generic COCO detections on both sides of the comparison, never
-  the fine-tuned ones — with a subject-bootstrap CI excluding zero; far-limb MAE
-  improves or stays within its CI; AthletePose3D does not get worse than its
-  phase 11 figure.
-- **Ablations are mandatory:** scan only, filter only, both. Each gets its own
-  row. A gain that only shows up combined is reported as such.
+- **Gate:** sagittal MAE beats the **3.51° near / 3.62° far** deployable
+  baseline on AthleticsPose — the same detector on both sides of the comparison,
+  never the fine-tuned detections — read as a **paired per-subject difference**
+  with a subject-bootstrap CI excluding zero, because at n=3 every marginal
+  interval overlaps every other. Near and far limb each get their own verdict;
+  AthletePose3D does not get worse than its phase 11 figure.
 
 ### Phase 14 — Per-segment confidence
 
