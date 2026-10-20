@@ -2,7 +2,7 @@
   "source": "AthletePose3D, Yeung et al., CVSports at CVPR 2025",
   "drive_folder": "10YnMJAluiscnLkrdiluIeehNetdry5Ft",
   "licence": "non-commercial scientific research only",
-  "retrieved": "2026-09-14",
+  "retrieved": "2026-10-19",
   "model_params_deliberately_not_fetched": true,
   "files": {
     "cam_param.json": {
@@ -21,7 +21,7 @@
     "pose_2d.zip": {
       "drive_id": "13ISVY8G_NxrwLWFdxyTlOUhSyxVJsd93",
       "failed": true,
-      "quota_limited": true,
+      "quota_limited": false,
       "error": "FileURLRetrievalError"
     },
     "data.zip": {

@@ -546,6 +546,23 @@ The video never arrived, which is why **§7.5 of `results/phase11.md` is still
 open: the video tool has never run on real footage.** The blocker is Google
 Drive per-file share state, not size — `pose_3d.zip` downloaded without trouble.
 
+**Retry outcome, 2026-10-19 (one attempt, not a loop).** The September failure
+was read as a transient Drive share quota -- its error said "it may take up to
+24 hours". 35 days later a single fresh attempt
+(`.venv/Scripts/python.exe scripts/phase11_fetch_ap3d.py`, logs
+`data/athletepose3d/fetch5.log` / `.err`) still failed, and the error is now a
+different one: "Cannot retrieve the public link of the file. You may need to
+change the permission to 'Anyone with the link', or have had many accesses."
+`results/phase11_fetch.json` now records `quota_limited: false` for both
+`data.zip` and `pose_2d.zip`. The `.part` file is unchanged at 3,499,098,112
+bytes. **Conclusion: this is not a quota that expires.** Either the share's
+permissions changed or the per-file access state is persistent; from outside the
+share the two are indistinguishable. Treat AP3D raw video as unobtainable by
+this route, and do not schedule further retries -- the next move, if the video
+is wanted, is to ask the authors directly. `pose_3d.zip` remains complete and
+usable, so AP3D is still the phase 11 lifting-path test set; only the video,
+and therefore only §7.5, is blocked.
+
 **Units trap.** Clip records carry `data_input` and `data_label`, and
 `data_label` is **image-normalised perspective 3D** — usable for angles, not for
 positions or lengths. The metric alternative is `joint_3d_camera` in the

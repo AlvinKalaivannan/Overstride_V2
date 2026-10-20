@@ -328,9 +328,22 @@ Not one byte across five attempts. `pose_2d.zip` — the authors' own detections
 which would at least have given a detected-2D comparison without raw video — was
 refused outright from the first attempt.
 
-`scripts/phase11_retry_fetch.sh` continues on a ten-minute interval and the `.part`
-file preserves what arrived, so this may still resolve. But the finding does not
-depend on it, and the honest position is recorded now rather than left implied:
+`scripts/phase11_retry_fetch.sh` ran on a ten-minute interval and the `.part`
+file preserves what arrived, so this looked as though it might still resolve.
+
+> **Update, 2026-10-19.** It did not. The retry loop stopped at attempt 17 on
+> 2026-09-14 and was not rescheduled; a single fresh attempt 35 days later still
+> returned nothing, and the error text has *changed*. September's refusal was the
+> transient one ("it may take up to 24 hours"); October's is
+> "Cannot retrieve the public link of the file. You may need to change the
+> permission to 'Anyone with the link', or have had many accesses."
+> `results/phase11_fetch.json` records the new attempt with
+> `quota_limited: false`. So this is not a quota waiting to expire, and the
+> `.part` file is still 3,499,098,112 bytes — the same byte count as in
+> September. Logs: `data/athletepose3d/fetch5.log` / `.err`.
+
+The finding below does not depend on any of that, and the honest position was
+recorded at the time rather than left implied:
 
 **The video tool has never been run on real footage.** The blocker is dataset
 distribution — a public Google Drive share refusing to serve a file across several
