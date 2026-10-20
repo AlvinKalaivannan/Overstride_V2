@@ -131,7 +131,8 @@ that opened this file, not a backfill.
   *reducible*. Decompose first: which joints does the downstream quantity
   actually depend on, and how much of the residual is a definition rather than a
   mistake?
-- Go deeper: Seidel et al. on marker-based vs image-based joint-centre
-  definitions — the general name for this is the **joint-centre estimation**
-  problem, and it is why markerless and marker-based kinematics are compared with
-  offsets rather than expected to agree.
+- Go deeper: the problem has a name — **hip joint-centre estimation**. Start
+  with the regression-equation literature (Harrington et al. 2007 is the usual
+  reference for predicting the hip centre from pelvic landmarks) and note that
+  markerless and marker-based kinematics are therefore compared with a stated
+  offset rather than expected to agree. Verify the reference before citing it.
