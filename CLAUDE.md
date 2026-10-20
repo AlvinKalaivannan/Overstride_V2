@@ -2,6 +2,8 @@
 
 Injury screening for runners from monocular video.
 
+Learning mode: DEEP  -- see LEARNING.md
+
 **The claim being tested:** how much injury-classification performance is lost
 when lower-limb kinematics are recovered from a single camera instead of a
 motion capture lab. The deliverable is that degradation curve, measured. A
