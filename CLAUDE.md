@@ -36,7 +36,9 @@ any output, README, docstring, or plot title. Use "detect", "classify", or
 >
 > The injury question is closed and stays closed. The part of Overstride that
 > works is the **measurement**: side-on video → sagittal hip/knee/ankle angles at
-> 3.4° MAE. Phases 12–16 make that measurement more accurate, test it on datasets
+> **3.51° MAE as the tool actually ships** (3.43° in the configuration phase 3
+> ran — see the two baselines below). Phases 12–16 make that measurement more
+> accurate, test it on datasets
 > it has never seen, and ship it as a demo that runs on real footage.
 >
 > The method is borrowed from VSCS (the vehicle scanning project): **scan** the
@@ -122,11 +124,23 @@ require breaking one, stop and raise it rather than proceeding.
   report and demote it.
 - **Splits inside every dataset are grouped by subject**, same rule as `sub_id`
   above. A subject's clips never appear on both sides of a split.
-- **Every accuracy claim is a delta against the frozen baseline**: the phase 7
-  pipeline (`scripts/video_kinematics.py`, 3.43° sagittal MAE on AthleticsPose).
-  Report per dataset, per joint, with subject-level bootstrap CIs. A pooled
-  number alone is not reportable. If a change does not beat the baseline, say
-  so plainly and keep the baseline.
+- **Every accuracy claim is a delta against the frozen baseline, and the
+  baseline is two numbers, not one.** Phase 7 measured six configurations on the
+  same 592 AthleticsPose clips (`results/phase7_inference_full.json`); the one
+  the tool runs is not the one that was being quoted:
+  - **3.43°** — *historical*. Fine-tuned detections, zero padding, consecutive
+    windows: exactly what phase 3 ran. Quote it only as that.
+  - **3.51°** — **deployable, and the one phases 13–16 are measured against.**
+    Generic COCO detections, edge padding, overlapped windows — what
+    `scripts/video_kinematics.py:241,244` actually loads and runs.
+  - **3.18°** — *not deployable*. It needs AthleticsPose's fine-tuned
+    detections, which no real video can produce. A gate passed by switching to
+    them has measured nothing, so **every gate names its detector.**
+
+  They differ only by detector provenance (+0.45°) and the two inference fixes
+  (−0.25°). Report per dataset, per joint, with subject-level bootstrap CIs. A
+  pooled number alone is not reportable. If a change does not beat the baseline,
+  say so plainly and keep the baseline.
 - **Near and far limb are always reported separately.** A method that helps the
   near limb and hides a far-limb regression inside an average is a failed method.
 - **Ground truth is what the dataset shipped.** Never fit, smooth or re-derive a
@@ -248,7 +262,7 @@ recorded in `results/`.
 | **10** | C — a second lab's markers (Fukuchi) through the same MATLAB pipeline | Recovers sane kinematics outside the archive | Met — speed 1.71%; hip \|r\| 0.993; ankle weakest |
 | **11** | B1 — AthletePose3D: an independent lab through the lifting path | Lifter transfers; viewpoint penalty measured | Mixed — lifter degrades **1.84×**; viewpoint **3.50°→1.77°** measured; §7.5 still open |
 | **12** | **Scan** — per-subject body model from a short calibration pass | Segment lengths within the pre-registered error of mocap GT, stable across a subject's clips | Mixed — stability met (CV 1.7%), accuracy **not met** (0/8 ratios at 3%, errors 4.5–9.2%). The scan is precise but biased: limbs compressed 4.3%, pelvis widened 3.5%. Kill did not fire — keep it as a stabiliser, not anthropometry |
-| **13** | **Decompose & track** — segment-constrained fitting, per-segment state | Beats the 3.43° baseline on the tune set; far limb improves or holds; no transfer regression | Planned |
+| **13** | **Decompose & track** — segment-constrained fitting, per-segment state | Beats the **3.51° deployable** baseline on the tune set, same detector both sides; far limb improves or holds; no transfer regression | Planned |
 | **14** | **Per-segment confidence** — calibrated measurement reliability + viewpoint-based expected error | Stated confidence matches realized error | Planned |
 | **15** | **Held-out validation** on datasets never touched | Per-dataset MAE with CIs, reported whether it wins or loses | Planned |
 | **16** | **Streaming demo** — near-real-time, browser, runs on real footage | Latency and accuracy budgets met on held-out footage; closes §7.5 | Planned |
@@ -322,9 +336,11 @@ values here are starting points, not commitments.
   (Kalman or one-euro, chosen on the tune set). AddBiomechanics joint ranges
   are plausibility bounds, never a smoothing target.
 - If the lifter is retrained, BEDLAM and AMASS are the only training data.
-- **Gate:** sagittal MAE beats the **3.43°** baseline on AthleticsPose with a
-  subject-bootstrap CI excluding zero; far-limb MAE improves or stays within
-  its CI; AthletePose3D does not get worse than its phase 11 figure.
+- **Gate:** sagittal MAE beats the **3.51° deployable** baseline on
+  AthleticsPose — generic COCO detections on both sides of the comparison, never
+  the fine-tuned ones — with a subject-bootstrap CI excluding zero; far-limb MAE
+  improves or stays within its CI; AthletePose3D does not get worse than its
+  phase 11 figure.
 - **Ablations are mandatory:** scan only, filter only, both. Each gets its own
   row. A gain that only shows up combined is reported as such.
 
@@ -454,7 +470,7 @@ For phases 12–16, the report replaces the classifier items above with:
 | Scan | The per-subject calibration pass that produces the body model (phase 12) |
 | Segment | One rigid body part in the model: trunk, pelvis, thigh, shank or foot, per side |
 | Confidence | Per-segment, per-frame reliability of the *measurement*. Never an injury quantity |
-| Baseline (measurement) | The frozen phase 7 pipeline, 3.43° sagittal MAE on AthleticsPose |
+| Baseline (measurement) | The frozen phase 7 pipeline on AthleticsPose. **3.51°** as the tool ships (generic COCO + edge padding + overlapped windows) — the figure phases 13–16 are measured against. **3.43°** is the historical phase 3 configuration; **3.18°** is not deployable |
 | Held-out | A dataset not opened until the phase that tests on it |
 
 ---

@@ -78,6 +78,16 @@ absolute error** (MPJPE 51.7 mm), against a published band of 14.1–25.8° for
 generic models on clinical gait — the generic checkpoint here reproduces that
 band at 18.1°, which is what validates the setup.
 
+> **Which 3.4°?** That figure is the configuration phase 3 ran: AthleticsPose's
+> *fine-tuned* 2D detections, which a real video cannot produce. Phase 7 measured
+> all six configurations on the same 592 clips. The tool as it ships — generic
+> COCO detections, edge padding, overlapped windows — is **3.51°**, and that is
+> the baseline phases 13–16 are measured against. Fine-tuned detections with the
+> same two fixes reach 3.18°, which is *not* deployable for the same reason. The
+> whole spread is 0.33°, so nothing here turns on the choice; stating which one
+> is quoted does, because a later gate could otherwise be passed by swapping
+> detectors instead of improving the method.
+
 ![recovered vs true joint angles](figures/phase6_angle_recovery.png)
 
 Two findings make the camera path *better* than expected:
