@@ -23,10 +23,15 @@ ceiling is measurable with data already on disk and no video at all:
                                  wrongly is the mistake phase 7 documented)
   blend, alpha=0.5  det-coco     half the detector's error, same model
 
-The blend gives a sensitivity curve: angle error against 2D keypoint error in
-pixels. A candidate detector can then be placed on that curve from its 2D error
-alone, which is measurable on any dataset with 2D ground truth -- and therefore
-WITHOUT the video AthleticsPose does not release.
+The blend was built to give a sensitivity curve -- angle error against 2D
+keypoint error -- so a candidate detector could be placed on it from its 2D
+error alone, without the video AthleticsPose does not release. THAT DID NOT
+WORK, and the result is recorded rather than deleted: with the weights held
+fixed, cleaner input is monotonically WORSE (3.51 -> 5.16 deg), because the
+checkpoint has learned its detector's error distribution. The curve therefore
+runs opposite to detector quality and cannot place a candidate. What the blend
+does measure, and it is the more useful finding, is that a detector swap is not
+a drop-in change: it needs a matched lifter or it makes the tool worse.
 
 Near and far limb are reported separately throughout, per the measurement-track
 rule. No injury output; this is a measurement of a measurement.

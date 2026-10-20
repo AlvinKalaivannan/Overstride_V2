@@ -110,3 +110,28 @@ that opened this file, not a backfill.
 - Go deeper: Anselin's spatial-lag intuition, or more practically the
   within/between decomposition behind mixed-effects models — a pooled
   correlation is a weighted blend of a within-group and a between-group one.
+
+## 2026-10-19 — A mean hides which error matters, and some error is definitional
+
+- What it is: the generic COCO detector and the one fine-tuned on this dataset
+  have **the same** mean 2D error over the eight joints the sagittal angles use —
+  12.28 px against 12.18 px — yet differ by 0.33° in angle error. Fine-tuning did
+  not reduce the error, it **moved** it: knees and ankles 3.2–4.1 px instead of
+  5.4–6.4, hips slightly worse. The angles depend on the distal joints, so that
+  trade is a win that the mean cannot see.
+- And the hips sit at 21–23 px for *both*, because H36M's hip is the mean of the
+  ASI and PSI markers — a point **inside the pelvis** — while an image-based
+  detector marks a hip on the body surface. That error is **definitional**: no
+  detector can remove it without predicting mocap marker conventions. Phase 12
+  measured the same thing in 3D (81 mm, +18.2% femur inflation).
+- Where it shows up here: `scripts/phase7_detector_headroom.py` and
+  `results/phase07.md` §5.
+- Gap I had: treating a single "2D keypoint error" number as the quantity a
+  detector should be judged on, and treating the full gap to ground truth as
+  *reducible*. Decompose first: which joints does the downstream quantity
+  actually depend on, and how much of the residual is a definition rather than a
+  mistake?
+- Go deeper: Seidel et al. on marker-based vs image-based joint-centre
+  definitions — the general name for this is the **joint-centre estimation**
+  problem, and it is why markerless and marker-based kinematics are compared with
+  offsets rather than expected to agree.

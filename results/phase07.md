@@ -423,3 +423,82 @@ that *torchvision* emits COCO-17 — which was true and irrelevant. It has been
 replaced by one that reads the lifter's input convention **out of the released
 data**, the same principle as the `MODEL_FPS` test: never pin a second constant
 beside the first, read it from the thing it describes.
+
+### 5. What a better 2D detector is actually worth, 2026-10-19
+
+The approved plan called the detector replacement "the single highest-value
+change" on the strength of a +0.43° paired delta, a 56–66× speed gap and an
+unquantified error term. The accuracy half of that argument had never been
+bounded: if the lifter's own error with a *perfect* detector were already 3.4°,
+replacing the detector could buy 0.1° and no more.
+
+AthleticsPose ships `gt_markers2d_by_cam` — mocap markers projected into each
+camera, in the same H36M-17 convention as the detections — and
+`motionagformer-b-ath-gt-v1.ckpt`, trained on that input. So the bound is
+measurable with data already on disk and no video.
+`scripts/phase7_detector_headroom.py`, all 592 held-out clips:
+
+| input 2D | checkpoint | 2D error (px) | near | far | vs deployable |
+|---|---|---|---|---|---|
+| COCO detections | det-coco | 12.28 | **3.509°** | **3.618°** | — |
+| blend, half the 2D error | det-coco | 6.14 | 4.332° | 4.264° | **+0.823°** |
+| blend, quarter | det-coco | 3.07 | 4.680° | 4.628° | **+1.171°** |
+| ground-truth 2D | det-coco | 0.00 | 5.163° | 5.107° | **+1.653°** |
+| **ground-truth 2D** | **gt (matched)** | 0.00 | **1.468°** | **1.626°** | **−2.041°** |
+
+The deployable row reproduces 3.509° / 3.618° exactly, which is the script
+agreeing with `results/phase7_baseline_ci.json` on an independent code path.
+
+**Finding 1 — the checkpoint has learned its detector's error distribution, and
+cleaning the input without changing the weights is monotonically worse.**
+3.509° → 4.332° → 4.680° → 5.163° as the 2D is moved toward truth with the
+`det-coco` weights fixed. A *perfect* detector handed to the shipped checkpoint
+costs **+1.65°**. Phase 7 already documented pairing input and weights wrongly
+as a mistake; this is the same lesson measured in the other direction, and it
+means **a detector swap is not a drop-in change.** It requires a matched lifter,
+or it makes the tool worse.
+
+**Finding 2 — the 2.04° gap is mostly not a detector problem, and mean pixel
+error is the wrong statistic.** The fine-tuned detector is worth 0.33° of angle
+error (3.509° → 3.176°, phase 7 §1) while having **the same mean 2D error**:
+
+| joint | COCO det | fine-tuned det |
+|---|---|---|
+| pelvis | 20.5 px | 22.7 px |
+| r_hip / l_hip | 21.2 / 21.2 | **22.8 / 23.0** |
+| r_knee / l_knee | 5.4 / 5.8 | **3.6 / 4.1** |
+| r_ankle / l_ankle | 6.4 / 6.4 | **3.2 / 3.4** |
+| thorax | 11.3 | 14.9 |
+| **mean over the eight** | **12.28** | **12.18** |
+
+Two detectors, the same mean, 0.33° apart. Fine-tuning did not reduce the error,
+it **moved** it: tighter on the distal joints that set knee and ankle angles,
+looser on the hips. And the hips sit at 21–23 px for *both* — including a
+detector fine-tuned on this very mocap's 2D. That residual is **definitional**:
+H36M's hip is the mean of the ASI and PSI markers, a point inside the pelvis,
+while any image-based detector marks a hip on the body's surface. Phase 12
+measured the same offset in 3D — 81 mm, +18.2% femur inflation — and §4 above
+found it again as the four largest per-joint 2D errors.
+
+**So the plan's step 2 needs restating, not abandoning.**
+
+- The accuracy prize from a better detector is **not 2.04°**. That bound is
+  contaminated by a convention no detector can satisfy without predicting mocap
+  marker positions.
+- The realistic prize is the measured **0.33°** between a generic COCO detector
+  and one fine-tuned on this dataset — above the 0.2° resolution floor, and
+  worth having, but modest.
+- Most of it is available by being accurate **at the knees and ankles
+  specifically**. A candidate detector should be judged on distal-joint pixel
+  error, not on mean pixel error or COCO AP.
+- **The speed argument is untouched** and is now the main reason to replace the
+  detector: 2,790–3,280 ms/frame against phase 16's 50 ms budget. Accuracy is a
+  secondary, bounded benefit that arrives only with a matched lifter.
+
+**One hypothesis this falsified.** The blend was built to give a sensitivity
+curve — 2D pixel error against angle error — so that a candidate detector could
+be placed on it from its 2D error alone, without the video AthleticsPose does not
+release. It cannot: the blend curve measures out-of-distribution degradation of a
+fixed checkpoint, which runs the *opposite* way to detector quality. Placing a
+candidate detector still requires either a matched checkpoint or a dataset with
+video and 3D ground truth, which is phase 15's job.

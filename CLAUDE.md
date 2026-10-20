@@ -359,7 +359,9 @@ values here are starting points, not commitments.
 > all. Two further facts, both measured rather than assumed, set the order:
 >
 > * the largest **quantified** term left is the 2D detector, +0.43° near and
->   +0.42° far, both excluding zero (`results/phase7_baseline_ci.json`);
+>   +0.42° far, both excluding zero (`results/phase7_baseline_ci.json`) — but see
+>   the bound below: most of the detector-shaped gap is a marker convention, and
+>   the realistic prize is 0.33°;
 > * with three held-out subjects the **resolution floor is about 0.2°** — below
 >   that nothing can be shown here, however real it is. Any arm whose expected
 >   gain is smaller than the floor is not worth building yet, and must say so
@@ -377,12 +379,31 @@ is a separate row; a gain that only appears in combination is reported as such.
    claim that the lengths are true**. Reported in those words.
 3. **Both**, only if either arm moves the number.
 
-**Prerequisite, not part of this phase:** the detector replacement. It is the
-largest quantified accuracy term, the whole of phase 16's speed problem, and the
-only unquantified error in the tool's budget — one change on three problems — so
-it is measured first, and phase 13's arms are measured on top of whatever
-detector wins. Pairing a new detector with the right checkpoint is phase 7's own
-lesson (`CKPT_FOR` in `scripts/phase7_inference_fix.py`).
+**Prerequisite, not part of this phase:** the detector replacement — and it is
+now **bounded**, which changes what it is for. `results/phase07.md` §5, all 592
+clips:
+
+- a **perfect** 2D detector with matched weights gives **1.47° near / 1.63° far**,
+  so the whole detector-shaped gap is 2.04°;
+- but **most of that gap is a convention, not a detector.** Both hips sit at
+  21–23 px from projected mocap for *both* released detectors, including the one
+  fine-tuned on this dataset's own 2D, because H36M's hip is the mean of the ASI
+  and PSI markers — a point inside the pelvis that no image-based detector marks.
+  Phase 12 measured the same offset in 3D at 81 mm;
+- the **realistic** accuracy prize is the measured **0.33°** between a generic
+  COCO detector and a fine-tuned one — above the 0.2° floor, worth having,
+  modest. And it comes from **distal-joint accuracy specifically**: the two
+  detectors have the *same* mean 2D error, 12.28 px against 12.18 px, and differ
+  only in where it sits (knees and ankles 3.2–4.1 px against 5.4–6.4 px);
+- **a swap is not a drop-in.** Handing the shipped checkpoint cleaner-than-trained
+  2D is monotonically worse — 3.51° → 4.33° → 4.68° → 5.16° as the input moves
+  toward truth — so a new detector needs a matched lifter or it degrades the
+  tool. Phase 7's `CKPT_FOR` lesson, measured in the other direction.
+
+**So the detector is replaced for SPEED** — 2,790–3,280 ms/frame against phase
+16's 50 ms budget — with a bounded accuracy benefit that arrives only with
+matched weights. Judge candidates on **knee and ankle pixel error**, never on
+mean pixel error or COCO AP.
 
 - If the lifter is retrained, BEDLAM and AMASS are the only training data.
 - **Gate:** sagittal MAE beats the **3.51° near / 3.62° far** deployable
