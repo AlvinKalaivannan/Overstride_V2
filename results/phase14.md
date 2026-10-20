@@ -177,9 +177,26 @@ and they do not agree.
 rho(segment, subject) = Spearman( stated_error , realized_error )
                         over all out-of-fold frames of that subject
 
-GATE:  mean over subjects of rho  >=  0.30        per segment
-  and  the 95% subject-bootstrap CI lower bound  >  0
+GATE:  rho  >=  0.30   for EVERY held-out subject,  per segment
+reported:  the mean, the minimum, and a subject-bootstrap interval marked
+           nominal
 ```
+
+**Third correction, 2026-10-19, before any result.** The gate above originally
+read "mean over subjects >= 0.30 and the 95% subject-bootstrap CI lower bound
+> 0". That interval cannot exist here. **AthleticsPose holds out three
+subjects** — S11, S13, S16 (`phase3_infer.py:53`) — and the other 21 trained the
+lifter, so its error on them is training error and is unusable as a label. A
+bootstrap over three numbers resamples three numbers; its interval is an
+artefact of the resampling, not evidence.
+
+So the bar is stated per subject instead: **every** held-out subject must clear
+0.30. At n=3 that is both stronger than a mean and honest about what three
+subjects can support. The mean, the minimum and the nominal interval are all
+reported, and the figure's error bar is the observed per-subject range rather
+than a bootstrap.
+
+The same follows for the folds: **leave-one-subject-out, 3 folds**, not 5.
 
 Spearman is computed **within subject, then averaged**. Pooling frames across
 subjects would let between-subject differences in overall error masquerade as
@@ -193,8 +210,9 @@ is a failed confidence, and it must be visible.
 ```
 OLS:  realized_error  =  a + b * stated_error      out-of-fold frames
 
-GATE:  b in [0.80, 1.20]       per segment
-reported:  a, R^2, and the mean absolute calibration gap in degrees
+GATE:  b in [0.80, 1.20]       per segment, pooled over subjects
+reported:  b per subject, a, R^2, and the mean absolute calibration gap in
+           degrees
 ```
 
 Same structure as phase 4B's calibration check, applied to angles instead of
@@ -224,9 +242,10 @@ and the clip-level expected error only.
   `det-coco` checkpoint, edge padding and overlapped windows — the **deployable**
   configuration, 3.51°. Fine-tuned detections are not used: no real video can
   produce them, so a confidence fitted on them would be fitted on an artifact.
-- **Split: `StratifiedGroupKFold`-equivalent grouping on `subject`**, 5 folds. A
-  subject's frames never appear on both sides. 8 cameras share one trial, so
-  clip-level splitting would leak; this is the same rule as `groups=sub_id`.
+- **Split: `GroupKFold` on `subject`, 3 folds — leave-one-subject-out**, since
+  only three subjects are held out. A subject's frames never appear on both
+  sides. 8 cameras share one trial, so clip-level splitting would leak; this is
+  the same rule as `groups=sub_id`.
 - **All fitting inside the fold**: scaler, feature selection, ridge, calibration.
   Every reported number is out-of-fold.
 - **Intervals: subject bootstrap**, `subject_bootstrap_ci` from
@@ -249,6 +268,11 @@ Written down now, so it is not rationalised later:
 - **It could be ranking clips, not frames.** A per-clip permutation control is
   reported: shuffle stated error within each clip and re-score. It must collapse
   to ρ ≈ 0.
+- **Three subjects is three subjects.** Whatever this phase finds, it is found
+  on S11, S13 and S16. A confidence model that works on three people may not
+  work on thirty, and nothing in this phase can tell the difference. The
+  AthletePose3D transfer check is the only outside evidence available, and it
+  has three running subjects of its own.
 - **Realized error is measured against the lifter's own 3D, not the lab's.** The
   ground truth is AthleticsPose's released `markers_h36m`, used exactly as
   shipped, including its `p2mm` convention. Angles are scale-invariant, so the

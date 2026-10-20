@@ -84,8 +84,16 @@ def pad_to(chunk: np.ndarray, n: int, mode: str) -> np.ndarray:
 
 @torch.no_grad()
 def lift(model, det2d: np.ndarray, pad: str, windows: str,
-         scale: float = 1.0) -> np.ndarray:
-    """2D COCO-17 -> 3D. Scale-free by default; angles do not depend on it."""
+         scale: float = 1.0, with_weights: bool = False):
+    """2D COCO-17 -> 3D. Scale-free by default; angles do not depend on it.
+
+    with_weights also returns the per-frame blend weight each output frame was
+    built from: the sum of the triangular weights of the windows covering it.
+    A frame at a window centre carries ~1.0, a frame at a seam less, and an
+    edge-padded frame least of all -- which is a video-only signal for phase 14,
+    and the reason it is read out here rather than reimplemented beside this
+    function where it could drift from it.
+    """
     t = det2d.shape[0]
     coords = np.concatenate([det2d[:, :, :2],
                              np.zeros_like(det2d[:, :, :1])], axis=-1)
@@ -99,6 +107,9 @@ def lift(model, det2d: np.ndarray, pad: str, windows: str,
             valid = len(chunk)
             inp = torch.from_numpy(pad_to(chunk, CLIP, pad)[None]).float()
             out[start:start + valid] = model(inp)[0].numpy()[:valid]
+        if with_weights:
+            # every frame is covered exactly once, with no blending
+            return out * scale, np.ones(t)
         return out * scale
 
     # 50%-overlap sliding windows, blended with a triangular weight so there is
@@ -120,7 +131,10 @@ def lift(model, det2d: np.ndarray, pad: str, windows: str,
         got = model(inp)[0].numpy()
         acc[s:s + valid] += got[:valid] * tri[:valid]
         wts[s:s + valid] += tri[:valid]
-    return (acc / np.maximum(wts, 1e-9)) * scale
+    lifted = (acc / np.maximum(wts, 1e-9)) * scale
+    if with_weights:
+        return lifted, wts.reshape(t)
+    return lifted
 
 
 def clip_list(limit: int | None) -> list[tuple]:
@@ -211,7 +225,14 @@ def main() -> int:
             raise SystemExit(f"checkpoint missing: {CKPT_FOR[det]}")
         print(f"  {det:5} -> {CKPT_FOR[det]}")
 
-    err = {name: {"hip": [], "knee": []} for name, *_ in CONFIGS}
+    err = {name: {limb: {"hip": [], "knee": []} for limb in ("near", "far")}
+           for name, *_ in CONFIGS}
+    # Per-clip rows, carrying the subject id. The aggregate means below are
+    # unchanged; this exists because a mean with no rows behind it cannot be
+    # given a subject-grouped confidence interval, and the phase 13 gate asks
+    # for one. Clips are not independent -- 8 cameras share a trial -- so the
+    # interval must resample SUBJECTS, which needs the subject recorded here.
+    per_clip: list[dict] = []
     for i, (action, subj, stem, _n) in enumerate(clips):
         gt3d = np.asarray(np.load(
             DATA / "gt_markers3d_by_cam" / action / subj / f"{stem}.npz")["markers_h36m"])
@@ -225,36 +246,60 @@ def main() -> int:
         gt3d = gt3d[:n]
         near = ("l" if gt3d[:, H36M["l_hip"], 2].mean()
                 < gt3d[:, H36M["r_hip"], 2].mean() else "r")
-        ga = sagittal_angles(gt3d, near)
+        far = "r" if near == "l" else "l"
+        # The published figures are the NEAR limb, and the aggregate below still
+        # is -- nothing about them changes here. The FAR limb is scored
+        # alongside because the measurement track forbids reporting the two
+        # pooled, and the phase 13 gate asks the far limb to "improve or stay
+        # within its CI" -- which needs a far-limb baseline to compare against.
+        # There was none.
+        ga = {"near": sagittal_angles(gt3d, near),
+              "far": sagittal_angles(gt3d, far)}
 
         for name, det, pad, win in CONFIGS:
             est = lift(models[det], srcs[det][:n], pad, win)
-            ea = sagittal_angles(est, near)
-            for joint in ("hip", "knee"):
-                d = np.abs(ea[joint] - ga[joint])
-                if np.all(np.isfinite(d)):
-                    err[name][joint].append(float(d.mean()))
+            ea = {"near": sagittal_angles(est, near),
+                  "far": sagittal_angles(est, far)}
+            row = {"config": name, "action": action, "subject": subj,
+                   "clip": stem, "near": near, "n_frames": int(n)}
+            for limb in ("near", "far"):
+                for joint in ("hip", "knee"):
+                    d = np.abs(ea[limb][joint] - ga[limb][joint])
+                    ok = bool(np.all(np.isfinite(d)))
+                    row[f"{limb}_{joint}_mae"] = float(d.mean()) if ok else None
+                    if ok:
+                        err[name][limb][joint].append(float(d.mean()))
+            per_clip.append(row)
         if (i + 1) % 25 == 0:
             print(f"    {i + 1}/{len(clips)} clips")
 
     base = CONFIGS[0][0]
     rows = []
     for name, det, pad, win in CONFIGS:
-        hip = float(np.mean(err[name]["hip"]))
-        knee = float(np.mean(err[name]["knee"]))
+        hip = float(np.mean(err[name]["near"]["hip"]))
+        knee = float(np.mean(err[name]["near"]["knee"]))
         mean = (hip + knee) / 2
+        fhip = float(np.mean(err[name]["far"]["hip"]))
+        fknee = float(np.mean(err[name]["far"]["knee"]))
         rows.append({"config": name, "detector": det, "padding": pad,
                      "windows": win, "hip_mae": hip, "knee_mae": knee,
-                     "mean_mae": mean, "n": len(err[name]["hip"])})
+                     "mean_mae": mean, "n": len(err[name]["near"]["hip"]),
+                     "far_hip_mae": fhip, "far_knee_mae": fknee,
+                     "far_mean_mae": (fhip + fknee) / 2,
+                     "n_far": len(err[name]["far"]["hip"])})
     bmean = rows[0]["mean_mae"]
 
     print(f"\n=== VERDICT ===")
     print(f"  {'configuration':<24}{'detector':>9}{'pad':>7}{'windows':>13}"
-          f"{'hip':>8}{'knee':>8}{'mean':>8}{'vs base':>10}")
+          f"{'hip':>8}{'knee':>8}{'mean':>8}{'vs base':>10}"
+          f"{'far hip':>9}{'far knee':>10}{'far mean':>10}")
     for r in rows:
         print(f"  {r['config']:<24}{r['detector']:>9}{r['padding']:>7}"
               f"{r['windows']:>13}{r['hip_mae']:>8.2f}{r['knee_mae']:>8.2f}"
-              f"{r['mean_mae']:>8.2f}{r['mean_mae'] - bmean:>+10.2f}")
+              f"{r['mean_mae']:>8.2f}{r['mean_mae'] - bmean:>+10.2f}"
+              f"{r['far_hip_mae']:>9.2f}{r['far_knee_mae']:>10.2f}"
+              f"{r['far_mean_mae']:>10.2f}")
+    print("  near and far are reported separately, never pooled.")
 
     print(f"\n  phase 3 published 3.4 deg on the full 592 clips.")
     print(f"  baseline here on {rows[0]['n']} clips: {bmean:.2f} deg")
@@ -283,10 +328,19 @@ def main() -> int:
         out_path = OUT
     out_path.write_text(json.dumps({"capture_fps": fps, "n_clips": len(clips),
                                "n_multiwindow": n_multi, "configs": rows,
+                               "n_subjects": len({c[1] for c in clips}),
                                "fix_effect_deg": fixes,
                                "generic_detector_cost_deg": gap}, indent=2),
                    encoding="utf-8")
     print(f"\nwrote {out_path.relative_to(REPO)}")
+    rows_path = out_path.with_name(out_path.stem + "_rows.json")
+    rows_path.write_text(json.dumps(
+        {"source": "scripts/phase7_inference_fix.py",
+         "n_clips": len(clips), "n_rows": len(per_clip),
+         "note": "one row per (config, clip); a null MAE is a non-finite angle "
+                 "trace, excluded from that config mean exactly as before",
+         "rows": per_clip}, indent=2), encoding="utf-8")
+    print(f"wrote {rows_path.relative_to(REPO)} ({len(per_clip)} rows)")
     return 0
 
 

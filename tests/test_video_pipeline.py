@@ -71,3 +71,29 @@ def test_model_fps_matches_the_training_set_declared_capture_rate():
     assert MODEL_FPS == declared, (
         f"MODEL_FPS={MODEL_FPS} but the lifter's training set was captured at "
         f"{declared} Hz across {len(rates)} QTM exports")
+
+
+def test_blend_weights_are_one_per_frame_and_peak_at_window_centres():
+    """phase 14 reads the per-frame blend weight out of `lift` rather than
+    reimplementing the window arithmetic beside it, where it could drift. This
+    pins the contract: one weight per frame, and a frame covered by two windows
+    is weighted more than a frame at the very edge."""
+    import torch
+    from phase7_inference_fix import CLIP, lift
+
+    class Identity(torch.nn.Module):
+        def forward(self, x):
+            return x
+
+    n = 200
+    rng = np.random.default_rng(3)
+    det = np.concatenate([rng.normal(size=(n, 17, 2)) * 40.0 + 200.0,
+                          np.ones((n, 17, 1))], axis=-1)
+    out, w = lift(Identity(), det, "edge", "overlap", with_weights=True)
+    assert out.shape == (n, 17, 3) and w.shape == (n,)
+    assert np.all(w > 0)
+    assert w[CLIP // 2] > w[0]
+
+    out2, w2 = lift(Identity(), det, "edge", "consecutive", with_weights=True)
+    assert np.allclose(w2, 1.0), "consecutive windows cover each frame once"
+    assert np.allclose(out2, lift(Identity(), det, "edge", "consecutive"))
