@@ -11,8 +11,7 @@ WHAT THIS IS NOT
   results/phase05d.md. Do not add one.
 
 THE PIPELINE
-  decode -> Keypoint R-CNN COCO-17 -> temporal smoothing -> REORDER TO
-  H36M-17 -> resample to the
+  decode -> Keypoint R-CNN COCO-17 -> REORDER TO H36M-17 -> resample to the
   model's capture rate -> MotionAGFormer 2D-to-3D lift -> sagittal angles
 
   Three things here differ from the research path in scripts/phase3_infer.py, all
@@ -68,7 +67,16 @@ from phase7_inference_fix import lift  # noqa: E402
 
 MODEL_FPS = 100.0          # AthleticsPose Timebase.Frequency; docs/data-inventory.md 8.1
 PERSON_SCORE = 0.90
-LOWPASS_HZ = 10.0          # matches the Ferber pipeline's own filter
+# MEASURED HARMFUL, 2026-10-20 -- off by default. See results/phase13.md.
+# 10 Hz was chosen to match the Ferber pipeline's own filter and justified as
+# "the lifter was trained on temporally coherent input". The lifter was trained
+# on UNSMOOTHED released detections, and phase 13 arm 1 measured what smoothing
+# costs on 592 clips: +0.119 deg near [+0.019, +0.176] at the sigma this tool
+# actually applied to 30 fps footage, and +1.04 to +4.61 deg at stronger
+# settings. It also makes the 2D itself worse -- 12.195 px to 15.591 at 6 Hz --
+# because a running ankle has real high-frequency content that a low-pass smears
+# along with the jitter.
+LOWPASS_HZ = 0.0           # 0 disables it; --smooth-hz re-enables for comparison
 PLAUSIBLE = {"hip": (-40.0, 60.0), "knee": (-170.0, 20.0)}
 CROP_PAD = 0.35            # fraction of the box, each side; see crop_window
 
@@ -246,11 +254,14 @@ def detect_coco17(frames: list, crop: bool = True,
                 "detector_min_size": min(h, w)}
 
 
-def smooth(kp: np.ndarray, fps: float) -> np.ndarray:
+def smooth(kp: np.ndarray, fps: float, cutoff_hz: float | None = None) -> np.ndarray:
     """Low-pass the 2D tracks. Keypoint R-CNN is frame-independent and jitters;
     the lifter was trained on temporally coherent input."""
     from scipy.ndimage import gaussian_filter1d
-    sd = fps / (2.0 * np.pi * LOWPASS_HZ)
+    cutoff = LOWPASS_HZ if cutoff_hz is None else cutoff_hz
+    if cutoff <= 0.0:
+        return kp
+    sd = fps / (2.0 * np.pi * cutoff)
     if sd <= 0.3:
         return kp
     out = kp.copy()
@@ -355,6 +366,10 @@ def main() -> int:
     ap.add_argument("--out", required=True, type=Path)
     ap.add_argument("--every", type=int, default=1, help="use every Kth frame")
     ap.add_argument("--max-frames", type=int, default=300)
+    ap.add_argument("--smooth-hz", type=float, default=0.0,
+                    help="low-pass the 2D at this cutoff before lifting. OFF by "
+                         "default because phase 13 measured it harmful; kept so "
+                         "the measurement can be reproduced")
     ap.add_argument("--no-crop", action="store_true",
                     help="full-frame detection on every frame: 5x slower, "
                          "and the fallback if crop tracking misbehaves on "
@@ -392,7 +407,10 @@ def main() -> int:
         print("  This tool needs a single runner, filmed side-on, in frame "
               "throughout.")
         return 2
-    kp = smooth(kp, fps)
+    kp = smooth(kp, fps, args.smooth_hz)
+    if args.smooth_hz > 0:
+        print(f"  low-passed the 2D at {args.smooth_hz:.0f} Hz -- measured "
+              "HARMFUL in results/phase13.md; this is for comparison only")
     kp = coco17_to_h36m17(kp)
     print("reordered COCO-17 -> H36M-17 (the lifter's input convention)")
 

@@ -150,3 +150,20 @@ def test_a_clip_with_no_subject_is_refused_and_writes_nothing(tmp_path):
         sys.argv = argv
     assert code == 2, "noise contains no runner; the tool must refuse"
     assert not list(out.iterdir()), f"refused but still wrote {list(out.iterdir())}"
+
+
+def test_smoothing_is_off_by_default_and_opt_in():
+    """Phase 13 arm 1 measured the 2D low-pass as harmful: +0.119 deg near with
+    a CI excluding zero at the sigma this tool applied, and up to +4.6 deg at
+    stronger settings. It stays available so the measurement can be reproduced,
+    but it must not be on unless asked for."""
+    from video_kinematics import LOWPASS_HZ, smooth
+
+    kp = np.zeros((40, 17, 3))
+    kp[:, :, 0] = np.arange(40)[:, None] % 7          # something jagged
+    assert LOWPASS_HZ == 0.0, "the default must be off"
+    assert np.array_equal(smooth(kp, 30.0), kp), "default must not alter the 2D"
+    assert np.array_equal(smooth(kp, 30.0, 0.0), kp)
+    changed = smooth(kp, 100.0, 6.0)
+    assert not np.array_equal(changed, kp), "an explicit cutoff must still filter"
+    assert np.array_equal(changed[:, :, 2], kp[:, :, 2]), "scores are not a track"
