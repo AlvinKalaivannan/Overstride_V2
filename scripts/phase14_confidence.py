@@ -58,9 +58,19 @@ PAD, WINDOWS = "edge", "overlap"
 SEGMENTS = {"thigh_l": ("l_hip", "l_knee"), "thigh_r": ("r_hip", "r_knee"),
             "shank_l": ("l_knee", "l_ankle"), "shank_r": ("r_knee", "r_ankle")}
 
-# COCO-17, as torchvision emits and the lifter consumes.
-COCO = {"l_shoulder": 5, "r_shoulder": 6, "l_hip": 11, "r_hip": 12,
-        "l_knee": 13, "r_knee": 14, "l_ankle": 15, "r_ankle": 16}
+# THE 2D HERE IS H36M-ORDERED, NOT COCO-ORDERED.
+#
+# `det_markers2d_by_cam_coco` is named after the DETECTOR that produced it, not
+# after its joint order: the file ships in the same H36M-17 convention as the
+# lifter's input and output (joints 3 and 6 are the ankles, 10 is the head).
+# The first version of this script indexed it with COCO indices, which silently
+# read a shoulder where a hip belonged -- the identical mistake
+# `video_kinematics.py` was making, made again here. It was caught by the
+# ungated validator: the azimuth proxy scored Spearman -0.02 against the
+# ground-truth viewpoint metric when the same quantity, indexed correctly,
+# reaches -0.86. There is therefore no COCO table in this file at all, and
+# `tests/test_confidence.py` asserts the proxy against ground truth on real
+# clips so the seam cannot break again in silence.
 
 # Hip width over trunk length, in 3D, from the TWENTY-ONE subjects that are not
 # held out (S00-S23 minus S11, S13, S16), 98 clips, median 0.4663, sd 0.027.
@@ -125,6 +135,35 @@ def realized_errors(est: np.ndarray, gt: np.ndarray) -> dict[str, np.ndarray]:
 
 
 # ------------------------------------------------------------------ features --
+def azimuth_proxy(det2d: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Camera azimuth from the 2D detections alone. H36M-17 indices.
+
+      w_2d = s * W * |cos(theta)|     apparent hip separation
+      t_2d = s * T                    apparent trunk length, which the camera
+                                      does not foreshorten: the trunk is
+                                      vertical and the camera roughly horizontal
+      w_2d / t_2d = (W / T) * |cos(theta)| = R_POP * |cos(theta)|
+
+    so the unknown image scale s cancels and an angle remains, given a
+    population value for the anthropometric ratio W/T.
+
+    The frozen protocol divided by the ESTIMATE's own 3D width instead, which is
+    self-cancelling -- the estimate's x,y come from these same detections, so the
+    compression appears above and below the line. Measured: that feature scored
+    Spearman -0.02 against the ground-truth viewpoint metric; this one reaches
+    -0.86. See results/phase14.md.
+
+    Returns (ml_2d_ratio, view_proxy_deg), both per frame.
+    """
+    xy = det2d[:, :, :2]
+    mid_sho = 0.5 * (xy[:, H36M["l_shoulder"]] + xy[:, H36M["r_shoulder"]])
+    mid_hip = 0.5 * (xy[:, H36M["l_hip"]] + xy[:, H36M["r_hip"]])
+    ml = np.linalg.norm(xy[:, H36M["l_hip"]] - xy[:, H36M["r_hip"]], axis=-1)
+    trunk = np.linalg.norm(mid_sho - mid_hip, axis=-1)
+    ratio = ml / np.maximum(trunk, 1e-9)
+    return ratio, np.degrees(np.arccos(np.clip(ratio / R_POP, 0.0, 1.0)))
+
+
 def features_from_video(det2d: np.ndarray, est: np.ndarray,
                         blend: np.ndarray) -> tuple[dict, str, np.ndarray]:
     """Per-segment, per-frame inputs, from the detections and the estimate only.
@@ -138,34 +177,13 @@ def features_from_video(det2d: np.ndarray, est: np.ndarray,
     n = len(est)
     xy, score = det2d[:, :, :2], det2d[:, :, 2]
 
-    # Camera azimuth, video-only.
-    #
-    #   w_2d  =  s * W * |cos(theta)|          apparent hip separation
-    #   t_2d  =  s * T                         apparent trunk length, which the
-    #                                          camera does not foreshorten: the
-    #                                          trunk is vertical and the camera
-    #                                          roughly horizontal
-    #   w_2d / t_2d  =  (W / T) * |cos(theta)|  =  R_POP * |cos(theta)|
-    #
-    # so the unknown image scale s cancels and what remains is an angle, given a
-    # population value for the anthropometric ratio W/T.
-    #
-    # THE FROZEN PROTOCOL DIVIDED BY THE ESTIMATE'S OWN 3D WIDTH INSTEAD, and
-    # that is self-cancelling: the estimate's x,y come from the same detections,
-    # so the compression appears in numerator and denominator and divides out.
-    # Measured: the frozen feature correlates with the ground-truth viewpoint
-    # metric at Spearman -0.02, while this ratio alone reaches Pearson -0.973
-    # over the same 592 clips. See results/phase14.md.
-    mid_sho_2d = 0.5 * (xy[:, COCO["l_shoulder"]] + xy[:, COCO["r_shoulder"]])
-    mid_hip_2d = 0.5 * (xy[:, COCO["l_hip"]] + xy[:, COCO["r_hip"]])
-    ml_2d = np.linalg.norm(xy[:, COCO["l_hip"]] - xy[:, COCO["r_hip"]], axis=-1)
-    trunk_2d = np.linalg.norm(mid_sho_2d - mid_hip_2d, axis=-1)
-    ml_2d_ratio = ml_2d / np.maximum(trunk_2d, 1e-9)
-    view_proxy_deg = np.degrees(np.arccos(np.clip(ml_2d_ratio / R_POP, 0.0, 1.0)))
+    ml_2d_ratio, view_proxy_deg = azimuth_proxy(det2d)
+    mid_sho_2d = 0.5 * (xy[:, H36M["l_shoulder"]] + xy[:, H36M["r_shoulder"]])
+    trunk_2d = np.linalg.norm(mid_sho_2d - xy[:, H36M["pelvis"]], axis=-1)
 
     # motion: how far the lower-body keypoints moved since the previous frame,
     # in units of trunk length so it does not depend on the image scale
-    lower = [COCO[k] for k in ("l_hip", "r_hip", "l_knee", "r_knee",
+    lower = [H36M[k] for k in ("l_hip", "r_hip", "l_knee", "r_knee",
                                "l_ankle", "r_ankle")]
     disp = np.zeros(n)
     if n > 1:
@@ -188,9 +206,9 @@ def features_from_video(det2d: np.ndarray, est: np.ndarray,
         med = float(np.median(lengths[name]))
         pair_mean = 0.5 * (lengths[name] + lengths[partner])
         out[name] = {
-            "score_prox": score[:, COCO[a]],
-            "score_dist": score[:, COCO[b]],
-            "score_min": np.minimum(score[:, COCO[a]], score[:, COCO[b]]),
+            "score_prox": score[:, H36M[a]],
+            "score_dist": score[:, H36M[b]],
+            "score_min": np.minimum(score[:, H36M[a]], score[:, H36M[b]]),
             # phase 12: a subject's length is stable across trials to 1.7% but
             # wanders 14.5% frame to frame, so a frame whose limb is the wrong
             # length is a frame the lifter lost

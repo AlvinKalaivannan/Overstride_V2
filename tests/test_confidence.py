@@ -105,3 +105,51 @@ def test_features_never_see_ground_truth():
     assert list(sig.parameters) == ["det2d", "est", "blend"]
     sig = inspect.signature(realized_errors)
     assert list(sig.parameters) == ["est", "gt"]
+
+
+def test_the_azimuth_proxy_tracks_real_camera_obliquity():
+    """The seam test that was missing.
+
+    Every unit test above passes on random arrays, so none of them can catch the
+    failure that actually happened: reading the released 2D with COCO indices
+    when it ships in H36M order. That mistake leaves the proxy varying
+    plausibly while measuring nothing, and only ground truth exposes it. No
+    model inference here -- the proxy is a function of the detections alone.
+    """
+    import numpy as np
+
+    from conftest import DATASET
+    from phase14_confidence import azimuth_proxy
+    from phase3_angles import H36M
+
+    scipy_stats = pytest.importorskip("scipy.stats")
+    det_root = DATASET / "det_markers2d_by_cam_coco" / "running"
+    gt_root = DATASET / "gt_markers3d_by_cam" / "running"
+    if not det_root.is_dir():
+        pytest.skip(f"AthleticsPose detections not on disk at {det_root}")
+
+    proxy, truth = [], []
+    for f in sorted(det_root.glob("*/*.npy"))[:60]:
+        g = gt_root / f.parent.name / f"{f.stem}.npz"
+        if not g.exists():
+            continue
+        det = np.load(f).astype(float)
+        gt = np.asarray(np.load(g)["markers_h36m"])
+        n = min(len(det), len(gt))
+        if n < 20:
+            continue
+        _, deg = azimuth_proxy(det[:n])
+        lh, rh = gt[:n, H36M["l_hip"]], gt[:n, H36M["r_hip"]]
+        width = np.linalg.norm(lh - rh, axis=-1)
+        depth = np.abs(lh[:, 2] - rh[:, 2])
+        vr = float(np.mean(depth / np.maximum(width, 1e-9)))
+        proxy.append(float(np.median(deg)))
+        truth.append(float(np.degrees(np.arcsin(min(vr, 1.0)))))
+
+    if len(proxy) < 10:
+        pytest.skip("too few clips with both detections and ground truth")
+    rho = scipy_stats.spearmanr(proxy, truth).statistic
+    assert rho > 0.5, (
+        f"azimuth proxy vs ground-truth obliquity: Spearman {rho:.3f}. "
+        "Near zero means the 2D is being read in the wrong joint order, or the "
+        "proxy is normalised by something that cancels the effect.")
