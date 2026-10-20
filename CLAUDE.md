@@ -281,7 +281,7 @@ recorded in `results/`.
 | **11** | B1 — AthletePose3D: an independent lab through the lifting path | Lifter transfers; viewpoint penalty measured | Mixed — lifter degrades **1.84×**; viewpoint **3.50°→1.77°** measured; §7.5 still open |
 | **12** | **Scan** — per-subject body model from a short calibration pass | Segment lengths within the pre-registered error of mocap GT, stable across a subject's clips | Mixed — stability met (CV 1.7%), accuracy **not met** (0/8 ratios at 3%, errors 4.5–9.2%). The scan is precise but biased: limbs compressed 4.3%, pelvis widened 3.5%. Kill did not fire — keep it as a stabiliser, not anthropometry |
 | **13** | **Decompose & track** — three arms: filter only, scan as a *consistency* constraint, both. Detector replacement first | Beats **3.51° near / 3.62° far** on the tune set, same detector both sides, paired per subject; near and far judged separately; no transfer regression | Planned — re-cut 2026-10-19 |
-| **14** | **Per-segment confidence** — calibrated measurement reliability + viewpoint-based expected error | Stated confidence matches realized error | Planned |
+| **14** | **Per-segment confidence** — calibrated measurement reliability + viewpoint-based expected error | Confidence ranks frames by realized error (ρ ≥ 0.30, every subject) and the stated error is the right size (slope in [0.8, 1.2]) | Mixed — **2 of 4 segments rank their error** (both shanks, ρ 0.34); **1 of 4 is also calibrated**; and the permutation control shows ~4/5 of the skill is **between clips**, not between frames. It is a viewpoint meter. Camera azimuth *is* recoverable from video alone, r = 0.974 |
 | **15** | **Held-out validation** on datasets never touched | Per-dataset MAE with CIs, reported whether it wins or loses | Planned |
 | **16** | **Streaming demo** — near-real-time, browser, runs on real footage | Latency and accuracy budgets met on held-out footage; closes §7.5 | Planned |
 
@@ -402,6 +402,30 @@ lesson (`CKPT_FOR` in `scripts/phase7_inference_fix.py`).
   pre-register), and stated expected error vs realized error has a calibration
   slope in **[0.8, 1.2]** (pre-register). Same structure as phase 4B's
   calibration check, applied to angles instead of labels.
+
+> **Outcome, 2026-10-19 — `results/phase14.md`.** Partially met, and the useful
+> part is not the part that was planned.
+>
+> * **Only four segments have a sagittal error to rank.** The body frame is built
+>   from the pelvis and the trunk, so those two cannot have one; foot has no toe
+>   keypoint. Thigh and shank, near and far, is the whole measurable set.
+> * **Both shanks clear ρ 0.30 for every subject; both thighs do not.** One
+>   segment of four is also correctly scaled. Kill did not fire.
+> * **It is a viewpoint meter.** Camera azimuth carries essentially all the
+>   signal; keypoint score, segment-length deviation, left/right asymmetry and
+>   window blend weight are within noise of zero, and the detector's own
+>   confidence is *anti*-correlated with thigh error.
+> * **~4/5 of the ranking is between clips**, per the pre-registered
+>   within-clip permutation control. So phase 16 gets a **clip-level** expected
+>   error it can defend, per-segment confidence on the **shanks** with a caveat,
+>   and **no** per-segment claim on the thighs.
+> * **Reusable, and it closes an open question:** this phase asked for "an
+>   estimated camera azimuth (from apparent hip/shoulder width against the
+>   scan)" without knowing one was obtainable. It is — apparent 2D hip
+>   separation over apparent trunk length, over a population ratio, at
+>   **Pearson 0.974** against the ground-truth depth metric, with no depth, no
+>   millimetres and no ground truth. The near limb is also identifiable from the
+>   estimate alone, 592 of 592 clips.
 
 ### Phase 15 — Held-out validation
 
