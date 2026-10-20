@@ -283,7 +283,7 @@ recorded in `results/`.
 | **13** | **Decompose & track** — three arms: filter only, scan as a *consistency* constraint, both. Detector replacement first | Beats **3.51° near / 3.62° far** on the tune set, same detector both sides, paired per subject; near and far judged separately; no transfer regression | Planned — re-cut 2026-10-19 |
 | **14** | **Per-segment confidence** — calibrated measurement reliability + viewpoint-based expected error | Confidence ranks frames by realized error (ρ ≥ 0.30, every subject) and the stated error is the right size (slope in [0.8, 1.2]) | Mixed — **2 of 4 segments rank their error** (both shanks, ρ 0.34); **1 of 4 is also calibrated**; and the permutation control shows ~4/5 of the skill is **between clips**, not between frames. It is a viewpoint meter. Camera azimuth *is* recoverable from video alone, r = 0.974 |
 | **15** | **Held-out validation** on datasets never touched | Per-dataset MAE with CIs, reported whether it wins or loses | Planned |
-| **16** | **Streaming demo** — near-real-time, browser, runs on real footage | Latency and accuracy budgets met on held-out footage; closes §7.5 | Planned |
+| **16** | **Streaming demo** → split into **16A offline** (one consented clip) and **16C streaming**, deferred | ≥ 20 fps end to end; demo angles match the phase 15 offline numbers | **≥ 20 fps NOT MET and not attemptable** — 207 ms/frame is the floor with these weights, 5.3× over. 16A proceeds; 16C waits for phase 15 |
 
 > **Phase 6 was redefined.** "Demo shell" assumed something worth demonstrating
 > to a user. Phases 4B and 5D showed a per-user limb verdict is unsupportable —
@@ -474,6 +474,47 @@ mean pixel error or COCO AP.
   CI. **Running it on real phone footage closes §7.5** from phase 11.
 - Demo clips come from datasets whose license allows showing them, or from
   footage filmed for this project with the runner's consent.
+
+> ## The 20 fps gate is NOT MET, and it is not being attempted (2026-10-19)
+>
+> **The pre-registered bar stands as written and is recorded as failed.** It is
+> not being lowered, re-defined or quietly dropped; what changes is the order of
+> work, which is an operator decision taken on the measurements below
+> (`results/phase07.md` §§5–6, `results/phase16_detector_speed.py` output).
+>
+> **What was taken, because it is free.** `scripts/video_kinematics.py` now
+> detects at the frame's **native resolution** instead of letting torchvision
+> upscale every frame to `min_size=800`, and runs on a **padded person crop**
+> that tracks the previous frame, re-detecting full-frame whenever a limb leaves
+> the window. **1,055 ms/frame → 207 ms, a 5.1× speed-up with the same weights**
+> — so no retraining, and no shift in the keypoint distribution the lifter was
+> trained against.
+>
+> **Why that is not enough, and why a faster detector is not the answer yet.**
+> 207 ms against the ~39 ms the detector may have inside a 50 ms frame is still
+> 5.3× over, and a two-stage ResNet50 Keypoint R-CNN will not close that on a
+> laptop CPU. A different architecture would — but §5 measured what that costs:
+> the lifter has **learned its detector's error distribution**, so handing the
+> shipped checkpoint cleaner-than-trained 2D is monotonically *worse*
+> (3.51° → 5.16°). A new detector therefore needs a **matched lifter**, a matched
+> lifter needs that detector's 2D on data with 3D ground truth, and
+> **AthleticsPose cannot provide it — it releases no video.** BEDLAM is the only
+> train-side set that could.
+>
+> **So the swap cannot be measured today, and this project does not ship what it
+> cannot measure.** Phase 15 brings MoVi — 30 fps hand-held iPhone video
+> synchronised to 120 Hz Qualisys — which is both the §7.5 answer and the first
+> test bed on which a candidate detector could be judged. The architecture
+> question is deferred to after it, deliberately and on the record.
+>
+> **16A proceeds now:** one consented side-on clip, offline, through the fixed
+> tool, publishing the traces and the error budget. That closes §7.5's substance
+> at ~5 fps without claiming a frame rate it does not have. **16C** — streaming
+> and the browser port — waits.
+>
+> **Judge a candidate detector on knee and ankle pixel error**, never on mean
+> pixel error or COCO AP: §5 found the two released detectors have the *same*
+> mean 2D error, 12.28 px against 12.18 px, and differ by 0.33° in angle.
 
 ### Optional research follow-up
 

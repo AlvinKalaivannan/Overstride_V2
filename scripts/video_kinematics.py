@@ -45,6 +45,8 @@ Run: .venv/Scripts/python.exe scripts/video_kinematics.py --video CLIP.mp4 --out
 
 from __future__ import annotations
 
+import time
+
 import argparse
 import json
 import sys
@@ -68,6 +70,7 @@ MODEL_FPS = 100.0          # AthleticsPose Timebase.Frequency; docs/data-invento
 PERSON_SCORE = 0.90
 LOWPASS_HZ = 10.0          # matches the Ferber pipeline's own filter
 PLAUSIBLE = {"hip": (-40.0, 60.0), "knee": (-170.0, 20.0)}
+CROP_PAD = 0.35            # fraction of the box, each side; see crop_window
 
 
 def decode(path: Path, every: int, max_frames: int) -> tuple[list, float]:
@@ -142,39 +145,105 @@ def coco17_to_h36m17(kp: np.ndarray) -> np.ndarray:
     return out
 
 
-def detect_coco17(frames: list) -> tuple[np.ndarray, dict]:
+def crop_window(box: np.ndarray, h: int, w: int,
+                pad: float = CROP_PAD) -> tuple[int, int, int, int]:
+    """A padded, bounds-clipped window around a person box.
+
+    Padding is proportional to the box, not a fixed pixel count, so it holds up
+    across resolutions and across a runner who is near or far from the camera.
+    It has to be generous: a tight box clips the swinging leg at toe-off, and a
+    clipped ankle is exactly the keypoint the sagittal angles depend on most.
+    """
+    x0, y0, x1, y1 = box
+    mx, my = pad * (x1 - x0), pad * (y1 - y0)
+    return (max(0, int(x0 - mx)), max(0, int(y0 - my)),
+            min(w, int(x1 + mx)), min(h, int(y1 + my)))
+
+
+def detect_coco17(frames: list, crop: bool = True,
+                  model=None) -> tuple[np.ndarray, dict]:
     """COCO-17 keypoints per frame from torchvision Keypoint R-CNN.
 
     Returned in COCO order. `coco17_to_h36m17` converts; the lifter must never
     be handed this array directly.
+
+    TWO FREE SPEED-UPS, measured in results/phase07.md 6 and worth 5.1x
+    together. Neither changes the weights, so neither shifts the keypoint
+    distribution the lifter was trained against -- which matters, because 5 of
+    the same report showed the lifter is sensitive to exactly that.
+
+      NATIVE RESOLUTION  torchvision defaults to min_size=800 and silently
+                         upscales a 640x480 frame to 1067x800, 2.8x the pixels.
+                         Setting min_size to the frame's own shortest side is
+                         2.3x on its own.
+      PERSON CROP        one full-frame pass finds the runner; after that the
+                         model runs on a padded crop that tracks the previous
+                         frame's keypoints. 1,055 ms/frame -> 207 ms.
+
+    The crop is a tracker, so it can drift or lose the subject. Every frame
+    whose keypoints fall outside the crop, or whose score drops, triggers a
+    full-frame re-detection rather than a guess -- and the count is reported,
+    because a clip that re-detects constantly is a clip this tool should refuse.
     """
-    from torchvision.models.detection import (KeypointRCNN_ResNet50_FPN_Weights,
-                                              keypointrcnn_resnet50_fpn)
-    weights = KeypointRCNN_ResNet50_FPN_Weights.DEFAULT
-    det = keypointrcnn_resnet50_fpn(weights=weights, box_score_thresh=0.5)
-    det.eval()
+    h, w = frames[0].shape[:2]
+    if model is None:
+        from torchvision.models.detection import (
+            KeypointRCNN_ResNet50_FPN_Weights, keypointrcnn_resnet50_fpn)
+        det = keypointrcnn_resnet50_fpn(
+            weights=KeypointRCNN_ResNet50_FPN_Weights.DEFAULT,
+            box_score_thresh=0.5, min_size=min(h, w), max_size=max(h, w))
+        det.eval()
+    else:
+        # injected for tests: the crop-to-full-frame coordinate mapping is a
+        # seam, and seams are where this pipeline has broken twice
+        det = model
+
+    def run(bgr, win: tuple[int, int, int, int] | None):
+        x0, y0, x1, y1 = win if win else (0, 0, w, h)
+        sub = bgr[y0:y1, x0:x1]
+        if sub.size == 0:
+            return None
+        rgb = cv2.cvtColor(sub, cv2.COLOR_BGR2RGB)
+        t = torch.from_numpy(rgb).permute(2, 0, 1).float() / 255.0
+        out = det([t])[0]
+        scores = out["scores"].numpy()
+        if len(scores) == 0 or float(scores.max()) < 0.5:
+            return None
+        best = int(np.argmax(scores))
+        k = out["keypoints"][best].numpy()[:, :2] + np.array([x0, y0])
+        return (k, out["keypoints_scores"][best].numpy(),
+                out["boxes"][best].numpy() + np.array([x0, y0, x0, y0]),
+                int((scores > PERSON_SCORE).sum()))
 
     kp = np.zeros((len(frames), 17, 3), dtype=np.float64)
-    found, crowded = 0, 0
+    found, crowded, redetects, cropped = 0, 0, 0, 0
+    win: tuple[int, int, int, int] | None = None
     with torch.no_grad():
         for i, bgr in enumerate(frames):
-            rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
-            t = torch.from_numpy(rgb).permute(2, 0, 1).float() / 255.0
-            out = det([t])[0]
-            scores = out["scores"].numpy()
-            if len(scores) == 0:
+            got = run(bgr, win if crop else None)
+            inside = got is not None and win is not None and (
+                got[0][:, 0].min() > win[0] and got[0][:, 0].max() < win[2]
+                and got[0][:, 1].min() > win[1] and got[0][:, 1].max() < win[3])
+            if win is not None and not inside:
+                # the tracker lost it, or a limb left the window: pay for one
+                # full-frame pass rather than keep a truncated skeleton
+                redetects += 1
+                got, win = run(bgr, None), None
+            if got is None:
+                win = None
                 continue
-            if int((scores > PERSON_SCORE).sum()) > 1:
-                crowded += 1
-            best = int(np.argmax(scores))
-            if scores[best] < 0.5:
-                continue
-            kp[i, :, :2] = out["keypoints"][best].numpy()[:, :2]
-            kp[i, :, 2] = out["keypoints_scores"][best].numpy()
+            k, scores, box, n_people = got
+            cropped += int(win is not None)
+            crowded += int(n_people > 1)
+            kp[i, :, :2], kp[i, :, 2] = k, scores
             found += 1
+            win = crop_window(box, h, w) if crop else None
             if (i + 1) % 25 == 0:
-                print(f"    detected {i + 1}/{len(frames)} frames")
-    return kp, {"frames_with_person": found, "frames_crowded": crowded}
+                print(f"    detected {i + 1}/{len(frames)} frames "
+                      f"({cropped} on a crop, {redetects} re-detections)")
+    return kp, {"frames_with_person": found, "frames_crowded": crowded,
+                "frames_on_crop": cropped, "full_frame_redetections": redetects,
+                "detector_min_size": min(h, w)}
 
 
 def smooth(kp: np.ndarray, fps: float) -> np.ndarray:
@@ -286,6 +355,10 @@ def main() -> int:
     ap.add_argument("--out", required=True, type=Path)
     ap.add_argument("--every", type=int, default=1, help="use every Kth frame")
     ap.add_argument("--max-frames", type=int, default=300)
+    ap.add_argument("--no-crop", action="store_true",
+                    help="full-frame detection on every frame: 5x slower, "
+                         "and the fallback if crop tracking misbehaves on "
+                         "your footage")
     args = ap.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
 
@@ -297,8 +370,15 @@ def main() -> int:
     h, w = frames[0].shape[:2]
     print(f"  {len(frames)} frames at {fps:.1f} fps, {w}x{h}")
 
-    print("detecting 2D keypoints (Keypoint R-CNN, COCO-17)")
-    kp, meta = detect_coco17(frames)
+    print("detecting 2D keypoints (Keypoint R-CNN, COCO-17, native "
+          "resolution + person crop)")
+    t_det = time.perf_counter()
+    kp, meta = detect_coco17(frames, crop=not args.no_crop)
+    meta["detect_ms_per_frame"] = 1000.0 * (time.perf_counter() - t_det) / len(frames)
+    print(f"  {meta['detect_ms_per_frame']:.0f} ms/frame "
+          f"({1000.0 / meta['detect_ms_per_frame']:.1f} fps), "
+          f"{meta['frames_on_crop']} on a crop, "
+          f"{meta['full_frame_redetections']} re-detections")
 
     # Refuse rather than emit. A CSV of angles computed from frames with no
     # subject in them looks exactly like a real result, which is worse than no
