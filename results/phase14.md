@@ -283,4 +283,135 @@ Written down now, so it is not rationalised later:
 
 ## Results
 
-*Not yet run. Nothing above this line changes once it is.*
+Run 2026-10-19. 592 held-out AthleticsPose clips, 214,500 segment-frames, 3
+subjects (S11, S13, S16), leave-one-subject-out, deployable configuration
+(generic COCO detections + edge padding + overlapped windows).
+`results/phase14_confidence.json`, `figures/phase14_confidence.png`.
+
+### The verdict, per segment
+
+| segment | realized | stated | rho (min over subjects) | bar 1 (every subject >= 0.30) | slope | bar 2 ([0.8, 1.2]) |
+|---|---|---|---|---|---|---|
+| shank_l | 3.80° | 3.06° | 0.37 (**0.34**) | **met** | 1.47 | not met |
+| shank_r | 3.05° | 3.04° | 0.34 (**0.34**) | **met** | 0.83 | **met** |
+| thigh_l | 3.09° | 2.87° | 0.20 (0.09) | not met | 0.65 | not met |
+| thigh_r | 3.07° | 2.87° | 0.26 (0.17) | not met | 0.57 | not met |
+
+**The kill criterion did not fire** — two segments rank error above the bar — but
+only **one segment of four clears both bars**, and it clears bar 2 at 0.83
+against a floor of 0.80. The thighs fail bar 1 on individual subjects while
+averaging close to it (thigh_l: 0.093, 0.186, 0.328), which is exactly why the
+bar was stated per subject rather than as a mean.
+
+The pre-registered control passes: the full model beats detector score alone on
+every segment (0.37 vs 0.21, 0.34 vs 0.15, 0.20 vs −0.08, 0.26 vs −0.08). **The
+detector's own confidence channel is worthless on the thighs** — negative, and
+its calibration slope is negative too, meaning it is anti-correlated with error.
+
+### What the confidence actually is: a viewpoint meter
+
+Standardised ridge coefficients on log realized error (descriptive, whole-sample):
+
+| input | coefficient |
+|---|---|
+| `view_proxy_deg` | **−0.614** |
+| `ml_2d_ratio` | **−0.368** |
+| `score_min` | −0.067 |
+| `score_dist` | −0.049 |
+| `speed` | −0.044 |
+| `len_dev` | +0.036 |
+| everything else | ≤ 0.016 |
+
+The first two are the same quantity — one is `arccos` of the other, rescaled — so
+**this is effectively a single-feature model, and the feature is camera
+azimuth.** Nothing else earns its place: keypoint score, segment-length
+deviation, left/right asymmetry, window blend weight and speed are all within
+noise of zero. The sign reproduces phases 3B and 11 from video alone: the more
+side-on the view, the lower the error.
+
+**And the per-clip ranking is most of the skill.** Shuffling the stated error
+*within each clip* — destroying all frame-level ordering while leaving each
+clip's level intact — still scores:
+
+| segment | confidence | shuffled within clip | what the frames add |
+|---|---|---|---|
+| shank_l | 0.37 | 0.28 | +0.09 |
+| shank_r | 0.34 | 0.29 | +0.05 |
+| thigh_l | 0.20 | 0.19 | +0.01 |
+| thigh_r | 0.26 | 0.22 | +0.04 |
+
+So roughly **four fifths of the ranking is between clips, not between frames**.
+That control was pre-registered precisely to catch this, and it caught it. The
+honest description of what phase 14 produced is a **clip-level reliability
+estimate with a weak per-frame component**, not the per-segment per-frame
+confidence the phase set out to build. `R²` of realized on stated is 0.036–0.141,
+and the per-subject calibration slopes scatter widely (shank_l: 1.03, 1.32,
+1.77), so the stated error's *size* does not transfer across subjects even where
+its *ranking* does.
+
+### Two findings that stand on their own
+
+**1. Camera azimuth is recoverable from video alone.** The proxy — apparent 2D
+hip separation over apparent trunk length, divided by a population
+anthropometric ratio — reaches **Spearman 0.864, Pearson 0.974** against the
+ground-truth depth metric over 592 clips. `CLAUDE.md` asked phase 14 for "an
+estimated camera azimuth (from apparent hip/shoulder width against the scan)"
+without knowing whether one was obtainable. It is, and to within 3% of variance
+explained. This is reusable: it is the input phase 16's expected-error readout
+needs, and it needs no ground truth, no depth and no scan in millimetres.
+
+**2. The near limb can be identified without ground truth.** Taking the nearer
+limb from the *estimate's* own depth ordering agrees with the ground-truth
+ordering on **592 of 592 clips**. Near and far must be reported separately, and
+on real footage there is no ground truth to label them with; this says the tool
+can label them itself, with no observed failure.
+
+### What was wrong with the first run, and why it is not in this table
+
+The first run of the frozen protocol is kept at
+`results/phase14_confidence_frozen_protocol.json` and
+`figures/phase14_confidence_frozen_protocol.png`. **Its numbers are void**, for
+two code defects rather than two findings:
+
+1. **The azimuth proxy was self-cancelling.** It divided the apparent 2D hip
+   width by the *estimate's own 3D* hip width. The estimate's x and y come from
+   those same detections, so the camera's compression appeared above and below
+   the line and divided out.
+2. **The 2D was read in the wrong joint order.** `det_markers2d_by_cam_coco` is
+   named after the detector that produced it, not after its joint order, and it
+   ships in **H36M-17** — so COCO indices read a shoulder where a hip belonged.
+   The same mistake `scripts/video_kinematics.py` was making, found the same day
+   (see `results/phase07.md` §4).
+
+Neither was catchable by the unit tests, which all pass on random arrays: a
+wrong index leaves every feature varying plausibly. What caught both was the
+**ungated validator** — the proxy scored Spearman −0.02 against ground truth
+where it should have scored −0.86. It existed only because `CLAUDE.md` requires
+expected error to come from the measured viewpoint curve, which forced the proxy
+to be compared against something real. A test now asserts that correlation on
+real clips (`tests/test_confidence.py::test_the_azimuth_proxy_tracks_real_camera_obliquity`),
+so the seam cannot break silently again.
+
+Fitting also changed in one way that is a method fix, not a defect: `exp()` of a
+least-squares fit in log space estimates the **geometric** mean, which sits below
+the arithmetic mean the calibration bar is stated against. **Duan's smearing
+estimator**, fitted on the training fold like everything else, corrects it — it
+is what moved stated error from 2.0° against 3.8° realized to 3.06° against
+3.80°.
+
+### What this means downstream
+
+- **Phase 16 may show a clip-level expected error**, built from the azimuth
+  proxy and the already-measured viewpoint curve. That is well supported.
+- **It may not claim per-segment confidence on the thighs.** Two segments of
+  four fail to rank their own error on individual subjects.
+- **It may show per-segment confidence on the shanks**, with the caveat that the
+  stated magnitude is only calibrated for one of the two.
+- **Three subjects is three subjects.** Every number here rests on S11, S13 and
+  S16. The AthletePose3D transfer check is the only outside evidence available
+  and has three running subjects of its own.
+- **The thighs' failure has a plausible cause worth testing, not assuming:** the
+  hip is the joint where the detector and the mocap *disagree by definition* —
+  24–28 px against 3–5 px at the knees and ankles (`results/phase07.md` §4) — so
+  thigh direction error may be dominated by a definitional offset that no
+  video-only input can see. That is a phase 13 question, not a phase 14 one.

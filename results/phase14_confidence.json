@@ -1,0 +1,408 @@
+{
+  "pre_registration": "results/phase14.md, frozen 2026-10-19",
+  "configuration": {
+    "detector": "coco",
+    "padding": "edge",
+    "windows": "overlap",
+    "note": "the deployable 3.51 deg configuration"
+  },
+  "n_rows": 214500,
+  "n_subjects": 3,
+  "features": [
+    "score_prox",
+    "score_dist",
+    "score_min",
+    "len_dev",
+    "lr_asym",
+    "ml_2d_ratio",
+    "view_proxy_deg",
+    "blend_weight",
+    "speed",
+    "is_far",
+    "is_shank"
+  ],
+  "n_folds": 3,
+  "not_measurable": {
+    "pelvis": "defines the frame's medio-lateral axis -- sagittal error is definitionally zero",
+    "trunk": "defines the frame's vertical axis -- same",
+    "foot": "H36M-17 has no toe keypoint"
+  },
+  "models": {
+    "full": {
+      "inputs": [
+        "score_prox",
+        "score_dist",
+        "score_min",
+        "len_dev",
+        "lr_asym",
+        "ml_2d_ratio",
+        "view_proxy_deg",
+        "blend_weight",
+        "speed",
+        "is_far",
+        "is_shank"
+      ],
+      "segments": {
+        "shank_l": {
+          "n_frames": 53625,
+          "realized_mean_deg": 3.796455785074117,
+          "stated_mean_deg": 3.057291155055335,
+          "spearman": {
+            "n_subjects": 3,
+            "mean_rho": 0.372646095964871,
+            "min_rho": 0.3441692522378286,
+            "ci95_nominal": [
+              0.3441692522378286,
+              0.38839889944914124
+            ],
+            "per_subject": {
+              "S11": 0.3853701362076432,
+              "S13": 0.3883988994491413,
+              "S16": 0.3441692522378286
+            }
+          },
+          "calibration": {
+            "slope": 1.4666873038980381,
+            "intercept": -0.6876343363653129,
+            "r2": 0.14055976715136176,
+            "mean_abs_gap_deg": 2.366152479358885,
+            "slope_per_subject": {
+              "S11": 1.0320385771543106,
+              "S13": 1.322671933370702,
+              "S16": 1.7735673459170713
+            },
+            "slope_worst": 1.7735673459170713
+          }
+        },
+        "shank_r": {
+          "n_frames": 53625,
+          "realized_mean_deg": 3.045149727270807,
+          "stated_mean_deg": 3.036914610651376,
+          "spearman": {
+            "n_subjects": 3,
+            "mean_rho": 0.34429385952261393,
+            "min_rho": 0.33580205140575436,
+            "ci95_nominal": [
+              0.3358020514057543,
+              0.36044902407104945
+            ],
+            "per_subject": {
+              "S11": 0.33663050309103787,
+              "S13": 0.3604490240710495,
+              "S16": 0.33580205140575436
+            }
+          },
+          "calibration": {
+            "slope": 0.8301046901754827,
+            "intercept": 0.5241926653066498,
+            "r2": 0.05647055756179331,
+            "mean_abs_gap_deg": 1.9558567079823483,
+            "slope_per_subject": {
+              "S11": 0.6547546891607259,
+              "S13": 0.87151933444894,
+              "S16": 0.9966717683572864
+            },
+            "slope_worst": 0.6547546891607259
+          }
+        },
+        "thigh_l": {
+          "n_frames": 53625,
+          "realized_mean_deg": 3.0931088205161585,
+          "stated_mean_deg": 2.873715572618174,
+          "spearman": {
+            "n_subjects": 3,
+            "mean_rho": 0.20234297839348522,
+            "min_rho": 0.09312612650070892,
+            "ci95_nominal": [
+              0.09312612650070891,
+              0.32781930315282803
+            ],
+            "per_subject": {
+              "S11": 0.09312612650070892,
+              "S13": 0.18608350552691874,
+              "S16": 0.32781930315282803
+            }
+          },
+          "calibration": {
+            "slope": 0.6462393293459173,
+            "intercept": 1.2360007961364776,
+            "r2": 0.04278858623540427,
+            "mean_abs_gap_deg": 1.9341521588392199,
+            "slope_per_subject": {
+              "S11": 0.2566336358024095,
+              "S13": 0.4938261165760667,
+              "S16": 1.3427075428164936
+            },
+            "slope_worst": 0.2566336358024095
+          }
+        },
+        "thigh_r": {
+          "n_frames": 53625,
+          "realized_mean_deg": 3.070907127333025,
+          "stated_mean_deg": 2.8734689780541194,
+          "spearman": {
+            "n_subjects": 3,
+            "mean_rho": 0.2550293103068888,
+            "min_rho": 0.17367255097819584,
+            "ci95_nominal": [
+              0.17367255097819587,
+              0.3409739990746787
+            ],
+            "per_subject": {
+              "S11": 0.25044138086779194,
+              "S13": 0.3409739990746787,
+              "S16": 0.17367255097819584
+            }
+          },
+          "calibration": {
+            "slope": 0.5657545561148232,
+            "intercept": 1.4452289611442999,
+            "r2": 0.03604012369269827,
+            "mean_abs_gap_deg": 1.8636636722071616,
+            "slope_per_subject": {
+              "S11": 0.4475831126182742,
+              "S13": 0.9160656821388948,
+              "S16": 0.6410583198863086
+            },
+            "slope_worst": 0.4475831126182742
+          }
+        }
+      }
+    },
+    "detector_score_only": {
+      "inputs": [
+        "score_min"
+      ],
+      "segments": {
+        "shank_l": {
+          "n_frames": 53625,
+          "realized_mean_deg": 3.796455785074117,
+          "stated_mean_deg": 3.0393469304632537,
+          "spearman": {
+            "n_subjects": 3,
+            "mean_rho": 0.20580223924782368,
+            "min_rho": 0.19494148102037182,
+            "ci95_nominal": [
+              0.19494148102037182,
+              0.21225259959823503
+            ],
+            "per_subject": {
+              "S11": 0.19494148102037182,
+              "S13": 0.21021263712486418,
+              "S16": 0.21225259959823503
+            }
+          },
+          "calibration": {
+            "slope": 3.245620235456494,
+            "intercept": -6.068110115009989,
+            "r2": 0.11779652779783767,
+            "mean_abs_gap_deg": 2.4916719796666498,
+            "slope_per_subject": {
+              "S11": 3.013863460911757,
+              "S13": 4.154846184036401,
+              "S16": 3.866165422251173
+            },
+            "slope_worst": 4.154846184036401
+          }
+        },
+        "shank_r": {
+          "n_frames": 53625,
+          "realized_mean_deg": 3.045149727270807,
+          "stated_mean_deg": 3.016172870172451,
+          "spearman": {
+            "n_subjects": 3,
+            "mean_rho": 0.1473225736223668,
+            "min_rho": 0.10732505815344874,
+            "ci95_nominal": [
+              0.10732505815344874,
+              0.19819606910392285
+            ],
+            "per_subject": {
+              "S11": 0.13644659360972883,
+              "S13": 0.19819606910392285,
+              "S16": 0.10732505815344874
+            }
+          },
+          "calibration": {
+            "slope": 1.0703572751568835,
+            "intercept": -0.1832328474491009,
+            "r2": 0.01434507265428997,
+            "mean_abs_gap_deg": 2.0732019899339433,
+            "slope_per_subject": {
+              "S11": 1.5524016220909727,
+              "S13": 2.5410524985209046,
+              "S16": 1.1006204675600033
+            },
+            "slope_worst": 2.5410524985209046
+          }
+        },
+        "thigh_l": {
+          "n_frames": 53625,
+          "realized_mean_deg": 3.0931088205161585,
+          "stated_mean_deg": 3.132487959028969,
+          "spearman": {
+            "n_subjects": 3,
+            "mean_rho": -0.08131036169653576,
+            "min_rho": -0.20166818565297562,
+            "ci95_nominal": [
+              -0.20166818565297562,
+              -0.0036661335183763417
+            ],
+            "per_subject": {
+              "S11": -0.03859676591825529,
+              "S13": -0.0036661335183763412,
+              "S16": -0.20166818565297562
+            }
+          },
+          "calibration": {
+            "slope": -1.1866074589708961,
+            "intercept": 6.810142397836456,
+            "r2": 0.01641057332725604,
+            "mean_abs_gap_deg": 2.077525305201756,
+            "slope_per_subject": {
+              "S11": 0.44247498885606296,
+              "S13": 1.1122524123545614,
+              "S16": -2.73062185286385
+            },
+            "slope_worst": -2.73062185286385
+          }
+        },
+        "thigh_r": {
+          "n_frames": 53625,
+          "realized_mean_deg": 3.070907127333025,
+          "stated_mean_deg": 3.131812548655975,
+          "spearman": {
+            "n_subjects": 3,
+            "mean_rho": -0.0779998818950978,
+            "min_rho": -0.1349252229582871,
+            "ci95_nominal": [
+              -0.1349252229582871,
+              -0.03390363383513264
+            ],
+            "per_subject": {
+              "S11": -0.06517078889187365,
+              "S13": -0.03390363383513264,
+              "S16": -0.1349252229582871
+            }
+          },
+          "calibration": {
+            "slope": -0.4162191239622546,
+            "intercept": 4.37442740274861,
+            "r2": 0.0021993674153362175,
+            "mean_abs_gap_deg": 1.9484399614792411,
+            "slope_per_subject": {
+              "S11": 0.23503446495283037,
+              "S13": 0.9548009582446416,
+              "S16": -1.6495361386387644
+            },
+            "slope_worst": -1.6495361386387644
+          }
+        }
+      }
+    }
+  },
+  "control_within_clip_permutation": {
+    "shank_l": {
+      "n_subjects": 3,
+      "mean_rho": 0.28217516205448323,
+      "min_rho": 0.2262295747398763,
+      "ci95_nominal": [
+        0.2262295747398763,
+        0.32350299034380764
+      ],
+      "per_subject": {
+        "S11": 0.2967929210797658,
+        "S13": 0.32350299034380764,
+        "S16": 0.2262295747398763
+      }
+    },
+    "shank_r": {
+      "n_subjects": 3,
+      "mean_rho": 0.28763212562953605,
+      "min_rho": 0.282141772155347,
+      "ci95_nominal": [
+        0.282141772155347,
+        0.2936133233067261
+      ],
+      "per_subject": {
+        "S11": 0.282141772155347,
+        "S13": 0.2936133233067261,
+        "S16": 0.28714128142653494
+      }
+    },
+    "thigh_l": {
+      "n_subjects": 3,
+      "mean_rho": 0.1943682108079308,
+      "min_rho": 0.08070038291618449,
+      "ci95_nominal": [
+        0.08070038291618449,
+        0.3234497712999997
+      ],
+      "per_subject": {
+        "S11": 0.08070038291618449,
+        "S13": 0.17895447820760824,
+        "S16": 0.3234497712999997
+      }
+    },
+    "thigh_r": {
+      "n_subjects": 3,
+      "mean_rho": 0.22296778500048134,
+      "min_rho": 0.17558525429716879,
+      "ci95_nominal": [
+        0.17558525429716879,
+        0.2713048550493975
+      ],
+      "per_subject": {
+        "S11": 0.22201324565487773,
+        "S13": 0.2713048550493975,
+        "S16": 0.17558525429716879
+      }
+    }
+  },
+  "azimuth_proxy_vs_ground_truth": {
+    "n_clips": 592,
+    "spearman": 0.8642431004977124,
+    "pearson": 0.9735647089059891,
+    "note": "video-only proxy vs the GT depth metric; ungated, it measures the cost of having no depth"
+  },
+  "near_limb_call": {
+    "agreement": "592/592",
+    "rate": 1.0,
+    "note": "the near limb from the estimate's own depth vs from ground truth; the feature uses the estimate, reporting uses GT"
+  },
+  "verdict": {
+    "shank_l": {
+      "bar1_rho_met": true,
+      "bar2_slope_met": false,
+      "bar2_slope_met_every_subject": false,
+      "mean_rho": 0.372646095964871,
+      "min_rho": 0.3441692522378286,
+      "slope": 1.4666873038980381
+    },
+    "shank_r": {
+      "bar1_rho_met": true,
+      "bar2_slope_met": true,
+      "bar2_slope_met_every_subject": false,
+      "mean_rho": 0.34429385952261393,
+      "min_rho": 0.33580205140575436,
+      "slope": 0.8301046901754827
+    },
+    "thigh_l": {
+      "bar1_rho_met": false,
+      "bar2_slope_met": false,
+      "bar2_slope_met_every_subject": false,
+      "mean_rho": 0.20234297839348522,
+      "min_rho": 0.09312612650070892,
+      "slope": 0.6462393293459173
+    },
+    "thigh_r": {
+      "bar1_rho_met": false,
+      "bar2_slope_met": false,
+      "bar2_slope_met_every_subject": false,
+      "mean_rho": 0.2550293103068888,
+      "min_rho": 0.17367255097819584,
+      "slope": 0.5657545561148232
+    }
+  },
+  "kill_criterion_fired": false
+}
