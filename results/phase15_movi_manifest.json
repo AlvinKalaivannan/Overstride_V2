@@ -1,0 +1,55 @@
+{
+  "doi": "doi:10.5683/SP2/JRHDRN",
+  "api": "https://borealisdata.ca/api/access/datafile/{id}",
+  "note": "sizes and hashes only -- no MoVi data is committed",
+  "files": [
+    {
+      "datafile_id": 92073,
+      "filename": "S_V3D.tar",
+      "bytes": 619532288,
+      "content_length_header": "619532288",
+      "sha256": "f681438c0710d38a48dd84e5857f9a165093a37f6eceec8c514add9766ff1ebe",
+      "seconds": 76.7
+    },
+    {
+      "datafile_id": 85637,
+      "filename": "S2_PG1_Subject_45_L.avi",
+      "bytes": 99097442,
+      "content_length_header": "99097442",
+      "sha256": "1b14e735519f04b1cc394c8f915ac664be1ac5e3fa8cba39001ac432c2d45982",
+      "seconds": 11.6
+    },
+    {
+      "datafile_id": 85559,
+      "filename": "S2_PG1_Subject_74_L.avi",
+      "bytes": 98209082,
+      "content_length_header": "98209082",
+      "sha256": "a787a8823b78d8b40ebb10cb06160e925f6f3284dc7f71668cfb18b377be6f96",
+      "seconds": 15.0
+    },
+    {
+      "datafile_id": 85654,
+      "filename": "S2_PG1_Subject_80_L.avi",
+      "bytes": 102353446,
+      "content_length_header": "102353446",
+      "sha256": "918345ab61817cd77e7435b9b213234e903b96f89764ed48dccaab358d2457b4",
+      "seconds": 13.8
+    },
+    {
+      "datafile_id": 86001,
+      "filename": "S2_CP1_Subject_22.mp4",
+      "bytes": 176103304,
+      "content_length_header": "176103304",
+      "sha256": "4b65b9681086f41461627f98c52eb88fa736ce7659a85a8175cb36377ed1a0d1",
+      "seconds": 20.2
+    },
+    {
+      "datafile_id": 86078,
+      "filename": "S2_CP2_Subject_22.mp4",
+      "bytes": 160381864,
+      "content_length_header": "160381864",
+      "sha256": "b6345c19b7df0f39b0c275db66b23b4ad261c38cbebc8217ae95b959e3f40731",
+      "seconds": 19.2
+    }
+  ]
+}
