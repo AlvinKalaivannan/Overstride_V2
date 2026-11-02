@@ -668,6 +668,146 @@ prescribes, and phase 11 measured error falling 3.50° → 1.77° as a view
 approaches it, so a frontal-only dataset would be a weak test. Answering it
 requires looking at the data, which is what phase 15 is for.
 
+### 8.5 BML MoVi — role: **held-out test**, opened 2026-11-02 for phase 15
+
+**This section was written and committed BEFORE any MoVi data byte was
+downloaded**, per the standing rule that a licence is recorded here first. The
+phase 15 pipeline was frozen earlier still, in `64fb0bc`, so the ordering
+*freeze → licence → download* is checkable in `git log` against the file
+timestamps rather than asserted. The six verification checks below are filled in
+after download and before the first number is reported.
+
+#### Accession
+
+| | |
+|---|---|
+| Repository | Scholars Portal Dataverse (borealisdata.ca), BioMotionLab Dataverse, York University |
+| DOI | `10.5683/SP2/JRHDRN` |
+| Paper to cite | Ghorbani, Mahmood, Troje et al., *MoVi: A large multi-purpose human motion and video dataset*, PLoS ONE 16(6) 2021, `10.1371/journal.pone.0253157` (also arXiv 2003.01888). The licence states that citing the dataset URL instead of the publication is **not** compliant |
+| Files in the record | **1,057**, 290.2 GB total |
+| `fileAccessRequest` | **false** — and 0 of 1,057 files are restricted |
+
+**The README's access procedure is stale.** `README.pdf` (dated 2020-03-29,
+downloaded here as documentation only) says access is *"limited"*, requires an
+institutional-email Dataverse account, and must be *"requested"* and granted by
+the lab (§4, *Requesting Access*). That is no longer how the record behaves:
+`fileAccessRequest` is `false`, no file is marked restricted, and HTTP range
+probes of 1 KB against datafiles 85637, 92073 and 193807 each returned **206
+with 1,024 bytes** without any credential. Access is open. The licence below
+still binds regardless, because it binds on *use*, not on the access mechanism.
+
+#### Licence — non-commercial research, and no distribution
+
+Verbatim from the record's Terms tab (`termsOfUse`, retrieved 2026-11-02; the
+README does not contain the licence, it only points at this tab):
+
+> By downloading and/or using the Data, you acknowledge that you have read these
+> terms and conditions, understand them, and agree to be bound by them.
+
+The grant is *"non-exclusive, non-transferable, free of charge"*, for
+*"non-commercial scientific research, non-commercial education, or
+non-commercial artistic projects"*, and it does permit *"modify, adapt,
+translate or create derivative works based upon the Data"*. Three clauses bind
+this project:
+
+1. **No distribution.** *"The Data and the License herein granted shall not be
+   copied, shared, distributed, re-sold, offered for re-sale, transferred or
+   sub-licensed in whole or in part, except that you may make one copy for
+   archive purposes only"*, and *"The Data may not be reproduced, modified
+   and/or made available in any form to any third party without prior written
+   permission."* **So no MoVi frame, crop, overlay, render or figure-of-pixels
+   is published, committed, or shown in the demo — ever.** What leaves this
+   machine is summary measurement statistics and plots of *angles*, which are
+   not the Data.
+2. **No commercial use, including training.** *"This license also prohibits the
+   use of the Data to train methods/algorithms/neural networks/etc. for
+   commercial use of any kind."* Nothing is trained on MoVi in this project at
+   all — phase 15 is inference with a frozen checkpoint, and the only permitted
+   training sets for this track are BEDLAM and AMASS. This also reinforces
+   `CLAUDE.md`'s existing no-commercial-framing rule.
+3. **Citation is a licence condition**, and it must be the paper.
+
+Human-subjects note, recorded because it is the reason the no-distribution rule
+is taken literally: the licence states participants were students and staff at
+Queen's University who *"gave their informed, written, consent for the
+scientific analysis and publication of their video Data"*. That consent is the
+lab's to exercise, not this project's.
+
+**AMASS overlap.** Part of MoVi is included in AMASS and was processed with
+AMASS's methods; using that part *"falls under the AMASS license agreement"* and
+additionally requires citing Mahmood et al. 2019. `MOVI_AMASS_MOSH.zip` and
+`F_AMASS.tar` are that part. Phase 15 defaults to the Visual3D export instead,
+so this clause applies only if the MoSh fallback is taken.
+
+#### The slice taken, and why only this much
+
+290 GB is not downloadable here and most of it is irrelevant: 21 movements per
+round, of which exactly one is running gait. The slice is **≈ 1.20 GB**:
+
+| file | datafile id | MB | why |
+|---|---|---|---|
+| `S_V3D.tar` | 92073 | 590.8 | Visual3D-processed mocap for round S — the reference 3D |
+| `S2_PG1_Subject_45_L.avi` | 85637 | 94.5 | Point Grey, calibrated and mocap-synchronised: these carry the MAE |
+| `S2_PG1_Subject_74_L.avi` | 85559 | 93.7 | " |
+| `S2_PG1_Subject_80_L.avi` | 85654 | 97.6 | " |
+| `S2_CP1_Subject_22.mp4` | 86001 | 167.9 | hand-held iPhone 7 — the §7.5 question |
+| `S2_CP2_Subject_22.mp4` | 86078 | 153.0 | " |
+
+Fetched with `GET https://borealisdata.ca/api/access/datafile/<id>` into
+`data/movi/raw/` (gitignored, verified with `git check-ignore -v`). Fallback, if
+the Visual3D export turns out not to carry the joints needed:
+`MOVI_AMASS_MOSH.zip` (id 193807, 954.6 MB), which is shipped ground truth and
+so permitted, but is a different convention and pulls in the AMASS clause above.
+
+#### Naming, read out of the README
+
+`<Round>_<CameraType>_<Subject>`, with Round in `{F, S1, S2, I1, I2}` and
+CameraType in `{CP1, CP2, PG1, PG2}`. **CP = Camera Phone** (hand-held
+iPhone 7), **PG = Point Grey** (FLIR machine vision). Subjects 1–90. The `_L`
+suffix on the PG `.avi` files is **not explained anywhere in the README** — it
+is recorded here as unexplained and is not guessed at; if it turns out to encode
+something that matters (a camera side, a compression variant) that goes in this
+section before any number.
+
+#### Two facts established from metadata alone, both with consequences
+
+1. **`Camera Parameters.tar` (id 92085, 0.1 MB) contains intrinsics and
+   extrinsics for PG1 and PG2 only — zero CP entries.** The hand-held phone
+   cameras ship **no calibration**. This fires the clause already frozen into
+   `results/phase15.md`: CP clips carry an MAE only if their synchronisation to
+   mocap can be verified from the dataset's own documentation, and **if it
+   cannot, they are reported as traces with no error figure.** §7.5 then closes
+   on the weaker claim rather than on a fabricated alignment.
+2. **Movement (2) is Jogging; movement (3) is _Running in place_**
+   (arXiv 2003.01888 §2.1). Running in place is not running gait — no
+   flight-phase translation, and a stationary subject makes the sagittal camera
+   geometry a different problem. It is excluded, with its n reported.
+
+#### The six checks — filled in after download, before the first number
+
+Pre-registered in `results/phase15.md` and reproduced here so the answers live
+with the dataset:
+
+| # | check | status |
+|---|---|---|
+| 1 | mocap units (mm or m), verified against a femur length that must be human, 350–550 mm | *pending* |
+| 2 | coordinate convention: vertical axis and handedness. A mirrored axis flips flexion sign | *pending* |
+| 3 | marker set → H36M-17 mapping, stated explicitly, with a left/right sanity check | *pending* |
+| 4 | video frame rate **read from the file**, not assumed to be 30 | *pending* |
+| 5 | video-to-mocap synchronisation offset, from the dataset's own documentation | *pending* |
+| 6 | subject identity across modalities — the video file's subject id is the mocap file's | *pending* |
+
+Any check that fails and cannot be resolved from the dataset's own documentation
+**stops the MAE for the affected clips** rather than being worked around.
+
+#### Role
+
+`CLAUDE.md` assigns MoVi **held-out test**, and this is the phase that opens it.
+The acquisition spike in §8.4 established existence and licence from outside the
+data, which is not opening it; downloading and measuring is, and that is phase
+15's job. Nothing is tuned on these numbers — `results/phase15.md`
+§"What would make this phase wrong" governs.
+
 ---
 
 ## Deferred to later phases
