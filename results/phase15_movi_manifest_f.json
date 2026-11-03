@@ -1,0 +1,69 @@
+{
+  "doi": "doi:10.5683/SP2/JRHDRN",
+  "api": "https://borealisdata.ca/api/access/datafile/{id}",
+  "round": "F",
+  "note": "sizes and hashes only -- no MoVi data is committed",
+  "files": [
+    {
+      "datafile_id": 128299,
+      "from_archive": "F_Subjects_1_45.tar",
+      "filename": "F_v3d_Subject_1.mat",
+      "bytes": 32555139,
+      "sha256": "44691cf314ac4007215e0f3eacf22244d2050aba06f8a659b545181398442e04"
+    },
+    {
+      "datafile_id": 128299,
+      "from_archive": "F_Subjects_1_45.tar",
+      "filename": "F_v3d_Subject_10.mat",
+      "bytes": 43884550,
+      "sha256": "25b59b26e9f48d757d9dcd5072209fa13d3d597fc02cb9d9b35f2f9582d1a72f"
+    },
+    {
+      "datafile_id": 128299,
+      "from_archive": "F_Subjects_1_45.tar",
+      "filename": "F_v3d_Subject_11.mat",
+      "bytes": 52380187,
+      "sha256": "0d43c4fac32b4bf51fbd25333066ff2c16f541b9b5297bca6bcc5c02a6817db3"
+    },
+    {
+      "datafile_id": 85268,
+      "filename": "F_PG1_Subject_1_L.avi",
+      "bytes": 145303034,
+      "content_length_header": "145303034",
+      "sha256": "f466e3b79274495dcd03f507df623f7e5020c0394d731633a7b009398d2ac4cb",
+      "seconds": 46.8
+    },
+    {
+      "datafile_id": 85238,
+      "filename": "F_PG1_Subject_10_L.avi",
+      "bytes": 250576964,
+      "content_length_header": "250576964",
+      "sha256": "a1b0692aa047422159cc6d345eada747b5730dba45fabc8bdb2d7d21c8d597a5",
+      "seconds": 86.5
+    },
+    {
+      "datafile_id": 85274,
+      "filename": "F_PG1_Subject_11_L.avi",
+      "bytes": 300920436,
+      "content_length_header": "300920436",
+      "sha256": "263ebb2314a3ccc86b85d318a42765bd804f541bf0d95825a5199d1a574b49dd",
+      "seconds": 211.3
+    },
+    {
+      "datafile_id": 85331,
+      "filename": "F_PG2_Subject_1_L.avi",
+      "bytes": 132449286,
+      "content_length_header": "132449286",
+      "sha256": "d8637b18fe400833cc20a6d2fdafc6382e08e0d5ed852cc130d54812ae22020e",
+      "seconds": 112.5
+    },
+    {
+      "datafile_id": 86002,
+      "filename": "F_CP1_Subject_1.mp4",
+      "bytes": 309629197,
+      "content_length_header": "309629197",
+      "sha256": "afae39a9a8a4dbdd3e56898f3d30e2a6138efe1da5941996cb8a4ebf3d5ba367",
+      "seconds": 82.4
+    }
+  ]
+}

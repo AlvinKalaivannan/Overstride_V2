@@ -78,6 +78,46 @@ PERSON_SCORE = 0.90
 # along with the jitter.
 LOWPASS_HZ = 0.0           # 0 disables it; --smooth-hz re-enables for comparison
 PLAUSIBLE = {"hip": (-40.0, 60.0), "knee": (-170.0, 20.0)}
+
+# ---------------------------------------------------------------------------
+# THE CONFIDENCE SCALE SEAM, found 2026-11-02 by phase 15.
+#
+# `lift` feeds channel 2 of the 2D array to the model as a per-keypoint weight,
+# and the checkpoint was trained on AthleticsPose's released
+# `det_markers2d_by_cam_coco` files, whose channel 2 is a NORMALISED confidence:
+# measured over 60 clips and 131,121 values, mean 0.8676, sd 0.1164, p25-p75
+# 0.837-0.940, max 1.18.
+#
+# torchvision's `keypoints_scores` are RAW, UNNORMALISED heatmap scores. On MoVi
+# they run [3.9, 18.4] with a mean of 12.4 -- about 14x the scale the lifter was
+# trained against. Writing them straight into channel 2 handed the model an
+# out-of-distribution input, and the result was not a degraded measurement but a
+# destroyed one: 30 deg MAE with r = +0.02 against the reference, and an
+# estimated knee flexion of +66 deg, which this file's own PLAUSIBLE band calls
+# impossible. The same clip's projected-reference 2D gives 4.5 deg.
+#
+# This could not be caught before phase 15. Every earlier number came from the
+# released .npy files, which already carry normalised confidences, and
+# AthleticsPose ships no video -- so the detector half of this path had never
+# been scored against ground truth. It is the second defect of this family
+# after the COCO/H36M joint order, and both lived in the only code path that had
+# no ground truth to check it against.
+#
+# THE FIX IS A CONSTANT, AND THE CHOICE IS A PRIORI, NOT FITTED. Three reasons:
+#   * in training the channel is nearly constant anyway -- sd 0.1164 on a mean
+#     of 0.8676 is 13% CV, with the middle half inside 0.10 of the mean;
+#   * phase 14 measured the detector's own confidence as *anti*-correlated with
+#     thigh error, so the channel carries no signal worth preserving;
+#   * picking anything data-dependent would require ground truth with video to
+#     choose it on, and the only such set is MoVi, which is HELD OUT. Choosing
+#     on MoVi would invalidate phase 15. So the choice has zero parameters
+#     fitted to any held-out data.
+# A quantile map onto the tune-set distribution would keep the relative
+# ordering of keypoints and is the obvious upgrade, but it cannot be validated
+# without a tune set that ships video. That is one more argument for the
+# matched-detector retraining already on the plan.
+TRAIN_CONF_MEAN = 0.8676   # tune set, 60 clips / 131,121 values
+TRAIN_CONF_SD = 0.1164
 CROP_PAD = 0.35            # fraction of the box, each side; see crop_window
 
 
@@ -269,6 +309,23 @@ def smooth(kp: np.ndarray, fps: float, cutoff_hz: float | None = None) -> np.nda
     return out
 
 
+def scores_to_train_scale(kp: np.ndarray) -> np.ndarray:
+    """Put channel 2 on the scale the lifter was trained against.
+
+    See the TRAIN_CONF_MEAN comment above for why this exists and why it is a
+    constant. Channels 0 and 1 are untouched; only the weight channel changes.
+
+    This is deliberately a named step at the seam rather than a quiet edit
+    inside `detect_coco17`, because the detector's RAW scores are still what
+    `check` and phase 14's features want to see. The conversion belongs where
+    the array crosses into the lifter, and it should be visible there.
+    """
+    out = kp.copy()
+    detected = np.abs(kp[:, :, :2]).sum(axis=(1, 2)) > 0
+    out[:, :, 2] = np.where(detected[:, None], TRAIN_CONF_MEAN, 0.0)
+    return out
+
+
 def resample(seq: np.ndarray, n_out: int) -> np.ndarray:
     src = np.linspace(0.0, 1.0, len(seq))
     dst = np.linspace(0.0, 1.0, n_out)
@@ -413,6 +470,13 @@ def main() -> int:
               "HARMFUL in results/phase13.md; this is for comparison only")
     kp = coco17_to_h36m17(kp)
     print("reordered COCO-17 -> H36M-17 (the lifter's input convention)")
+
+    raw_conf = kp[:, :, 2].copy()
+    kp = scores_to_train_scale(kp)
+    print(f"rescaled the confidence channel: torchvision raw scores "
+          f"[{raw_conf[raw_conf > 0].min():.2f}, {raw_conf.max():.2f}] -> "
+          f"{TRAIN_CONF_MEAN} (the scale the lifter was trained on; phase 15 "
+          f"found raw scores destroy the estimate)")
 
     n_model = max(81, int(round(len(kp) * MODEL_FPS / fps)))
     print(f"resampling {len(kp)} frames @ {fps:.0f} fps -> {n_model} @ "

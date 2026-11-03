@@ -159,3 +159,35 @@ def test_blend_weights_are_one_per_frame_and_peak_at_window_centres():
     out2, w2 = lift(Identity(), det, "edge", "consecutive", with_weights=True)
     assert np.allclose(w2, 1.0), "consecutive windows cover each frame once"
     assert np.allclose(out2, lift(Identity(), det, "edge", "consecutive"))
+
+
+def test_the_confidence_channel_is_put_on_the_scale_the_lifter_trained_on():
+    """torchvision's raw keypoint scores are ~14x the trained scale.
+
+    The checkpoint was trained on AthleticsPose's released detections, whose
+    channel 2 is a normalised confidence (mean 0.8676, sd 0.1164 over 60 clips).
+    torchvision emits raw heatmap scores -- [3.9, 18.4] on MoVi. Feeding those
+    straight to the lifter gave 30 deg MAE with r = +0.02 against ground truth
+    and an impossible +66 deg knee flexion; the same clip's projected-reference
+    2D gave 4.5 deg. This asserts the seam is still being crossed.
+    """
+    import numpy as np
+
+    from video_kinematics import (TRAIN_CONF_MEAN, scores_to_train_scale)
+
+    rng = np.random.default_rng(11)
+    kp = np.empty((5, 17, 3))
+    kp[:, :, :2] = rng.uniform(50, 500, size=(5, 17, 2))
+    kp[:, :, 2] = rng.uniform(3.9, 18.4, size=(5, 17))   # torchvision's scale
+    kp[3] = 0.0                                          # an undetected frame
+
+    out = scores_to_train_scale(kp)
+
+    # the trained scale, not the raw one
+    assert out[:, :, 2].max() <= 1.2, "confidence left on the raw score scale"
+    for i in (0, 1, 2, 4):
+        assert np.allclose(out[i, :, 2], TRAIN_CONF_MEAN)
+    # an undetected frame must not be handed a confident weight
+    assert np.allclose(out[3, :, 2], 0.0)
+    # the coordinates are untouched
+    assert np.array_equal(out[:, :, :2], kp[:, :, :2])
