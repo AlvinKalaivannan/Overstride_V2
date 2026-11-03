@@ -867,6 +867,59 @@ project prescribes *and* a frontal contrast camera.
 Any check that fails and cannot be resolved from the dataset's own documentation
 **stops the MAE for the affected clips** rather than being worked around.
 
+#### Subject designation, fixed 2026-11-02 BEFORE either set was downloaded
+
+Phase 15's result rests on **two** usable subjects, and they disagree by
+**2.3×** on the detector's share of the error and **2×** on the perfect-2D hip
+bias. That is too thin to decide anything on, so more subjects are needed — but
+spending them all on diagnosis would leave nothing to test a fix against. The
+subjects are therefore split into two sets **now**, with the roles written down
+before any of the data exists on disk, so neither role can be reassigned later
+to suit a result.
+
+| set | subjects | role |
+|---|---|---|
+| **spent** | `Subject_1`, `Subject_10` | the phase 15 result. Measured, inspected, decomposed. No longer independent |
+| **spent / excluded** | `Subject_11` | excluded by the frozen check rule; see `results/phase15.md` D4 |
+| **DIAGNOSTIC** | `Subject_12`, `Subject_13`, `Subject_15` | **PG1 only.** Downloaded 2026-11-02 to diagnose the hip bias and the detector split. **Spent the moment they are looked at**, exactly as 1 and 10 are |
+| **SEALED TEST** | `Subject_16`, `Subject_17`, `Subject_18`, `Subject_19`, `Subject_2` | **named and costed, NOT downloaded.** Opened only to test a fix that was frozen beforehand |
+
+`Subject_14` is skipped throughout: it has **no round F video of any kind**,
+consistent with the README's 89-of-90 count for PG1.
+
+**The diagnostic set is spent on arrival.** That is the point of naming it: a
+subject used to work out *why* the hip is biased cannot then be used to show
+that a hip correction works. Saying so in advance is what stops the second use
+from happening by drift.
+
+**DIAGNOSTIC — `Subject_12`, `Subject_13`, `Subject_15`, PG1 only**
+
+| item | id | size |
+|---|---|---|
+| mocap, one ranged prefix of `F_Subjects_1_45.tar` reaching the 7th member | 128299 | ~290 MB of 1,814.6 MB |
+| `F_PG1_Subject_12_L.avi` | 85270 | 247 MB |
+| `F_PG1_Subject_13_L.avi` | 85234 | 260 MB |
+| `F_PG1_Subject_15_L.avi` | 85255 | 234 MB |
+| **total** | | **~1,030 MB** |
+
+**SEALED TEST — the next five in archive order with PG1 video. Do not download.**
+
+| subject | archive position | `F_PG1` id | size |
+|---|---|---|---|
+| `Subject_16` | 8 | 85266 | 213 MB |
+| `Subject_17` | 9 | 85241 | 199 MB |
+| `Subject_18` | 10 | 85248 | 240 MB |
+| `Subject_19` | 11 | 85244 | 218 MB |
+| `Subject_2` | 12 | 85251 | 91 MB |
+| **video total** | | | **961 MB** |
+| mocap prefix reaching position 12 | 128299 | | ~492 MB |
+| **total if all five** | | | **~1,453 MB** |
+| *total if only the first three (16, 17, 18)* | | | *~1,063 MB* |
+
+Costed from Dataverse metadata only — ids and byte counts — which is the same
+lookup §8.4 used and which `CLAUDE.md` says is not "opening" a held-out set.
+**No sealed-set byte has been transferred.**
+
 #### Which subjects are opened, and which are still a clean test set
 
 **Subjects 1, 10 and 11 are spent as a test set.** They have been measured,

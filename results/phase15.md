@@ -494,6 +494,28 @@ run on real footage"*. It still has not, in the sense that matters:
 calibrated machine-vision cameras. MoVi has the phone footage §7.5 needs, and
 this phase could not score it. §7.5 stays **open**.
 
+## Subject designation, fixed 2026-11-02 before any further download
+
+The result above rests on **two** subjects, and they disagree by **2.3×** on
+the detector's share and **2×** on the perfect-2D hip bias. More subjects are
+needed to diagnose that, but spending every remaining subject on diagnosis would
+leave nothing to test a fix against. So the roles are fixed **now**, before the
+data exists on disk:
+
+| set | subjects | role |
+|---|---|---|
+| spent | `Subject_1`, `Subject_10` | the headline result above |
+| spent / excluded | `Subject_11` | excluded by the frozen rule, D4 |
+| **DIAGNOSTIC** | `Subject_12`, `Subject_13`, `Subject_15` | PG1 only. **Spent on arrival** — used to work out *why*, never to show that a fix works |
+| **SEALED TEST** | `Subject_16`, `Subject_17`, `Subject_18`, `Subject_19`, `Subject_2` | named and costed, **not downloaded**. Opened only against a fix frozen beforehand |
+
+`Subject_14` is skipped: no round F video of any kind.
+
+**Nothing below this line changes the phase 15 headline.** The diagnostic rows
+are labelled as diagnostic, they are not pooled into the result, and the
+reported figure stays **9.610° near / 10.604° far on PG1 at n = 2**. Sizes,
+file ids and the full rationale are in `docs/data-inventory.md` §8.5.
+
 ### What this phase does NOT establish
 
 - **Nothing about phone footage** — see above.
