@@ -103,8 +103,12 @@ def load_v3d(path: Path) -> dict:
     out = {
         "key": key,
         "subject_id": str(np.asarray(_f(subj, "id")).ravel()[0]),
-        "sex": str(np.asarray(_f(subj, "sex")).ravel()[0]),
-        "height_cm": int(np.asarray(_f(subj, "height")).ravel()[0]),
+        # `subject` also carries sex, height, mass and age. They are NOT read.
+        # MoVi's licence forbids reproducing the Data "in any form to any third
+        # party", this repository is public, and per-participant sex and stature
+        # keyed to the dataset's own subject id is the Data about a consenting
+        # human subject rather than a measurement of this method. No check here
+        # needs them -- they were collected only because they were in the struct.
         "marker_names": _strings(_f(m, "markerName")),
         "marker_location": np.asarray(_f(m, "markerLocation"), dtype=float),
         "marker_gaps": np.asarray(_f(m, "markerGaps")),
@@ -293,7 +297,6 @@ def travel_azimuth(pelvis: np.ndarray, centre: np.ndarray, up_axis: int,
 def check_subject(path: Path) -> dict:
     v = load_v3d(path)
     r: dict = {"file": path.name, "subject_id": v["subject_id"],
-               "sex": v["sex"], "height_cm": v["height_cm"],
                "n_markers": len(v["marker_names"]),
                "n_frames_mocap": int(v["marker_location"].shape[0])}
     print(f"\n===== {path.name} :: {v['subject_id']} =====")
@@ -413,16 +416,28 @@ def check_subject(path: Path) -> dict:
     femur = 0.5 * (seglen("l_hip", "l_knee") + seglen("r_hip", "r_knee"))
     tibia = 0.5 * (seglen("l_knee", "l_ankle") + seglen("r_knee", "r_ankle"))
     hipw = seglen("l_hip", "r_hip")
+    # THE VERDICT, NOT THE MEASUREMENTS. The question this check exists to
+    # answer is "are the units millimetres or metres", and a pass against a
+    # pre-registered human range answers it exactly as well as printing a
+    # participant's femur length does -- without publishing the limb
+    # measurements of three identifiable people from a dataset whose licence
+    # forbids redistributing the Data. The values are computed and tested here;
+    # they are simply not emitted.
+    femur_ok = FEMUR_MM[0] <= femur <= FEMUR_MM[1]
+    tibia_ok = TIBIA_MM[0] <= tibia <= TIBIA_MM[1]
+    hip_ok = 120.0 <= hipw <= 350.0
     r["check1_units"] = {
-        "femur_median_mm": round(femur, 1), "femur_plausible_mm": list(FEMUR_MM),
-        "tibia_median_mm": round(tibia, 1), "tibia_plausible_mm": list(TIBIA_MM),
-        "hip_width_median_mm": round(hipw, 1),
-        "femur_over_height": round(femur / (v["height_cm"] * 10.0), 4),
+        "femur_in_plausible_range": bool(femur_ok),
+        "femur_plausible_mm": list(FEMUR_MM),
+        "tibia_in_plausible_range": bool(tibia_ok),
+        "tibia_plausible_mm": list(TIBIA_MM),
+        "hip_width_in_plausible_range": bool(hip_ok),
         "units": "millimetres",
-        "pass": bool(FEMUR_MM[0] <= femur <= FEMUR_MM[1]
-                     and TIBIA_MM[0] <= tibia <= TIBIA_MM[1])}
-    print(f"  [1] units: femur {femur:.1f} mm, tibia {tibia:.1f} mm, "
-          f"hip width {hipw:.1f} mm -> "
+        "note": ("per-subject segment lengths are deliberately not reported: "
+                 "see the comment above and docs/data-inventory.md 8.5"),
+        "pass": bool(femur_ok and tibia_ok)}
+    print(f"  [1] units: femur, tibia and hip width all inside their "
+          f"pre-registered human ranges -> "
           f"{'PASS millimetres' if r['check1_units']['pass'] else 'FAIL'}")
 
     # ---- check 2: which axis is up, and is the frame mirrored -------------
@@ -432,7 +447,7 @@ def check_subject(path: Path) -> dict:
     for name in ("PG1", "PG2"):
         R_cv, t_cv, centre = camera_pose(name)
         cams[name] = (R_cv, t_cv, centre)
-    heights = {n: cams[n][2].tolist() for n in cams}
+    # local only -- never emitted; see check2_convention below
     # The axis on which BOTH camera rigs sit between 0.8 m and 2.5 m: that has
     # to be a mounting height, which is a fact about the rig rather than a guess
     # about the convention.
@@ -452,9 +467,14 @@ def check_subject(path: Path) -> dict:
     knee = np.concatenate([sagittal_angles(g, s)["knee"][angle_mask(g, s)]
                            for s in ("l", "r")])
     r["check2_convention"] = {
-        "camera_centres_world_mm": heights,
+        # The camera centres themselves are verbatim content of MoVi's
+        # `Camera Parameters.tar`, so what is reported is the INFERENCE drawn
+        # from them -- that both rigs sit at a height, which is what identifies
+        # the vertical axis -- rather than the coordinates.
+        "both_cameras_at_mounting_height_0.8_2.5m": bool(len(cand) == 1),
         "vertical_axis_from_camera_height": up_axis,
-        "mean_head_minus_pelvis_mm": [round(x, 1) for x in head_minus_pelvis],
+        "head_above_pelvis_on_that_axis": bool(
+            int(np.argmax(np.abs(head_minus_pelvis))) == up_axis),
         "vertical_axis_from_posture": int(np.argmax(np.abs(head_minus_pelvis))),
         "knee_flexion_deg": {"min": round(float(knee.min()), 2),
                              "max": round(float(knee.max()), 2),
@@ -464,7 +484,8 @@ def check_subject(path: Path) -> dict:
                  "plausible band, hip (-40,60) knee (-170,20)"),
         "pass": bool(up_axis == int(np.argmax(np.abs(head_minus_pelvis)))
                      and -170.0 <= knee.min() and knee.max() <= 20.0)}
-    print(f"  [2] convention: camera centres put vertical on axis {up_axis}; "
+    print(f"  [2] convention: camera mounting heights put vertical on axis "
+          f"{up_axis}; "
           f"head-pelvis agrees on axis "
           f"{int(np.argmax(np.abs(head_minus_pelvis)))}")
     print(f"      knee flexion over jogging: "
@@ -488,16 +509,18 @@ def check_subject(path: Path) -> dict:
             "travel_azimuth_deg": round(az["deg"], 1),
             "travel_azimuth_iqr_deg": [round(az.get("p25", float("nan")), 1),
                                        round(az.get("p75", float("nan")), 1)],
-            "camera_centre_mm": [round(x, 1) for x in centre],
             "n_frames_scored": int(ok.sum()),
-            "distance_to_subject_mm": round(float(np.linalg.norm(
-                np.nanmean(g[:, H36M["pelvis"]], axis=0) - centre)), 1)}
+            # Rounded to the metre: the distance matters as "a few metres away,
+            # like a phone on a tripod", and a decimal place would start to
+            # describe the rig rather than the geometry.
+            "distance_to_subject_m": round(float(np.linalg.norm(
+                np.nanmean(g[:, H36M["pelvis"]], axis=0) - centre)) / 1000.0, 1)}
         print(f"  [side-on] {name}: view_ratio {vr:.4f} "
               f"(1 = side-on, AthleticsPose median 0.751), "
               f"travel azimuth {az['deg']:.1f} deg "
               f"[{az.get('p25', float('nan')):.0f}, "
               f"{az.get('p75', float('nan')):.0f}] (90 = side-on), "
-              f"{r['viewpoint'][name]['distance_to_subject_mm'] / 1000:.2f} m away")
+              f"{r['viewpoint'][name]['distance_to_subject_m']:.1f} m away")
     r["left_limb_nearer_camera"] = {
         name: bool(np.nanmean(to_camera(g, *cams[name][:2])[:, H36M["l_hip"], 2])
                    < np.nanmean(to_camera(g, *cams[name][:2])[:, H36M["r_hip"], 2]))

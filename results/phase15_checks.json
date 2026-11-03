@@ -138,24 +138,25 @@
         "note": "distance from H36M's mean(ASIS,PSIS) hip to the dataset's own hip joint centre -- the irreducible offset no image-based detector can mark"
       },
       "check1_units": {
+        "femur_in_plausible_range": true,
         "femur_plausible_mm": [
           350.0,
           550.0
         ],
+        "tibia_in_plausible_range": true,
         "tibia_plausible_mm": [
           300.0,
           500.0
         ],
+        "hip_width_in_plausible_range": true,
         "units": "millimetres",
+        "note": "per-subject segment lengths are deliberately not reported: see the comment above and docs/data-inventory.md 8.5",
         "pass": true
       },
       "check2_convention": {
+        "both_cameras_at_mounting_height_0.8_2.5m": true,
         "vertical_axis_from_camera_height": 2,
-        "mean_head_minus_pelvis_mm": [
-          81.2,
-          -3.1,
-          668.5
-        ],
+        "head_above_pelvis_on_that_axis": true,
         "vertical_axis_from_posture": 2,
         "knee_flexion_deg": {
           "min": -73.53,
@@ -173,7 +174,8 @@
             62.1,
             83.7
           ],
-          "n_frames_scored": 809
+          "n_frames_scored": 809,
+          "distance_to_subject_m": 4.6
         },
         "PG2": {
           "view_ratio": 0.4677,
@@ -182,7 +184,8 @@
             5.8,
             22.9
           ],
-          "n_frames_scored": 809
+          "n_frames_scored": 809,
+          "distance_to_subject_m": 4.3
         }
       },
       "left_limb_nearer_camera": {
@@ -316,24 +319,25 @@
         "note": "distance from H36M's mean(ASIS,PSIS) hip to the dataset's own hip joint centre -- the irreducible offset no image-based detector can mark"
       },
       "check1_units": {
+        "femur_in_plausible_range": true,
         "femur_plausible_mm": [
           350.0,
           550.0
         ],
+        "tibia_in_plausible_range": true,
         "tibia_plausible_mm": [
           300.0,
           500.0
         ],
+        "hip_width_in_plausible_range": true,
         "units": "millimetres",
+        "note": "per-subject segment lengths are deliberately not reported: see the comment above and docs/data-inventory.md 8.5",
         "pass": true
       },
       "check2_convention": {
+        "both_cameras_at_mounting_height_0.8_2.5m": true,
         "vertical_axis_from_camera_height": 2,
-        "mean_head_minus_pelvis_mm": [
-          31.8,
-          -24.1,
-          637.8
-        ],
+        "head_above_pelvis_on_that_axis": true,
         "vertical_axis_from_posture": 2,
         "knee_flexion_deg": {
           "min": -116.26,
@@ -351,7 +355,8 @@
             65.5,
             81.9
           ],
-          "n_frames_scored": 969
+          "n_frames_scored": 969,
+          "distance_to_subject_m": 4.4
         },
         "PG2": {
           "view_ratio": 0.4651,
@@ -360,7 +365,196 @@
             4.0,
             20.8
           ],
-          "n_frames_scored": 969
+          "n_frames_scored": 969,
+          "distance_to_subject_m": 3.9
+        }
+      },
+      "left_limb_nearer_camera": {
+        "PG1": true,
+        "PG2": false
+      }
+    },
+    {
+      "file": "F_v3d_Subject_11.mat",
+      "subject_id": "Subject_11",
+      "n_markers": 87,
+      "n_frames_mocap": 22159,
+      "check6_subject_identity": {
+        "mat_field": "Subject_11",
+        "filename": "Subject_11",
+        "video_stem_would_be": "F_PG1_Subject_11_L.avi",
+        "pass": true
+      },
+      "motions_list": [
+        "kicking",
+        "taking_photo",
+        "stretching",
+        "phone_talking",
+        "throw/catch",
+        "crossarms",
+        "pointing",
+        "running_in_spot",
+        "sitting_down",
+        "jumping_jack",
+        "hopping_rm",
+        "hand_waving",
+        "cross_legged_sitting",
+        "scratching_head",
+        "checking_watch",
+        "jogging",
+        "vertical_jumping",
+        "hand_clapping",
+        "walking",
+        "sideways",
+        "crawling"
+      ],
+      "jogging_index_0based": 15,
+      "excluded_running_in_spot_index_0based": [
+        7
+      ],
+      "jogging_frames": {
+        "video_30fps": [
+          3244,
+          3684
+        ],
+        "mocap_120hz": [
+          12973,
+          14733
+        ],
+        "n_video": 441,
+        "n_mocap": 1761,
+        "seconds_at_30fps": 14.7
+      },
+      "check5_sync": {
+        "mocap_hz": 120.0,
+        "video_fps_declared": 30.0,
+        "expected_ratio": 4.0,
+        "median_flag_ratio": 3.9985933785794723,
+        "max_abs_dev_from_4": 0.024793388429752206,
+        "note": "flags30 and flags120 are the SAME movement boundaries expressed in video and mocap frames, so the dataset ships the correspondence rather than leaving it to be estimated",
+        "pass": true
+      },
+      "check3_mapping": {
+        "pelvis": [
+          "LFWT",
+          "LBWT",
+          "RFWT",
+          "RBWT"
+        ],
+        "r_hip": [
+          "RFWT",
+          "RBWT"
+        ],
+        "r_knee": "RKJC",
+        "r_ankle": "RAJC",
+        "l_hip": [
+          "LFWT",
+          "LBWT"
+        ],
+        "l_knee": "LKJC",
+        "l_ankle": "LAJC",
+        "spine": "midpoint(pelvis, THORAX)",
+        "thorax": "THORAX",
+        "neck": "CLAV",
+        "head": "HEAD",
+        "l_shoulder": "LSJC",
+        "l_elbow": "LEJC",
+        "l_wrist": "LWJC",
+        "r_shoulder": "RSJC",
+        "r_elbow": "REJC",
+        "r_wrist": "RWJC"
+      },
+      "n_frames_jogging_mocap": 1761,
+      "gap_sentinel": {
+        "n_frames": 1761,
+        "n_frames_with_a_gap_in_any_mapped_marker": 768,
+        "fraction_if_excluded_globally": 0.4361,
+        "per_side_for_hip_and_knee": {
+          "l": {
+            "n_usable": 1022,
+            "n_excluded": 739,
+            "fraction_excluded": 0.4196
+          },
+          "r": {
+            "n_usable": 1022,
+            "n_excluded": 739,
+            "fraction_excluded": 0.4196
+          }
+        },
+        "joints_each_angle_reads": [
+          "pelvis",
+          "thorax",
+          "l_hip",
+          "r_hip",
+          "<side>_hip",
+          "<side>_knee",
+          "<side>_ankle"
+        ],
+        "gapped_frames_per_marker": {
+          "CLAV": 244,
+          "LFWT": 346,
+          "LKJC": 21,
+          "LWJC": 82,
+          "RFWT": 208,
+          "THORAX": 244
+        },
+        "handling": "excluded, never interpolated"
+      },
+      "h36m_hip_vs_joint_centre_mm": {
+        "left": 97.0,
+        "right": 98.0,
+        "phase12_measured_mm": 81.0,
+        "note": "distance from H36M's mean(ASIS,PSIS) hip to the dataset's own hip joint centre -- the irreducible offset no image-based detector can mark"
+      },
+      "check1_units": {
+        "femur_in_plausible_range": false,
+        "femur_plausible_mm": [
+          350.0,
+          550.0
+        ],
+        "tibia_in_plausible_range": true,
+        "tibia_plausible_mm": [
+          300.0,
+          500.0
+        ],
+        "hip_width_in_plausible_range": true,
+        "units": "millimetres",
+        "note": "per-subject segment lengths are deliberately not reported: see the comment above and docs/data-inventory.md 8.5",
+        "pass": false
+      },
+      "check2_convention": {
+        "both_cameras_at_mounting_height_0.8_2.5m": true,
+        "vertical_axis_from_camera_height": 2,
+        "head_above_pelvis_on_that_axis": true,
+        "vertical_axis_from_posture": 2,
+        "knee_flexion_deg": {
+          "min": -74.33,
+          "max": -7.33,
+          "median": -22.71
+        },
+        "note": "a mirrored axis would flip flexion sign; jogging knee flexion must be one-signed and inside the tool's own plausible band, hip (-40,60) knee (-170,20)",
+        "pass": true
+      },
+      "viewpoint": {
+        "PG1": {
+          "view_ratio": 0.6664,
+          "travel_azimuth_deg": 76.9,
+          "travel_azimuth_iqr_deg": [
+            57.5,
+            85.4
+          ],
+          "n_frames_scored": 1253,
+          "distance_to_subject_m": 4.6
+        },
+        "PG2": {
+          "view_ratio": 0.5113,
+          "travel_azimuth_deg": 15.4,
+          "travel_azimuth_iqr_deg": [
+            4.5,
+            35.9
+          ],
+          "n_frames_scored": 1253,
+          "distance_to_subject_m": 4.3
         }
       },
       "left_limb_nearer_camera": {

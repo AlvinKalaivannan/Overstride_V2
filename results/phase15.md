@@ -197,7 +197,7 @@ Full detail in `results/phase15_checks.json` and `docs/data-inventory.md` §8.5.
 
 | # | check | round F |
 |---|---|---|
-| 1 | mocap units | **PASS** — millimetres; femur, tibia and hip width all inside their pre-registered human ranges [redacted: see docs/data-inventory.md 8.5] |
+| 1 | mocap units | **PASS** — millimetres. Femur, tibia and hip width all fall inside their pre-registered human ranges (350–550 mm, 300–500 mm). The per-subject lengths are deliberately **not** reported: see `docs/data-inventory.md` §8.5 |
 | 2 | axis and handedness | **PASS** — vertical is axis 2, agreed independently by both camera centres sitting at 1.35–1.38 m and by head-minus-pelvis; jogging knee flexion `[-73.5, -8.7]°`, one-signed and anatomical |
 | 3 | marker set → H36M-17 | **PASS** for round F, **FAIL** for round S (see D1) |
 | 4 | video frame rate | **PASS** — read from the file: 30.000 fps, 800×600 |

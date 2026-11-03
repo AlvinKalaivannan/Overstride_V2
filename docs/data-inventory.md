@@ -790,12 +790,37 @@ with the dataset:
 
 | # | check | answer (round F) |
 |---|---|---|
-| 1 | mocap units | **millimetres.** femur, tibia and hip width all inside their pre-registered human ranges [redacted: see docs/data-inventory.md 8.5] |
+| 1 | mocap units | **millimetres** — femur, tibia and hip width all inside their pre-registered human ranges (350–550, 300–500, 120–350 mm) for every subject checked. **The per-subject lengths are not reported**, see the note below |
 | 2 | vertical axis and handedness | **vertical is axis 2**, agreed two independent ways: both PG camera centres sit at 1.35–1.38 m on that axis, which has to be a mounting height, and head-minus-pelvis points along it. Not mirrored — jogging knee flexion is `[-73.5, -8.7]°`, one-signed and inside the tool's own plausible band |
 | 3 | marker set → H36M-17 | **stated in `MOVI_TO_H36M`** (`scripts/phase15_checks.py`). Hips are `mean(LFWT, LBWT)` / `mean(RFWT, RBWT)` = `mean(ASIS, PSIS)`, which is H36M's own definition; knees `LKJC`/`RKJC`, ankles `LAJC`/`RAJC`, thorax `THORAX`, spine the pelvis–thorax midpoint. Verified against the projected reference joint by joint: every H36M joint matches the COCO slot it should, 11.8 px mean |
 | 4 | video frame rate | **30.000 fps, 800×600**, read from the file, not assumed |
 | 5 | synchronisation | **shipped by the dataset, not estimated.** `flags30` and `flags120` are the same movement boundaries in video and mocap frames, ratio **3.9981** (max deviation from 4: 0.0112). Video frame *k* ↔ mocap frame `f120[0] + 4k`, so the reference 3D is never resampled |
 | 6 | subject identity | **matches** — the `.mat` subject field equals the filename's subject for every subject checked |
+
+#### What is deliberately NOT reported from MoVi, and why
+
+The licence forbids reproducing the Data *"in any form to any third party"*, and
+**this repository is public**. So three classes of value are computed, tested
+and then **not emitted**:
+
+1. **Per-participant attributes** — `sex`, `height`, `mass` and `age` are in the
+   Visual3D `subject` struct and are **not read at all** by
+   `scripts/phase15_checks.py`. No check needs them.
+2. **Per-subject segment lengths in millimetres.** Check 1 exists to answer
+   "millimetres or metres", and a pass against a pre-registered human range
+   answers that exactly as well as publishing the femur length of three
+   identifiable people. The values are computed and tested; only the verdict is
+   written out.
+3. **Camera intrinsics and extrinsics**, which are verbatim content of
+   `Camera Parameters.tar`. What is reported is the *inference* — that both PG
+   rigs sit at a mounting height, which is what identifies the vertical axis —
+   plus `view_ratio`, the travel azimuth, and the subject distance rounded to
+   the metre. Not the coordinates.
+
+What *is* reported is measurement of the method: angle MAE, correlations,
+`view_ratio`, frame counts, exclusions, and the H36M-hip-to-joint-centre offset,
+which is a property of a *convention* rather than of a person and is the finding
+that replicates phase 12's 81 mm.
 
 **Two traps, both recorded because both would have produced a wrong number
 silently.**

@@ -20,7 +20,7 @@ marked.
 
 ### 1.1 The prior session (pre-compaction, 2026-10-19 → 10-20)
 
-Executed the approved plan at `~\.claude\plans\phase-0-effervescent-wave.md`
+Executed the approved plan at `~/.claude/plans/phase-0-effervescent-wave.md`
 (steps 0a–0d, then phase 14, then phase 13 arm 1, then phase 16 speed).
 Outcomes, all committed:
 
@@ -214,11 +214,12 @@ which **has not been run yet**.
 
 - Same subject, camera, mocap, window — but the **full** 206-frame jogging
   window, of which **161 frames** had a complete projected skeleton
-- 2D built by projecting the reference 3D through PG1's own intrinsics
-  (intrinsics not reproduced; read them from Camera Parameters.tar), extrinsics, and radial distortion
-  (distortion coefficients not reproduced). H36M-ordered by construction — no detector, no
-  COCO conversion. Channel 2 set to 1.0 in the diagnostic
-  (`project_reference` now uses `TRAIN_CONF_MEAN`)
+- 2D built by projecting the reference 3D through PG1's own intrinsics,
+  extrinsics and radial distortion, as shipped in `Camera Parameters.tar`
+  (values not reproduced here — MoVi's licence forbids redistributing the Data
+  and this repo is public; read them from the archive). H36M-ordered by
+  construction — no detector, no COCO conversion. Channel 2 set to 1.0 in the
+  diagnostic (`project_reference` now uses `TRAIN_CONF_MEAN`)
 - Projected skeleton height **333 px** vs the detector's **325 px**
 
 | limb | hip | hip r | knee | knee r | mean |
@@ -296,7 +297,7 @@ Note: scratchpad diagnostics (`diag_align.py`, `diag_bisect.py`, `diag_2d.py`,
 `extract_v3d.py`, `dump_move.py`, `probe_archives.py`, `range_tar_head.py`,
 `stream_tar_head.py`, `fids.py`, `terms.py`, `pdftxt.py`) live only in the
 session scratchpad at
-`~\AppData\Local\Temp\claude\C--Users-alvin-Overstride-V2\<session-id>\scratchpad`
+the session scratchpad under `%LOCALAPPDATA%/Temp/claude/<session-id>/scratchpad`
 and are **not in the repo**. They will be lost.
 
 ---
@@ -539,7 +540,7 @@ pre-registered 30 Hz control *on the MoVi side* by construction.
 - **RAM:** 31.4 GB
 - **GPU:** Intel Arc 140T (16 GB), driver 32.0.101.8860 — **not CUDA**, unusable by torch
 - **Free disk:** **612.1 GB free of 930.5 GB** on C:
-- **Python:** 3.11.9, venv at `~\Overstride_V2\.venv` (`.venv/Scripts/python.exe`)
+- **Python:** 3.11.9, venv at `<repo>/.venv` (`.venv/Scripts/python.exe`)
 
 ### Packages
 | package | version |
