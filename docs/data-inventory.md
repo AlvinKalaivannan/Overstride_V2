@@ -788,14 +788,45 @@ section before any number.
 Pre-registered in `results/phase15.md` and reproduced here so the answers live
 with the dataset:
 
-| # | check | status |
+| # | check | answer (round F) |
 |---|---|---|
-| 1 | mocap units (mm or m), verified against a femur length that must be human, 350–550 mm | *pending* |
-| 2 | coordinate convention: vertical axis and handedness. A mirrored axis flips flexion sign | *pending* |
-| 3 | marker set → H36M-17 mapping, stated explicitly, with a left/right sanity check | *pending* |
-| 4 | video frame rate **read from the file**, not assumed to be 30 | *pending* |
-| 5 | video-to-mocap synchronisation offset, from the dataset's own documentation | *pending* |
-| 6 | subject identity across modalities — the video file's subject id is the mocap file's | *pending* |
+| 1 | mocap units | **millimetres.** femur, tibia and hip width all inside their pre-registered human ranges [redacted: see docs/data-inventory.md 8.5] |
+| 2 | vertical axis and handedness | **vertical is axis 2**, agreed two independent ways: both PG camera centres sit at 1.35–1.38 m on that axis, which has to be a mounting height, and head-minus-pelvis points along it. Not mirrored — jogging knee flexion is `[-73.5, -8.7]°`, one-signed and inside the tool's own plausible band |
+| 3 | marker set → H36M-17 | **stated in `MOVI_TO_H36M`** (`scripts/phase15_checks.py`). Hips are `mean(LFWT, LBWT)` / `mean(RFWT, RBWT)` = `mean(ASIS, PSIS)`, which is H36M's own definition; knees `LKJC`/`RKJC`, ankles `LAJC`/`RAJC`, thorax `THORAX`, spine the pelvis–thorax midpoint. Verified against the projected reference joint by joint: every H36M joint matches the COCO slot it should, 11.8 px mean |
+| 4 | video frame rate | **30.000 fps, 800×600**, read from the file, not assumed |
+| 5 | synchronisation | **shipped by the dataset, not estimated.** `flags30` and `flags120` are the same movement boundaries in video and mocap frames, ratio **3.9981** (max deviation from 4: 0.0112). Video frame *k* ↔ mocap frame `f120[0] + 4k`, so the reference 3D is never resampled |
+| 6 | subject identity | **matches** — the `.mat` subject field equals the filename's subject for every subject checked |
+
+**Two traps, both recorded because both would have produced a wrong number
+silently.**
+
+1. **`markerGaps == 1` marks a missing marker, and Visual3D writes `[0, 0, 0]`
+   for it.** A sentinel, not a measurement — the same family as Ferber's `999`
+   and the `dv_r` zeros. Read literally it placed the knee joint centre at the
+   lab origin and drove jogging knee flexion to **+148.7°**. Gapped markers are
+   set to NaN and the frames they touch are **excluded, never interpolated**.
+   The exclusion is **per quantity**: `sagittal_angles` reads seven joints, so a
+   gap in an elbow or wrist must not cost a knee frame. Scoped globally it would
+   discard 21.2% of subject 1's jogging window; scoped correctly it is 3.9% left
+   and 4.5% right, and subject 10 loses nothing at all.
+2. **`LHJC`/`RHJC` are the _hand_ joint centres, not the hip.**
+   `markerDescription` reads "Left Hand Joint", and their height matches the
+   elbow. The hip joint centres are **`LHIP`/`RHIP`**. Using the wrong one put
+   the H36M-hip offset at 325 mm; the right one gives **104/110 mm** (subject 1)
+   and **90/92 mm** (subject 10), which independently reproduces the **81 mm**
+   phase 12 measured on AthleticsPose for the same definitional offset.
+
+**`motions_list` order is randomised per subject.** Jogging is index 18 for
+subject 1 and **16** for subject 10; `running_in_spot` moves from 7 to 19. The
+index must be read per subject — a hardcoded one silently measures a different
+movement.
+
+**The side-on question, which `CLAUDE.md` says phase 15 must answer first.**
+Both metrics agree on both subjects: **PG1 is side-on** (`view_ratio` 0.720 and
+0.705 against AthleticsPose's own median of 0.751; travel azimuth 75.7° and
+75.0°, IQR 62–84, where 90° is side-on), and **PG2 is near-frontal** (0.468 and
+0.465; azimuth 11.0° and 10.5°). So the held-out set carries the geometry this
+project prescribes *and* a frontal contrast camera.
 
 Any check that fails and cannot be resolved from the dataset's own documentation
 **stops the MAE for the affected clips** rather than being worked around.

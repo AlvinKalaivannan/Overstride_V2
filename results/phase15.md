@@ -109,6 +109,127 @@ All six go into `docs/data-inventory.md` §8.5 before Results is written.
 
 ---
 
+## Deviations from the frozen definition, recorded before any result
+
+The section above was frozen in `64fb0bc` and nothing in it has been edited.
+Three things happened between that freeze and the first number, and the rule
+this phase set for itself is the one being followed: *"If a defect is found that
+forces a pipeline change … the change is made, the old numbers are **voided and
+kept on disk**, and the phase re-runs from the frozen definition above with the
+deviation recorded."* No reportable number was produced before any of these, so
+there is nothing to void.
+
+### D1 — Round F, not round S (`fe247a8`)
+
+**Check 3 of the six failed for round S, irrecoverably.** `S_V3D.tar` ships 12
+physical markers — head, wrists and ankles — and **no hip, knee or pelvis**,
+which are exactly the joints this phase scores. It also ships no `motions_list`
+and no frame flags, so it cannot be cut into movements at all.
+
+Round F passes all six and ships more: 87 markers including `LFWT`/`LBWT` and
+`RFWT`/`RBWT`, which *are* the ASIS and PSIS markers, so **H36M's own hip
+definition — `mean(ASI, PSI)` — is exactly computable** rather than
+approximated. This is a change of *which clips*, not of the pipeline, and it was
+forced by a pre-registered check rather than chosen.
+
+The 1.26 GB of round-S video downloaded first is the wrong round and is kept
+only as the record of how this was found.
+
+### D2 — The confidence channel was 14× out of scale (`2db742f`)
+
+**A real defect in the deployable tool, not a property of MoVi.** `lift` feeds
+channel 2 of the 2D array to the model as a per-keypoint weight. The checkpoint
+was trained on AthleticsPose's released detections, whose channel 2 is a
+*normalised* confidence — mean 0.8676, sd 0.1164 over 60 clips and 131,121
+values. torchvision's `keypoints_scores` are *raw* heatmap scores, [3.9, 18.4]
+on MoVi, and `detect_coco17` wrote them straight through.
+
+| | MAE | r vs reference |
+|---|---|---|
+| raw scores | **30.07°** | +0.02 hip, +0.17 knee |
+| fixed | **11.45°** | +0.84 hip, +0.91 knee |
+
+With raw scores the estimated knee flexion reached **+66°**, which
+`video_kinematics.PLAUSIBLE` itself calls impossible. The fix is a constant and
+the choice is *a priori*: the trained channel is nearly constant anyway (13% CV),
+phase 14 measured the detector's own confidence as **anti**-correlated with
+thigh error, and anything data-dependent would have to be chosen on ground truth
+*with video* — which only MoVi provides, and choosing on MoVi would invalidate
+this phase. **Zero parameters are fitted to held-out data.**
+
+**Why no earlier phase could catch it:** every number before this one came from
+released `.npy` files that already carry normalised confidences, and
+AthleticsPose ships no video. The detector half of this path had never once been
+scored against ground truth. Second defect of this family after the COCO/H36M
+joint order; both lived in the only code path with no ground truth to check it
+against.
+
+### D3 — Time alignment is exact, and better than the freeze assumed
+
+The frozen text listed check 5 as *"synchronisation offset … if it cannot be
+established, the MAE is not reported."* It can be, and not as an estimate: MoVi
+ships `flags30` and `flags120`, the same movement boundaries expressed in video
+and in mocap frames, at a measured ratio of **3.9981** (max deviation from 4 is
+0.0112). So video frame *k* scores against mocap frame `f120[0] + 4k` and
+**the reference 3D is never resampled**, as `CLAUDE.md` requires.
+
+That also satisfies the pre-registered 30 Hz control *by construction*: the
+comparison already happens on a 30 Hz grid against untouched 120 Hz mocap. What
+it does **not** isolate is the frame-rate penalty on the AthleticsPose side,
+which would need the tune set re-scored at 30 fps — a separate run, named here
+so it is not mistaken for done.
+
+### Two corrections to earlier claims of mine
+
+- **`motions_list` order differs per subject.** Jogging is index 18 for subject
+  1 and **16** for subject 10; `running_in_spot` moves from 7 to 19. An earlier
+  commit message stated the index as if it were a dataset constant. The code
+  always read it per subject; the claim about it was wrong.
+- **`LHJC`/`RHJC` are the _hand_ joint centres**, not the hip — `markerDescription`
+  reads "Left Hand Joint" and their height matches the elbow. The hip joint
+  centres are `LHIP`/`RHIP`. With the right marker, the offset from H36M's
+  `mean(ASI,PSI)` hip is **104/110 mm** on subject 1 and **90/92 mm** on subject
+  10, independently reproducing the **81 mm** phase 12 measured on AthleticsPose.
+
+## The six checks, answered
+
+Full detail in `results/phase15_checks.json` and `docs/data-inventory.md` §8.5.
+
+| # | check | round F |
+|---|---|---|
+| 1 | mocap units | **PASS** — millimetres; femur, tibia and hip width all inside their pre-registered human ranges [redacted: see docs/data-inventory.md 8.5] |
+| 2 | axis and handedness | **PASS** — vertical is axis 2, agreed independently by both camera centres sitting at 1.35–1.38 m and by head-minus-pelvis; jogging knee flexion `[-73.5, -8.7]°`, one-signed and anatomical |
+| 3 | marker set → H36M-17 | **PASS** for round F, **FAIL** for round S (see D1) |
+| 4 | video frame rate | **PASS** — read from the file: 30.000 fps, 800×600 |
+| 5 | synchronisation | **PASS** — shipped by the dataset, ratio 3.9981 (see D3) |
+| 6 | subject identity | **PASS** — the `.mat` subject field matches the filename for every subject |
+
+**Gap sentinel, found and handled.** `markerGaps == 1` marks a *missing* marker
+and Visual3D writes `[0, 0, 0]` for it. Read literally that put the knee joint
+centre at the lab origin and drove knee flexion to +148.7°. Gapped markers are
+NaN and the frames they touch are **excluded, never interpolated**. The
+exclusion is **per quantity**: `sagittal_angles` reads seven joints, so an elbow
+gap must not cost a knee frame. Globally it would have been 21.2% of subject 1's
+window; correctly scoped it is 3.9% left / 4.5% right, and subject 10 loses
+nothing.
+
+## The side-on question, answered
+
+`CLAUDE.md` says phase 15 must settle this first. Both metrics agree, on both
+subjects measured:
+
+| camera | `view_ratio` (1 = side-on) | travel azimuth (90° = side-on) | verdict |
+|---|---|---|---|
+| **PG1** | 0.720 / 0.705 | 75.7° / 75.0° [62–84] | **side-on** |
+| **PG2** | 0.468 / 0.465 | 11.0° / 10.5° [4–23] | near-frontal |
+
+**PG1 at 0.71 is essentially AthleticsPose's own median of 0.751**, so the
+held-out set is viewed from the geometry this project prescribes — and PG2 gives
+the frontal contrast that makes the phase 11 viewpoint curve (3.50° → 1.77°)
+measurable on a lab the pipeline has never seen.
+
 ## Results
 
-*Not yet run. MoVi has not been downloaded at the time of this commit.*
+*The full run is in progress at the time of this commit. Numbers are appended
+below with their CIs; the smoke figures quoted in D2 are from one clip and 150
+frames and are not the result.*

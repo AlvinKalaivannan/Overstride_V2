@@ -181,3 +181,62 @@ that opened this file, not a backfill.
 - Go deeper: this is dataset shift, and specifically covariate shift between
   training and deployment inputs. Quiñonero-Candela et al., *Dataset Shift in
   Machine Learning* (2009) is the standard reference.
+
+## 2026-11-02 — An auxiliary input channel has a scale, and the scale is part of the contract
+
+- What it is: when a model takes a side channel alongside its main input — a
+  confidence, a mask, a weight — that channel has a **distribution** in
+  training, and the distribution is as much part of the interface as the tensor
+  shape. Shape mismatches raise an exception. **Scale mismatches do not: they
+  run, and they return numbers.** Here the lifter's third channel was trained on
+  normalised confidences (mean 0.868, sd 0.116) and was being handed
+  torchvision's raw heatmap scores (mean 12.4, range [3.9, 18.4]) — ~14× out.
+  The pipeline did not fail; it produced an MAE of 30° with a correlation of
+  **+0.02** against ground truth and an estimated knee flexion of +66°.
+- Where it shows up here: `scripts/video_kinematics.py`, the `TRAIN_CONF_MEAN`
+  comment and `scores_to_train_scale`, which is deliberately a **named step at
+  the seam** rather than a quiet edit inside `detect_coco17`.
+- Gap I had: I treated "shape is right and values look like plausible numbers"
+  as evidence the array was correct. A confidence of 12.4 *is* a plausible
+  number — it is just not a plausible confidence. The check I was missing is:
+  compare the distribution of every input channel against the distribution the
+  weights were trained on, before trusting a single output.
+- Why it was invisible for so long: every earlier number in this project came
+  from released `.npy` files that already carried normalised confidences, and
+  AthleticsPose ships no video — so the detector half of the deployable path had
+  **never been scored against ground truth**. Two defects of this exact family
+  (this one and the COCO/H36M joint order) both lived in that one unverified
+  path. The lesson is structural: **the code path with no ground truth is where
+  your bugs are**, and the count of bugs found there is not evidence it is now
+  clean.
+- Go deeper: same covariate-shift family as [[a-model-learns-its-input-pipeline]],
+  but the shift is in an auxiliary channel rather than the main one, which makes
+  it far easier to miss.
+
+## 2026-11-02 — Bisect a pipeline with a synthetic-perfect input
+
+- What it is: an end-to-end error tells you the pipeline is broken but not
+  *where*. To localise it, feed the back half a **perfect version of its own
+  input**, built from ground truth, and see which half the error follows. Here
+  MoVi ships camera intrinsics, extrinsics and radial distortion, so the
+  reference 3D could be projected into the image and handed to the lifter —
+  H36M-ordered by construction, no detector, no joint conversion. That gave
+  4.5°, matching the 5.16° phase 7 had independently measured for perfect 2D
+  into the same checkpoint, which cleared the lifter, the ground-truth mapping,
+  the projection, the time alignment and the angle code in one test.
+- Where it shows up here: the diagnostic chain behind commit `2db742f`, and
+  `results/phase15.md` §D2.
+- Gap I had: my first instinct was to suspect the thing that had *recently*
+  changed (my own ground-truth mapping) rather than run the test that would
+  partition the pipeline. A bisection costs one run and rules out five
+  components; guessing costs one run and rules out one.
+- Also learned, smaller but it bit me: **the mean of directions is not the mean
+  of angles.** My side-on cross-check averaged velocity vectors and then took
+  the angle, which partly cancels for a subject shuttling back and forth in a
+  lab volume — it read 88.6° and 36.3° for two clips whose `view_ratio` was
+  0.72 and 0.71. Computing the angle per frame and taking the median gave 75.7°
+  and 75.0°, agreeing with the frozen metric. This is why circular quantities
+  get circular statistics.
+- Go deeper: Mardia & Jupp, *Directional Statistics* (2000), ch. 2 for the
+  circular mean; for the debugging method, delta debugging / bisection as in
+  Zeller, *Why Programs Fail*, ch. 13.
