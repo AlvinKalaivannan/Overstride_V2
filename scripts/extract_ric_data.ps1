@@ -5,10 +5,22 @@
 #   - .NET System.IO.Compression (PS 5.1 / .NET FW 4.x) -> "unsupported compression method"
 #   - bsdtar / libarchive 3.8 -> "Damaged Zip archive"
 # The Windows shell zip handler DOES support Deflate64, and needs no install.
-$ErrorActionPreference = 'Stop'
 
-$zipPath   = 'C:\Users\alvin\Overstride_V2\data\_staging\ric_data.zip'
-$dataRoot  = 'C:\Users\alvin\Overstride_V2\data\ric'
+# Paths are repo-relative, derived from this script's own
+# location, and overridable. They used to be absolute paths under a
+# developer's home directory, which made the script unusable by
+# anyone else and leaked a username into a public repository.
+param(
+  [string]$ZipPath,
+  [string]$DataRoot
+)
+
+$repo = Split-Path -Parent $PSScriptRoot
+if (-not $ZipPath)  { $ZipPath  = Join-Path $repo 'data\_staging\ric_data.zip' }
+if (-not $DataRoot) { $DataRoot = Join-Path $repo 'data\ric' }
+$ErrorActionPreference = 'Stop'
+$zipPath   = $ZipPath
+$dataRoot  = $DataRoot
 $staged    = Join-Path $dataRoot 'reformat_data'   # the archive's own root folder name
 $final     = Join-Path $dataRoot 'ric_data'        # what CLAUDE.md expects
 $EXPECTED  = 2506

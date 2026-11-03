@@ -615,7 +615,7 @@ held-out status.
 | Paper | PLoS ONE 2021, `10.1371/journal.pone.0253157`; arXiv 2003.01888 | **none linked** — no related identifier on the record | Sci. Data 2024, `10.1038/s41597-024-04077-3` |
 | Licence | non-commercial scientific research only; no copying, sharing, distributing or re-selling; **also prohibits training methods for commercial use** | **CC BY 4.0** | **All Rights Reserved**, access on request, record marked *restricted* |
 | Running? | **jogging yes; "running" is _running in place_** | **yes** — one of seven movements | **yes** — CMJ, walking, running |
-| Raw video? | **yes** — 2× hand-held iPhone 7 and 2× FLIR Grasshopper, all 800×600, 30 fps | **unconfirmed** — `03_markerless_data.zip`, 486 MB, contents not stated | **yes** — 9 machine-vision cameras, HD, 200 fps |
+| Raw video? | **yes** — 2× hand-held iPhone 7 and 2× FLIR Grasshopper. *"all 800×600, 30 fps" was wrong and is corrected in §8.5*: PG is 800×600 at 30.000 fps, CP is 1920×1080 at 30.009 fps | **unconfirmed** — `03_markerless_data.zip`, 486 MB, contents not stated | **yes** — 9 machine-vision cameras, HD, 200 fps |
 | Reference 3D | Qualisys, 15 cameras, 120 Hz; also released as SMPL meshes | OptiTrack, 7 cameras, 120 Hz | 15-camera optical; `raw.c3d`, `markers.c3d`, `led.c3d` per trial — **marker tracks, not joint angles** |
 | Size | 9 h mocap + 17 h video + 6.6 h IMU | 1.1 GB in four archives | ~15 GB **per participant** × 15 ≈ 225 GB |
 | Publishable demo footage? | **no** — no distribution | **yes**, with attribution | **no** — "not to be shared outwith the dataset itself" |
@@ -643,7 +643,7 @@ held-out status.
 datasets exist; all three do, two have raw video confirmed and the third is one
 filename listing away from an answer. The ordering it implies:
 
-- **MoVi first.** Its video is 30 fps 800×600 from a *hand-held iPhone*, which is
+- **MoVi first.** Its video is 30 fps from a *hand-held iPhone* (1920×1080, not the 800×600 assumed here — see §8.5), which is
   the deployment camera almost exactly, and it is synchronised to 120 Hz
   Qualisys mocap. That combination is what §7.5 of `results/phase11.md` has been
   waiting for since phase 11: real consumer footage **with** ground truth.
@@ -778,6 +778,17 @@ section before any number.
    mocap can be verified from the dataset's own documentation, and **if it
    cannot, they are reported as traces with no error figure.** §7.5 then closes
    on the weaker claim rather than on a fabricated alignment.
+
+   **And it cannot be verified, for a second and independent reason found
+   2026-11-02:** `flags30` is indexed to the **PG** recording. CP is a different
+   recording of the same session — 1920×1080 at 30.009 fps with 4,369
+   frames against PG's 800×600 at 30.000 fps with 3,441 — so CP frame
+   *k* is not the same instant as PG frame *k*. Applying the PG window to CP
+   compared two unrelated signals and produced r = −0.077 hip, +0.022 knee.
+   Recovering the offset by cross-correlation would be *estimating* the
+   synchronisation, which the pre-registration says disqualifies the MAE. So
+   **`scripts/phase15_movi.py` refuses to compute an MAE for an uncalibrated
+   camera at all**, structurally, and `tests/test_phase15_refusal.py` pins it.
 2. **Movement (2) is Jogging; movement (3) is _Running in place_**
    (arXiv 2003.01888 §2.1). Running in place is not running gait — no
    flight-phase translation, and a stationary subject makes the sagittal camera
@@ -793,7 +804,7 @@ with the dataset:
 | 1 | mocap units | **millimetres** — femur, tibia and hip width all inside their pre-registered human ranges (350–550, 300–500, 120–350 mm) for every subject checked. **The per-subject lengths are not reported**, see the note below |
 | 2 | vertical axis and handedness | **vertical is axis 2**, agreed two independent ways: both PG camera centres sit at 1.35–1.38 m on that axis, which has to be a mounting height, and head-minus-pelvis points along it. Not mirrored — jogging knee flexion is `[-73.5, -8.7]°`, one-signed and inside the tool's own plausible band |
 | 3 | marker set → H36M-17 | **stated in `MOVI_TO_H36M`** (`scripts/phase15_checks.py`). Hips are `mean(LFWT, LBWT)` / `mean(RFWT, RBWT)` = `mean(ASIS, PSIS)`, which is H36M's own definition; knees `LKJC`/`RKJC`, ankles `LAJC`/`RAJC`, thorax `THORAX`, spine the pelvis–thorax midpoint. Verified against the projected reference joint by joint: every H36M joint matches the COCO slot it should, 11.8 px mean |
-| 4 | video frame rate | **30.000 fps, 800×600**, read from the file, not assumed |
+| 4 | video frame rate | **read from the file, and the two camera families differ.** PG: **800×600 at 30.000 fps**, 3,441 frames for Subject_1. CP: **1920×1080 at 30.009 fps**, **4,369 frames** — 928 more than PG. `CLAUDE.md`'s "all 800×600 30 fps" was wrong and is corrected |
 | 5 | synchronisation | **shipped by the dataset, not estimated.** `flags30` and `flags120` are the same movement boundaries in video and mocap frames, ratio **3.9981** (max deviation from 4: 0.0112). Video frame *k* ↔ mocap frame `f120[0] + 4k`, so the reference 3D is never resampled |
 | 6 | subject identity | **matches** — the `.mat` subject field equals the filename's subject for every subject checked |
 
@@ -855,6 +866,57 @@ project prescribes *and* a frontal contrast camera.
 
 Any check that fails and cannot be resolved from the dataset's own documentation
 **stops the MAE for the affected clips** rather than being worked around.
+
+#### Which subjects are opened, and which are still a clean test set
+
+**Subjects 1, 10 and 11 are spent as a test set.** They have been measured,
+their per-clip errors inspected, their gap patterns read, their check verdicts
+acted on, and one of them excluded on those grounds. Any fix evaluated on them
+from here is being evaluated on data it was shaped by. They remain the phase 15
+*result*; they are no longer an independent test.
+
+| subject | status |
+|---|---|
+| `Subject_1`, `Subject_10`, `Subject_11` | **opened and examined in detail** — phase 15 |
+| round S `Subject_22`, `_45`, `_74`, `_80` | **structure inspected only** (marker names, field layout) while establishing that round S is unusable. No round-S angle was computed, and their **round F data has never been touched** |
+| every other round F subject | **never opened** |
+
+**A fresh set, costed from Dataverse metadata only — nothing downloaded.**
+Establishing file ids and sizes is the same kind of lookup §8.4 used, which
+`CLAUDE.md` says is not "opening" a held-out set.
+
+The mocap lives in one 1,814.6 MB tar, `F_Subjects_1_45.tar` (id 128299), whose
+members sit in **lexicographic** order — `Subject_1`, `Subject_10`, `Subject_11`,
+`Subject_12`, `Subject_13`, `Subject_14`, `Subject_15`, … — so a ranged GET of a
+prefix reaches the early ones cheaply and the rest of the archive is never
+transferred. Measured member sizes: 32.6, 43.9 and 52.4 MB for the first three;
+the archive mean is 40.3 MB.
+
+**`Subject_14` has no round F video at all** — no `F_PG1`, `F_PG2`, `F_CP1` or
+`F_CP2` entry exists for it, consistent with the README's 89-of-90 count for
+PG1. It is skipped.
+
+So the next three usable subjects in archive order are **`Subject_12`,
+`Subject_13`, `Subject_15`**:
+
+| item | size |
+|---|---|
+| mocap: one ranged prefix reaching the 7th member | **~290 MB** of 1,814.6 MB |
+| `F_PG1_Subject_12_L.avi` (id 85270) | 247 MB |
+| `F_PG1_Subject_13_L.avi` (id 85234) | 260 MB |
+| `F_PG1_Subject_15_L.avi` (id 85255) | 234 MB |
+| **total, side-on camera only** | **~1,030 MB** |
+| adding `F_PG2` 12/13/15 (ids 85338, 85336, 85342) | +1,036 MB |
+| **total, both cameras** | **~2,066 MB** |
+
+At the 6.5–8.7 MB/s this record serves, PG1-only is roughly **2–3 minutes** of
+transfer. Inference is the real cost: at 540–1,060 ms/frame and ~200–450 jogging
+frames per subject, three subjects is **15–40 min** of CPU per arm.
+
+**Recommendation, not yet acted on:** take **PG1 only** for the fresh set.
+PG2 doubles the bytes and the CPU to answer a *different* question (whether the
+viewpoint curve replicates), and that question deserves its own deliberate run
+rather than riding along. **Nothing has been downloaded.**
 
 #### Role
 

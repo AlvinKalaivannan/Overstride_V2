@@ -120,13 +120,51 @@ def jogging_window(v: dict) -> tuple[int, np.ndarray, np.ndarray]:
     return i, v["flags30"][i], v["flags120"][i]
 
 
+def preregistered_checks(mat: Path) -> tuple[bool, dict]:
+    """Run the six pre-registered checks on this subject and report failures.
+
+    `results/phase15.md`, frozen in 64fb0bc: *"Any check that fails and cannot
+    be resolved from the dataset's own documentation **stops the MAE for the
+    affected clips** rather than being papered over."*
+
+    This makes that automatic. It is NOT a quality filter chosen after seeing
+    results -- the checks and their thresholds were pre-registered before MoVi
+    was downloaded, and the verdicts are computed from the data every run. A
+    subject that fails is excluded whatever its error would have been, and the
+    exclusion is recorded with the failing check named.
+
+    Computed here rather than read from `results/phase15_checks.json` so the
+    gate cannot drift out of step with a stale file.
+    """
+    from phase15_checks import check_subject
+
+    import contextlib
+    import io
+    with contextlib.redirect_stdout(io.StringIO()):
+        r = check_subject(mat)
+
+    failed = {}
+    for key, name in (("check1_units", "1 (mocap units / segment lengths "
+                                      "inside pre-registered human ranges)"),
+                      ("check2_convention", "2 (axis and handedness)"),
+                      ("check5_sync", "5 (synchronisation)"),
+                      ("check6_subject_identity", "6 (subject identity))")):
+        block = r.get(key)
+        if isinstance(block, dict) and block.get("pass") is False:
+            failed[key] = name
+    if "fatal" in r:
+        failed["fatal"] = r["fatal"]
+    return (not failed), {"failed_checks": failed,
+                          "gap_sentinel": r.get("gap_sentinel")}
+
+
 def near_limb(gt_cam: np.ndarray | None, est: np.ndarray) -> tuple[str, str]:
     """Which limb is nearer the camera. Depth is axis 2.
 
-    With calibration the ground truth answers it. Without (the hand-held phone
-    cameras ship none), the ESTIMATE answers it -- phase 14 found the near limb
-    recoverable from the estimate alone on 592 of 592 AthleticsPose clips, and
-    that is recorded wherever it is used rather than assumed silently.
+    With calibration the ground truth answers it. The uncalibrated branch is
+    retained but is currently unreachable from `run_clip`, which refuses an
+    uncalibrated camera before it gets here; it would use the ESTIMATE, which
+    phase 14 found recoverable on 592 of 592 AthleticsPose clips.
     """
     src = gt_cam if gt_cam is not None else est
     lo = np.nanmean(src[:, H36M["l_hip"], 2])
@@ -140,6 +178,63 @@ def run_clip(subject: str, cam: str, mat: Path, video: Path, det_model,
     v = load_v3d(mat)
     ji, f30, f120 = jogging_window(v)
     gt_world = to_h36m(v)
+
+    # ---- PRE-REGISTERED CHECK GATE ---------------------------------------
+    ok, chk = preregistered_checks(mat)
+    if not ok:
+        names = "; ".join(chk["failed_checks"].values())
+        gaps = (chk.get("gap_sentinel") or {}).get("gapped_frames_per_marker", {})
+        print(f"    {cam}: {subject} FAILS a pre-registered check -- no MAE. "
+              f"Failed: {names}")
+        if gaps:
+            print(f"          gapped markers in the jogging window: {gaps}")
+        return {"subject": subject, "camera": cam, "video": video.name,
+                "jogging_index": ji,
+                "arm": "excluded (subject fails a pre-registered check)",
+                "mae_refused": True,
+                "mae_refused_because": (
+                    f"subject fails pre-registered check(s): {names}. "
+                    f"results/phase15.md freezes the rule that a failed check "
+                    f"stops the MAE for the affected clips; the exclusion is "
+                    f"prescribed, not chosen after seeing the error."),
+                "failed_checks": chk["failed_checks"],
+                "gap_sentinel": chk.get("gap_sentinel"),
+                "err": None}
+
+    # ---- THE FROZEN CLAUSE FIRES HERE ------------------------------------
+    # `results/phase15.md`, frozen in 64fb0bc: CP clips carry an MAE "if their
+    # synchronisation to mocap can be verified from the dataset's own
+    # documentation ... if it cannot, they are reported as TRACES WITH NO ERROR
+    # FIGURE". For the hand-held phone cameras it cannot:
+    #
+    #   * `Camera Parameters.tar` has entries for PG1 and PG2 only -- zero CP;
+    #   * `flags30` is indexed to the PG recording. CP is a different recording:
+    #     1920x1080 at 30.009 fps with 4,369 frames for Subject_1 against PG's
+    #     800x600 at 30.000 fps with 3,441, so CP frame k is NOT the same
+    #     instant as PG frame k. Scoring CP on the PG window compared two
+    #     unrelated signals and produced r = -0.077 hip, +0.022 knee -- the same
+    #     no-relationship signature the confidence bug gave.
+    #
+    # Recovering the offset by cross-correlation would be ESTIMATING the
+    # synchronisation, which is exactly what the pre-registration says
+    # disqualifies the MAE. So the refusal is structural rather than a judgement
+    # made per clip: an uncalibrated camera never reaches the scoring code.
+    if not CAMERAS[cam]["calibrated"]:
+        print(f"    {cam}: UNCALIBRATED -- no MAE. Traces only; the frozen "
+              f"clause in results/phase15.md applies (sync cannot be verified, "
+              f"flags30 is PG-referenced and CP is a different recording).")
+        return {"subject": subject, "camera": cam, "video": video.name,
+                "jogging_index": ji,
+                "arm": "traces only (uncalibrated camera)",
+                "mae_refused": True,
+                "mae_refused_because": (
+                    "no camera calibration ships for CP, and flags30 is indexed "
+                    "to the PG recording, which has a different frame count and "
+                    "rate -- so the video-to-mocap correspondence cannot be "
+                    "verified from the dataset's own documentation. Estimating "
+                    "it would disqualify the MAE under the frozen "
+                    "pre-registration."),
+                "err": None}
 
     a30, b30 = int(f30[0]), int(f30[1])
     if max_frames:
@@ -264,7 +359,8 @@ def aggregate(rows: list[dict]) -> dict:
     out: dict = {}
     by_cam: dict[str, list[dict]] = defaultdict(list)
     for r in rows:
-        if "err" in r:
+        # A refused clip carries err=None and must never reach a mean.
+        if r.get("err"):
             by_cam[r["camera"]].append(r)
     for cam, rs in by_cam.items():
         e: dict = {"n_subjects": len({r["subject"] for r in rs}),
@@ -362,6 +458,11 @@ def main() -> int:
            "arm": ("perfect 2D (projected reference) -- DIAGNOSTIC, "
                    "nothing is selected on it" if args.perfect_2d
                    else "detector (the deployable path)"),
+           "no_error_figure": [
+               {"subject": r["subject"], "camera": r["camera"],
+                "video": r["video"], "why": r["mae_refused_because"],
+                "failed_checks": r.get("failed_checks")}
+               for r in rows if r.get("mae_refused")],
            "by_camera": agg, "clips": rows}
     args.out.write_text(json.dumps(out, indent=2), encoding="utf-8")
 
@@ -375,6 +476,15 @@ def main() -> int:
             print(f"  {cam:<7}{limb:>6}{d['per_joint']['hip']:>9.3f}"
                   f"{d['per_joint']['knee']:>9.3f}{d['mae_deg']:>9.3f}"
                   f"   [{lo:>6.3f}, {hi:>6.3f}]{e['n_subjects']:>5}")
+    refused = [r for r in rows if r.get("mae_refused")]
+    if refused:
+        print(f"\n  NO ERROR FIGURE, {len(refused)} clip(s):")
+        for r in refused:
+            why = ("fails a pre-registered check" if r.get("failed_checks")
+                   else "uncalibrated camera, sync unverifiable")
+            print(f"    {r['subject']:<11}{r['camera']:<5} "
+                  f"{r['video']:<26} {why}")
+        print("    both are prescribed by results/phase15.md, not chosen here")
     print(f"\n  AthleticsPose, for reference only: {AP_NEAR:.3f} near / "
           f"{AP_FAR:.3f} far")
     print(f"\nwrote {args.out}")

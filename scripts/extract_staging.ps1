@@ -1,10 +1,20 @@
 # Step A1: pull the two nested archives out of the outer zip.
 # The outer zip is STORED (compressed == uncompressed), so this is a byte copy.
-$ErrorActionPreference = 'Stop'
+# -Src is required because the download location is the caller's,
+# not the repository's. -Staging defaults inside the repo. These
+# were absolute paths under a developer's home directory.
+param(
+  [Parameter(Mandatory=$true)][string]$Src,
+  [string]$Staging
+)
+
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
-$src     = 'C:\Users\alvin\Downloads\24255795.zip'
-$staging = 'C:\Users\alvin\Overstride_V2\data\_staging'
+$repo = Split-Path -Parent $PSScriptRoot
+if (-not $Staging) { $Staging = Join-Path $repo 'data\_staging' }
+$ErrorActionPreference = 'Stop'
+$src     = $Src
+$staging = $Staging
 if (-not (Test-Path $staging)) { New-Item -ItemType Directory -Path $staging | Out-Null }
 
 $zip = [System.IO.Compression.ZipFile]::OpenRead($src)
