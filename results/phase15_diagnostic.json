@@ -1,0 +1,588 @@
+{
+  "what": "DIAGNOSTIC ROWS -- these do not change the phase 15 headline (9.610 near / 10.604 far, PG1, n=2)",
+  "camera": "PG1",
+  "designation_commit": "f549bfd, fixed before download",
+  "spent": [
+    "Subject_1",
+    "Subject_10"
+  ],
+  "diagnostic": [
+    "Subject_12",
+    "Subject_13",
+    "Subject_15"
+  ],
+  "sealed_test_untouched": [
+    "Subject_16",
+    "Subject_17",
+    "Subject_18",
+    "Subject_19",
+    "Subject_2"
+  ],
+  "subjects": {
+    "Subject_1": {
+      "subject": "Subject_1",
+      "designation": "spent (phase 15 headline)",
+      "passes_prereg_checks": true,
+      "failed_checks": {},
+      "trunk_lean": {
+        "deg": 5.413756819587604,
+        "sd_deg": 8.552507105408987,
+        "n": 799,
+        "note": "pelvis->THORAX vs vertical, in the sagittal plane; positive = leaning forward along travel"
+      },
+      "arms": {
+        "detected": {
+          "near": {
+            "hip": 13.706039044405655,
+            "hip_r": 0.8410084880806361,
+            "hip_bias": -13.706039044405655,
+            "hip_sd": 6.026746454147186,
+            "hip_n": 198,
+            "hip_gt_range_deg": [
+              -1.2,
+              47.2
+            ],
+            "knee": 6.949565242349246,
+            "knee_r": 0.9243103901522486,
+            "knee_bias": 6.592359120128522,
+            "knee_sd": 6.434794471478954,
+            "knee_n": 198,
+            "knee_gt_range_deg": [
+              -73.1,
+              -8.9
+            ],
+            "mean": 10.32780214337745
+          },
+          "far": {
+            "hip": 14.088799639239674,
+            "hip_r": 0.8084496773964666,
+            "hip_bias": -14.051622400730857,
+            "hip_sd": 6.102435551973655,
+            "hip_n": 197,
+            "hip_gt_range_deg": [
+              2.1,
+              42.4
+            ],
+            "knee": 7.843961578866673,
+            "knee_r": 0.87767459491105,
+            "knee_bias": 6.970750027476473,
+            "knee_sd": 7.821775469497196,
+            "knee_n": 197,
+            "knee_gt_range_deg": [
+              -73.0,
+              -8.7
+            ],
+            "mean": 10.966380609053173
+          }
+        },
+        "perfect": {
+          "near": {
+            "hip": 8.291181835602611,
+            "hip_r": 0.8848692512089722,
+            "hip_bias": -7.235250812258375,
+            "hip_sd": 5.3287420847374944,
+            "hip_n": 161,
+            "hip_gt_range_deg": [
+              -1.2,
+              47.2
+            ],
+            "knee": 3.6739580417951854,
+            "knee_r": 0.9556252979888789,
+            "knee_bias": 2.100387251567841,
+            "knee_sd": 4.949554121591896,
+            "knee_n": 161,
+            "knee_gt_range_deg": [
+              -73.1,
+              -10.8
+            ],
+            "mean": 5.982569938698898
+          },
+          "far": {
+            "hip": 9.381510871385501,
+            "hip_r": 0.7529016483580674,
+            "hip_bias": -7.902646440038921,
+            "hip_sd": 6.900284479054994,
+            "hip_n": 161,
+            "hip_gt_range_deg": [
+              2.1,
+              42.4
+            ],
+            "knee": 3.7713607991513154,
+            "knee_r": 0.9660179970967727,
+            "knee_bias": 3.044623163558085,
+            "knee_sd": 4.335049088923676,
+            "knee_n": 161,
+            "knee_gt_range_deg": [
+              -73.0,
+              -8.7
+            ],
+            "mean": 6.576435835268408
+          }
+        }
+      }
+    },
+    "Subject_10": {
+      "subject": "Subject_10",
+      "designation": "spent (phase 15 headline)",
+      "passes_prereg_checks": true,
+      "failed_checks": {},
+      "trunk_lean": {
+        "deg": 5.0210924861187625,
+        "sd_deg": 6.758165858781356,
+        "n": 959,
+        "note": "pelvis->THORAX vs vertical, in the sagittal plane; positive = leaning forward along travel"
+      },
+      "arms": {
+        "detected": {
+          "near": {
+            "hip": 8.407776330940385,
+            "hip_r": 0.6647280518695158,
+            "hip_bias": -5.081868995640042,
+            "hip_sd": 8.249813225897233,
+            "hip_n": 243,
+            "hip_gt_range_deg": [
+              -6.4,
+              40.1
+            ],
+            "knee": 9.376140404276832,
+            "knee_r": 0.9298717492263897,
+            "knee_bias": 7.107810934407893,
+            "knee_sd": 10.627963646308839,
+            "knee_n": 243,
+            "knee_gt_range_deg": [
+              -115.7,
+              0.7
+            ],
+            "mean": 8.89195836760861
+          },
+          "far": {
+            "hip": 7.30638096144807,
+            "hip_r": 0.7691391539475025,
+            "hip_bias": -5.42329777775588,
+            "hip_sd": 7.103719393526232,
+            "hip_n": 243,
+            "hip_gt_range_deg": [
+              -9.1,
+              37.8
+            ],
+            "knee": 13.175132768372084,
+            "knee_r": 0.8208464494267882,
+            "knee_bias": 10.470758098358072,
+            "knee_sd": 16.43971351629871,
+            "knee_n": 243,
+            "knee_gt_range_deg": [
+              -116.3,
+              3.2
+            ],
+            "mean": 10.240756864910077
+          }
+        },
+        "perfect": {
+          "near": {
+            "hip": 8.44030142593874,
+            "hip_r": 0.5871182922594737,
+            "hip_bias": -3.347243182319208,
+            "hip_sd": 9.302795572480864,
+            "hip_n": 243,
+            "hip_gt_range_deg": [
+              -6.4,
+              40.1
+            ],
+            "knee": 5.637693294447606,
+            "knee_r": 0.9722177141995325,
+            "knee_bias": 0.8921750961053486,
+            "knee_sd": 7.361430039205499,
+            "knee_n": 243,
+            "knee_gt_range_deg": [
+              -115.7,
+              0.7
+            ],
+            "mean": 7.038997360193173
+          },
+          "far": {
+            "hip": 8.652633294472007,
+            "hip_r": 0.6291197093019757,
+            "hip_bias": -3.290259782841924,
+            "hip_sd": 9.567776085955813,
+            "hip_n": 243,
+            "hip_gt_range_deg": [
+              -9.1,
+              37.8
+            ],
+            "knee": 6.255056459209842,
+            "knee_r": 0.9655469042944009,
+            "knee_bias": 2.059250630864267,
+            "knee_sd": 7.702703644913166,
+            "knee_n": 243,
+            "knee_gt_range_deg": [
+              -116.3,
+              3.2
+            ],
+            "mean": 7.453844876840925
+          }
+        }
+      }
+    },
+    "Subject_12": {
+      "subject": "Subject_12",
+      "designation": "diagnostic (spent on arrival)",
+      "passes_prereg_checks": true,
+      "failed_checks": {},
+      "trunk_lean": {
+        "deg": 5.536652998433547,
+        "sd_deg": 6.36935564567011,
+        "n": 1682,
+        "note": "pelvis->THORAX vs vertical, in the sagittal plane; positive = leaning forward along travel"
+      },
+      "arms": {
+        "detected": {
+          "near": {
+            "hip": 14.14497391531971,
+            "hip_r": 0.34940122199356083,
+            "hip_bias": -12.119227936617262,
+            "hip_sd": 8.648903908761335,
+            "hip_n": 423,
+            "hip_gt_range_deg": [
+              -0.6,
+              33.4
+            ],
+            "knee": 12.27764484937725,
+            "knee_r": 0.8354953243339476,
+            "knee_bias": 11.920552667528192,
+            "knee_sd": 7.907613716895229,
+            "knee_n": 423,
+            "knee_gt_range_deg": [
+              -66.6,
+              -11.4
+            ],
+            "mean": 13.21130938234848
+          },
+          "far": {
+            "hip": 11.344694939350903,
+            "hip_r": 0.5873791172917604,
+            "hip_bias": -9.576187166127209,
+            "hip_sd": 8.05634707487832,
+            "hip_n": 424,
+            "hip_gt_range_deg": [
+              -1.9,
+              43.1
+            ],
+            "knee": 8.03130197493408,
+            "knee_r": 0.8872435464369245,
+            "knee_bias": 5.962320189488264,
+            "knee_sd": 8.203944454861615,
+            "knee_n": 424,
+            "knee_gt_range_deg": [
+              -73.9,
+              -6.2
+            ],
+            "mean": 9.687998457142491
+          }
+        },
+        "perfect": {
+          "near": {
+            "hip": 9.688767856781869,
+            "hip_r": 0.11204858067697838,
+            "hip_bias": -3.4982172556902955,
+            "hip_sd": 11.162515154995493,
+            "hip_n": 416,
+            "hip_gt_range_deg": [
+              -0.6,
+              33.4
+            ],
+            "knee": 5.353664273887135,
+            "knee_r": 0.8930887510150606,
+            "knee_bias": 4.071774739742874,
+            "knee_sd": 5.855735770352813,
+            "knee_n": 416,
+            "knee_gt_range_deg": [
+              -66.6,
+              -11.4
+            ],
+            "mean": 7.521216065334502
+          },
+          "far": {
+            "hip": 10.042885411414101,
+            "hip_r": 0.2737694569997326,
+            "hip_bias": -3.535956994691503,
+            "hip_sd": 11.36866793078655,
+            "hip_n": 416,
+            "hip_gt_range_deg": [
+              -1.9,
+              43.1
+            ],
+            "knee": 4.053281153517178,
+            "knee_r": 0.9681818998369632,
+            "knee_bias": 2.5870682275240537,
+            "knee_sd": 4.498781436822927,
+            "knee_n": 416,
+            "knee_gt_range_deg": [
+              -73.9,
+              -6.2
+            ],
+            "mean": 7.048083282465639
+          }
+        }
+      }
+    },
+    "Subject_13": {
+      "subject": "Subject_13",
+      "designation": "diagnostic (spent on arrival)",
+      "passes_prereg_checks": true,
+      "failed_checks": {},
+      "trunk_lean": {
+        "deg": 6.654516564847252,
+        "sd_deg": 8.608990337859796,
+        "n": 1087,
+        "note": "pelvis->THORAX vs vertical, in the sagittal plane; positive = leaning forward along travel"
+      },
+      "arms": {
+        "detected": {
+          "near": {
+            "hip": 12.819429863804253,
+            "hip_r": 0.6371717303450829,
+            "hip_bias": -12.394116616817794,
+            "hip_sd": 6.829007947002102,
+            "hip_n": 275,
+            "hip_gt_range_deg": [
+              5.3,
+              42.8
+            ],
+            "knee": 8.472221502507395,
+            "knee_r": 0.8683860177808036,
+            "knee_bias": 6.951192436551984,
+            "knee_sd": 8.012945375620607,
+            "knee_n": 275,
+            "knee_gt_range_deg": [
+              -77.8,
+              -15.5
+            ],
+            "mean": 10.645825683155824
+          },
+          "far": {
+            "hip": 14.757597990971245,
+            "hip_r": 0.7999404702805526,
+            "hip_bias": -14.751604250431539,
+            "hip_sd": 6.004608189010565,
+            "hip_n": 275,
+            "hip_gt_range_deg": [
+              6.1,
+              46.0
+            ],
+            "knee": 9.847884068519118,
+            "knee_r": 0.8826666866181578,
+            "knee_bias": 9.224145485124438,
+            "knee_sd": 7.580025711871079,
+            "knee_n": 275,
+            "knee_gt_range_deg": [
+              -80.2,
+              -13.9
+            ],
+            "mean": 12.302741029745182
+          }
+        },
+        "perfect": {
+          "near": {
+            "hip": 10.833591520918281,
+            "hip_r": 0.18345365213943868,
+            "hip_bias": -5.699330397232362,
+            "hip_sd": 10.5614637002142,
+            "hip_n": 275,
+            "hip_gt_range_deg": [
+              5.3,
+              42.8
+            ],
+            "knee": 4.731952849087117,
+            "knee_r": 0.9363161418452624,
+            "knee_bias": 3.637258758176637,
+            "knee_sd": 5.385142906144395,
+            "knee_n": 275,
+            "knee_gt_range_deg": [
+              -77.8,
+              -15.5
+            ],
+            "mean": 7.782772185002699
+          },
+          "far": {
+            "hip": 7.966214521561251,
+            "hip_r": 0.7168227805622266,
+            "hip_bias": -6.01426734828379,
+            "hip_sd": 6.94728636620199,
+            "hip_n": 275,
+            "hip_gt_range_deg": [
+              6.1,
+              46.0
+            ],
+            "knee": 4.225396456652081,
+            "knee_r": 0.9379146627344285,
+            "knee_bias": 1.8885895657166565,
+            "knee_sd": 5.24868499981944,
+            "knee_n": 275,
+            "knee_gt_range_deg": [
+              -80.2,
+              -13.9
+            ],
+            "mean": 6.095805489106667
+          }
+        }
+      }
+    },
+    "Subject_15": {
+      "subject": "Subject_15",
+      "designation": "diagnostic (spent on arrival)",
+      "passes_prereg_checks": false,
+      "failed_checks": {
+        "check1_units": "1 (mocap units / segment lengths inside pre-registered human ranges)"
+      },
+      "trunk_lean": {
+        "deg": 3.909062670771772,
+        "sd_deg": 5.641686758982587,
+        "n": 927,
+        "note": "pelvis->THORAX vs vertical, in the sagittal plane; positive = leaning forward along travel"
+      },
+      "arms": null
+    }
+  },
+  "detector_cost": {
+    "Subject_1": {
+      "near": {
+        "detected": 10.32780214337745,
+        "perfect": 5.982569938698898,
+        "cost": 4.3452322046785525
+      },
+      "far": {
+        "detected": 10.966380609053173,
+        "perfect": 6.576435835268408,
+        "cost": 4.389944773784765
+      }
+    },
+    "Subject_10": {
+      "near": {
+        "detected": 8.89195836760861,
+        "perfect": 7.038997360193173,
+        "cost": 1.852961007415436
+      },
+      "far": {
+        "detected": 10.240756864910077,
+        "perfect": 7.453844876840925,
+        "cost": 2.7869119880691517
+      }
+    },
+    "Subject_12": {
+      "near": {
+        "detected": 13.21130938234848,
+        "perfect": 7.521216065334502,
+        "cost": 5.690093317013978
+      },
+      "far": {
+        "detected": 9.687998457142491,
+        "perfect": 7.048083282465639,
+        "cost": 2.639915174676852
+      }
+    },
+    "Subject_13": {
+      "near": {
+        "detected": 10.645825683155824,
+        "perfect": 7.782772185002699,
+        "cost": 2.863053498153125
+      },
+      "far": {
+        "detected": 12.302741029745182,
+        "perfect": 6.095805489106667,
+        "cost": 6.206935540638515
+      }
+    }
+  },
+  "pooled": {
+    "subjects": [
+      "Subject_1",
+      "Subject_10",
+      "Subject_12",
+      "Subject_13"
+    ],
+    "n": 4,
+    "arms": {
+      "detected": {
+        "near": {
+          "mae_deg": 10.76922389412259,
+          "ci95": [
+            9.330425196495412,
+            12.569938457550315
+          ],
+          "per_subject": {
+            "Subject_1": 10.32780214337745,
+            "Subject_10": 8.89195836760861,
+            "Subject_12": 13.21130938234848,
+            "Subject_13": 10.645825683155824
+          }
+        },
+        "far": {
+          "mae_deg": 10.79946924021273,
+          "ci95": [
+            9.964377661026283,
+            11.787244988536404
+          ],
+          "per_subject": {
+            "Subject_1": 10.966380609053173,
+            "Subject_10": 10.240756864910077,
+            "Subject_12": 9.687998457142491,
+            "Subject_13": 12.302741029745182
+          }
+        }
+      },
+      "perfect": {
+        "near": {
+          "mae_deg": 7.081388887307318,
+          "ci95": [
+            6.367231470357799,
+            7.71738315508565
+          ],
+          "per_subject": {
+            "Subject_1": 5.982569938698898,
+            "Subject_10": 7.038997360193173,
+            "Subject_12": 7.521216065334502,
+            "Subject_13": 7.782772185002699
+          }
+        },
+        "far": {
+          "mae_deg": 6.79354237092041,
+          "ci95": [
+            6.33387493744641,
+            7.250964079653283
+          ],
+          "per_subject": {
+            "Subject_1": 6.576435835268408,
+            "Subject_10": 7.453844876840925,
+            "Subject_12": 7.048083282465639,
+            "Subject_13": 6.095805489106667
+          }
+        }
+      }
+    },
+    "detector_cost_near": {
+      "mean": 3.6878350068152725,
+      "ci95": [
+        2.3580072527842804,
+        5.017662760846266
+      ],
+      "n": 4
+    }
+  },
+  "trunk_lean_vs_hip_bias": {
+    "n": 4,
+    "pearson_r": -0.35296134084619807,
+    "lean_deg": [
+      5.413756819587604,
+      5.0210924861187625,
+      5.536652998433547,
+      6.654516564847252
+    ],
+    "near_hip_bias_deg": [
+      -7.235250812258375,
+      -3.347243182319208,
+      -3.4982172556902955,
+      -5.699330397232362
+    ],
+    "note": "reported side by side only. No correction is applied and none should be derived from this n."
+  }
+}

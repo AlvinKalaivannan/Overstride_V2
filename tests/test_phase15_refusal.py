@@ -107,51 +107,57 @@ def test_the_committed_result_carries_no_cp_error_figure():
             assert clip.get("err") is None
 
 
-def test_a_subject_that_fails_a_prereg_check_gets_no_mae():
-    """The frozen rule, enforced in code rather than applied by hand.
+def test_the_gate_reports_a_failing_check_whatever_the_bar_is():
+    """The gate must surface a failed check, independent of which bar is set.
 
-    `results/phase15.md`: "Any check that fails and cannot be resolved from the
-    dataset's own documentation stops the MAE for the affected clips rather
-    than being papered over."
-
-    Subject_11 fails check 1 -- a segment length outside its pre-registered
-    human range -- and loses 42% of its jogging window to gaps in LFWT, RFWT,
-    CLAV and THORAX, the markers the body frame is built from. The exclusion is
-    PRESCRIBED, so it must happen without anyone deciding it per run.
+    An earlier version of this test asserted that `Subject_11` fails check 1.
+    That was a consequence of the bar as originally pre-registered, and the D7
+    re-registration made it false -- so the test broke for the right reason and
+    is rewritten to pin the MECHANISM rather than one subject's status under one
+    bar. See `results/phase15.md` D6/D7.
     """
     m = _movi()
     mats = sorted(m.MOCAP.glob("F_v3d_*.mat"))
     if not mats:
         pytest.skip("MoVi round F mocap not on disk")
-    by_subject = {p.stem.split("_v3d_")[-1]: p for p in mats}
-    if "Subject_11" not in by_subject:
-        pytest.skip("Subject_11 not on disk")
 
-    ok, chk = m.preregistered_checks(by_subject["Subject_11"])
-    assert ok is False, "Subject_11 is expected to fail a pre-registered check"
-    assert "check1_units" in chk["failed_checks"]
-
-    # and a subject that passes must NOT be gated out
-    if "Subject_10" in by_subject:
-        ok10, _ = m.preregistered_checks(by_subject["Subject_10"])
-        assert ok10 is True, "Subject_10 passes every check and must be kept"
+    ok, chk = m.preregistered_checks(mats[0])
+    # whatever the verdict, the shape of the answer is the contract
+    assert isinstance(ok, bool)
+    assert isinstance(chk, dict)
+    assert "failed_checks" in chk
+    assert ok == (not chk["failed_checks"]), (
+        "the boolean must agree with the list of failures")
 
 
-def test_the_gate_runs_before_any_decoding():
-    """A failing subject must be refused without touching its video."""
+def test_run_clip_refuses_any_subject_whose_checks_fail(monkeypatch):
+    """Forced failure: no MAE, no decoding, and the reason carried through.
+
+    Uses a stubbed gate so the test does not depend on any real subject failing
+    -- which is exactly the coupling that broke the previous version.
+    """
     m = _movi()
     mats = sorted(m.MOCAP.glob("F_v3d_*.mat"))
-    by_subject = {p.stem.split("_v3d_")[-1]: p for p in mats}
-    if "Subject_11" not in by_subject:
-        pytest.skip("Subject_11 not on disk")
+    if not mats:
+        pytest.skip("MoVi round F mocap not on disk")
 
+    monkeypatch.setattr(
+        m, "preregistered_checks",
+        lambda mat: (False, {"failed_checks": {"check1_units": "1 (stubbed)"},
+                             "gap_sentinel": None}))
+
+    # a video path that does not exist: if the gate did NOT run first, decoding
+    # would raise SystemExit instead of returning a refusal record
     missing = m.MOVI / "no_such_video.avi"
-    row = m.run_clip("Subject_11", "PG1", by_subject["Subject_11"], missing,
+    assert not missing.exists()
+
+    row = m.run_clip("Subject_X", "PG1", mats[0], missing,
                      det_model=None, lift_model=None, max_frames=0)
 
     assert row["mae_refused"] is True
     assert row["err"] is None
     assert "check1_units" in row["failed_checks"]
+    assert "pre-registered check" in row["mae_refused_because"]
 
 
 def test_the_committed_result_excludes_every_failing_subject():

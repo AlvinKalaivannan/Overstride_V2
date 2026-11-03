@@ -636,6 +636,166 @@ tall-but-real adults.
 **Tibia is unchanged at (300, 500).** Both of its endpoints are joint centres,
 so it carries no definitional offset — and it never failed for any subject.
 
+## Diagnostic rows (n = 4) — NOT the headline
+
+**These are diagnostic. They do not change the phase 15 result**, which stays
+**9.610° near / 10.604° far on PG1 at n = 2**. They exist because that result
+rests on two subjects which disagreed by 2.3× on the detector's share and 2×
+on the perfect-2D hip bias — too thin to decide anything on.
+
+Pool: `Subject_1`, `Subject_10` (spent on the headline) plus `Subject_12`,
+`Subject_13` (diagnostic set, designated in `f549bfd` before download).
+`Subject_15` was excluded by check 1 **as the bar stood when this ran** — see
+the sensitivity row at the end. Camera PG1, jogging only.
+Full numbers: `results/phase15_diagnostic.json`.
+
+### Per subject, both arms
+
+| subject | arm | limb | joint | MAE | bias | SD | r | n |
+|---|---|---|---|---|---|---|---|---|
+| Subject_1 | detected | near | hip | 13.706 | **−13.706** | 6.027 | 0.841 | 198 |
+| Subject_1 | detected | near | knee | 6.950 | **+6.592** | 6.435 | 0.924 | 198 |
+| Subject_1 | detected | far | hip | 14.089 | −14.052 | 6.102 | 0.808 | 197 |
+| Subject_1 | detected | far | knee | 7.844 | +6.971 | 7.822 | 0.878 | 197 |
+| Subject_1 | perfect | near | hip | 8.291 | **−7.235** | 5.329 | 0.885 | 161 |
+| Subject_1 | perfect | near | knee | 3.674 | +2.100 | 4.950 | 0.956 | 161 |
+| Subject_1 | perfect | far | hip | 9.382 | −7.903 | 6.900 | 0.753 | 161 |
+| Subject_1 | perfect | far | knee | 3.771 | +3.045 | 4.335 | 0.966 | 161 |
+| Subject_10 | detected | near | hip | 8.408 | −5.082 | 8.250 | 0.665 | 243 |
+| Subject_10 | detected | near | knee | 9.376 | +7.108 | 10.628 | 0.930 | 243 |
+| Subject_10 | detected | far | hip | 7.306 | −5.423 | 7.104 | 0.769 | 243 |
+| Subject_10 | detected | far | knee | 13.175 | +10.471 | 16.440 | 0.821 | 243 |
+| Subject_10 | perfect | near | hip | 8.440 | −3.347 | 9.303 | **0.587** | 243 |
+| Subject_10 | perfect | near | knee | 5.638 | +0.892 | 7.361 | 0.972 | 243 |
+| Subject_10 | perfect | far | hip | 8.653 | −3.290 | 9.568 | 0.629 | 243 |
+| Subject_10 | perfect | far | knee | 6.255 | +2.059 | 7.703 | 0.966 | 243 |
+| Subject_12 | detected | near | hip | 14.145 | −12.119 | 8.649 | **0.349** | 423 |
+| Subject_12 | detected | near | knee | 12.278 | +11.921 | 7.908 | 0.835 | 423 |
+| Subject_12 | detected | far | hip | 11.345 | −9.576 | 8.056 | 0.587 | 424 |
+| Subject_12 | detected | far | knee | 8.031 | +5.962 | 8.204 | 0.887 | 424 |
+| Subject_12 | perfect | near | hip | 9.689 | −3.498 | 11.163 | **0.112** | 416 |
+| Subject_12 | perfect | near | knee | 5.354 | +4.072 | 5.856 | 0.893 | 416 |
+| Subject_12 | perfect | far | hip | 10.043 | −3.536 | 11.369 | **0.274** | 416 |
+| Subject_12 | perfect | far | knee | 4.053 | +2.587 | 4.499 | 0.968 | 416 |
+| Subject_13 | detected | near | hip | 12.819 | −12.394 | 6.829 | 0.637 | 275 |
+| Subject_13 | detected | near | knee | 8.472 | +6.951 | 8.013 | 0.868 | 275 |
+| Subject_13 | detected | far | hip | 14.758 | −14.752 | 6.005 | 0.800 | 275 |
+| Subject_13 | detected | far | knee | 9.848 | +9.224 | 7.580 | 0.883 | 275 |
+| Subject_13 | perfect | near | hip | 10.834 | −5.699 | 10.561 | **0.183** | 275 |
+| Subject_13 | perfect | near | knee | 4.732 | +3.637 | 5.385 | 0.936 | 275 |
+| Subject_13 | perfect | far | hip | 7.966 | −6.014 | 6.947 | 0.717 | 275 |
+| Subject_13 | perfect | far | knee | 4.225 | +1.889 | 5.249 | 0.938 | 275 |
+
+### Detector cost per subject = detected − perfect
+
+| subject | limb | detected | perfect | **cost** |
+|---|---|---|---|---|
+| Subject_1 | near | 10.328 | 5.983 | **4.345** |
+| Subject_1 | far | 10.966 | 6.576 | **4.390** |
+| Subject_10 | near | 8.892 | 7.039 | **1.853** |
+| Subject_10 | far | 10.241 | 7.454 | **2.787** |
+| Subject_12 | near | 13.211 | 7.521 | **5.690** |
+| Subject_12 | far | 9.688 | 7.048 | **2.640** |
+| Subject_13 | near | 10.646 | 7.783 | **2.863** |
+| Subject_13 | far | 12.303 | 6.096 | **6.207** |
+
+**The cost still does not generalise, and four subjects confirm it rather than
+settling it:** near-limb cost spans **1.853–5.690** (3.1×) and far-limb
+**2.640–6.207** (2.4×). There is no stable "detector share" to quote.
+
+### Pooled over the four diagnostic-eligible subjects
+
+Subject bootstrap, N_BOOT 2000, SEED 11. **At n = 4 the interval is finally not
+degenerate** — 4⁴ = 256 distinct resamples, against n = 2 where the interval
+*is* the range — but it is still four people.
+
+| arm | limb | MAE | 95% CI |
+|---|---|---|---|
+| detected | near | **10.769°** | [9.330, 12.570] |
+| detected | far | **10.799°** | [9.964, 11.787] |
+| perfect | near | **7.081°** | [6.367, 7.717] |
+| perfect | far | **6.794°** | [6.334, 7.251] |
+| **detector cost** | near | **3.688°** | **[2.358, 5.018]** |
+
+### The three things these rows actually establish
+
+**1. Both joints carry a large one-signed bias, and the detector deepens it.**
+
+| | hip bias, perfect | hip bias, detected | knee bias, perfect | knee bias, detected |
+|---|---|---|---|---|
+| range over 4 subjects | −3.3 to −7.2 | −5.1 to −14.1 | +0.9 to +4.1 | +6.0 to +11.9 |
+
+**Hip reads low on every subject in both arms; knee reads high on every subject
+in both arms.** With a perfect 2D the hip bias is already −3.3 to −7.2°, so
+a substantial part is **not the detector** — but the detector roughly doubles
+both. Bias, not scatter, is the dominant error term: for Subject_1's detected
+near hip the MAE (13.706) and the |bias| (13.706) are **identical to three
+decimals**, meaning the estimate is below the reference in essentially every
+scored frame.
+
+**2. The perfect-2D hip is barely correlated with the reference on half the
+subjects.** Hip r in the perfect arm: **0.885, 0.587, 0.112, 0.183**. On
+`Subject_12` and `Subject_13` the hip trace carries almost no information even
+with an exact 2D input. The knee is the opposite — **0.956, 0.972, 0.893,
+0.936**, stable across every subject and both arms. **The hip is not a degraded
+measurement; on some subjects it is close to no measurement.** That is a
+stronger and more specific statement than the headline MAE supports, and it is
+the single most useful thing these four subjects bought.
+
+**3. The trunk-lean hypothesis is NOT supported at this n.**
+
+| subject | trunk lean | near hip bias (perfect) | far hip bias (perfect) |
+|---|---|---|---|
+| Subject_1 | 5.414° | −7.235 | −7.903 |
+| Subject_10 | 5.021° | −3.347 | −3.290 |
+| Subject_12 | 5.537° | −3.498 | −3.536 |
+| Subject_13 | 6.655° | −5.699 | −6.014 |
+| Subject_15 | 3.909° | — *(excluded; lean shown for the record)* |
+
+**Pearson r = −0.353 across 4 subjects.** The sign is the direction the
+hypothesis predicts — more forward lean, more negative hip bias — but
+|r| = 0.35 on four points is indistinguishable from zero, and the lean itself
+barely varies (5.0–6.7° among the scored subjects). **No correction is applied
+and none is justified by this.** If the trunk convention is the cause, it will
+take either more subjects or a direct test against H36M's thorax definition, not
+this correlation.
+
+### Sensitivity to the D7 re-registration — and it is uncomfortable
+
+The runs above used check 1 **as it stood at the time**, `(350, 550)` mm. Under
+the re-registered bar `(420, 700)` mm (D7, committed in `7a985d2` before this
+was recomputed):
+
+| subject | check 1, old bar | check 1, new bar |
+|---|---|---|
+| Subject_1, _10, _12, _13, _14 | pass | pass |
+| **Subject_11** | **FAIL** | **pass** |
+| **Subject_15** | **FAIL** | **pass** |
+
+**All seven subjects pass the re-registered bar.** So both exclusions were
+artefacts of a bar that was wrong for the quantity it gated.
+
+**And nothing else would have excluded `Subject_11`.** Its 42% gap rate is the
+other reason one might distrust it — but **there is no pre-registered
+subject-level gap threshold, and there never was.** The gap sentinel excludes
+*frames*, not subjects: `preregistered_checks` reads only the pass flags of
+checks 1, 2, 5 and 6. Had check 1 been correctly specified, `Subject_11` would
+have been **scored on its remaining 58% of frames**, and its 42% loss would have
+appeared as a reduced n and nothing more.
+
+**The headline is NOT being changed, in either direction.** It stays
+**9.610° near / 10.604° far at n = 2**, and the pre-exclusion n = 3 figure
+(9.729° / 10.556°) stays beside it. Re-running the headline on the
+re-registered bar would mean reporting a figure chosen after seeing how the bar
+change moved it, which is the thing this protocol exists to prevent. **The
+correct place for the new bar to take effect is the sealed test set**, which is
+exactly why the re-registration was committed before that set is opened.
+
+What this costs, stated plainly: **the n = 2 headline is lower-n than it needed
+to be, because of a defect of mine in a pre-registered bar.** The diagnostic
+rows above are the honest view at n = 4, and they are labelled diagnostic
+because the subjects in them have been examined.
+
 ## Subject designation, fixed 2026-11-02 before any further download
 
 The result above rests on **two** subjects, and they disagree by **2.3×** on
