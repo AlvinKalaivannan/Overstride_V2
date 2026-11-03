@@ -18,41 +18,58 @@
     "far": 3.6177,
     "note": "different dataset, camera, population and movement"
   },
+  "arm": "detector (the deployable path)",
+  "no_error_figure": [
+    {
+      "subject": "Subject_1",
+      "camera": "CP1",
+      "video": "F_CP1_Subject_1.mp4",
+      "why": "no camera calibration ships for CP, and flags30 is indexed to the PG recording, which has a different frame count and rate -- so the video-to-mocap correspondence cannot be verified from the dataset's own documentation. Estimating it would disqualify the MAE under the frozen pre-registration.",
+      "failed_checks": null
+    },
+    {
+      "subject": "Subject_11",
+      "camera": "PG1",
+      "video": "F_PG1_Subject_11_L.avi",
+      "why": "subject fails pre-registered check(s): 1 (mocap units / segment lengths inside pre-registered human ranges). results/phase15.md freezes the rule that a failed check stops the MAE for the affected clips; the exclusion is prescribed, not chosen after seeing the error.",
+      "failed_checks": {
+        "check1_units": "1 (mocap units / segment lengths inside pre-registered human ranges)"
+      }
+    }
+  ],
   "by_camera": {
     "PG1": {
-      "n_subjects": 3,
-      "n_clips": 3,
+      "n_subjects": 2,
+      "n_clips": 2,
       "limbs": {
         "near": {
-          "mae_deg": 9.729083893388195,
+          "mae_deg": 9.60988025549303,
           "ci95": [
             8.89195836760861,
             10.32780214337745
           ],
           "per_subject": {
             "Subject_1": 10.32780214337745,
-            "Subject_10": 8.89195836760861,
-            "Subject_11": 9.967491169178526
+            "Subject_10": 8.89195836760861
           },
           "per_joint": {
-            "hip": 10.740311001700903,
-            "knee": 8.717856785075488
+            "hip": 11.05690768767302,
+            "knee": 8.162852823313038
           }
         },
         "far": {
-          "mae_deg": 10.556217893544243,
+          "mae_deg": 10.603568736981625,
           "ci95": [
             10.240756864910077,
             10.966380609053173
           ],
           "per_subject": {
             "Subject_1": 10.966380609053173,
-            "Subject_10": 10.240756864910077,
-            "Subject_11": 10.46151620666948
+            "Subject_10": 10.240756864910077
           },
           "per_joint": {
-            "hip": 10.686623563776044,
-            "knee": 10.425812223312443
+            "hip": 10.697590300343872,
+            "knee": 10.509547173619378
           }
         }
       }
@@ -90,40 +107,6 @@
           }
         }
       }
-    },
-    "CP1": {
-      "n_subjects": 1,
-      "n_clips": 1,
-      "limbs": {
-        "near": {
-          "mae_deg": 41.86303494167074,
-          "ci95": [
-            NaN,
-            NaN
-          ],
-          "per_subject": {
-            "Subject_1": 41.86303494167074
-          },
-          "per_joint": {
-            "hip": 59.10235678382054,
-            "knee": 24.623713099520938
-          }
-        },
-        "far": {
-          "mae_deg": 61.20411573084917,
-          "ci95": [
-            NaN,
-            NaN
-          ],
-          "per_subject": {
-            "Subject_1": 61.20411573084917
-          },
-          "per_joint": {
-            "hip": 67.57396529218984,
-            "knee": 54.83426616950849
-          }
-        }
-      }
     }
   },
   "clips": [
@@ -131,6 +114,7 @@
       "subject": "Subject_1",
       "camera": "PG1",
       "jogging_index": 18,
+      "arm": "detector",
       "video": "F_PG1_Subject_1_L.avi",
       "video_meta": {
         "fps_from_file": 30.0,
@@ -200,13 +184,14 @@
           "mean": 10.966380609053173
         }
       },
-      "seconds": 217.6,
-      "ms_per_frame": 1056.2
+      "seconds": 133.4,
+      "ms_per_frame": 647.7
     },
     {
       "subject": "Subject_1",
       "camera": "PG2",
       "jogging_index": 18,
+      "arm": "detector",
       "video": "F_PG2_Subject_1_L.avi",
       "video_meta": {
         "fps_from_file": 30.0,
@@ -276,89 +261,24 @@
           "mean": 11.367993593036473
         }
       },
-      "seconds": 186.3,
-      "ms_per_frame": 904.2
+      "seconds": 152.7,
+      "ms_per_frame": 741.4
     },
     {
       "subject": "Subject_1",
       "camera": "CP1",
-      "jogging_index": 18,
       "video": "F_CP1_Subject_1.mp4",
-      "video_meta": {
-        "fps_from_file": 30.00894979665485,
-        "n_frames_from_file": 4369,
-        "width": 1920,
-        "height": 1080,
-        "n_decoded": 206,
-        "range_requested": [
-          2884,
-          3089
-        ]
-      },
-      "fps_from_file": 30.00894979665485,
-      "n_video_frames": 206,
-      "n_frames_scored": {
-        "near": 197,
-        "far": 198
-      },
-      "near_limb": "r",
-      "near_limb_from": "the estimate (no calibration for this camera)",
-      "mocap_frames": [
-        11533,
-        12353
-      ],
-      "detector_meta": {
-        "frames_with_person": 206,
-        "frames_crowded": 4,
-        "frames_on_crop": 205,
-        "full_frame_redetections": 0,
-        "detector_min_size": 1080
-      },
-      "n_detected": 206,
-      "raw_conf_range": [
-        0.263,
-        21.7
-      ],
-      "detection_rate": 1.0,
-      "err": {
-        "near": {
-          "hip": 59.10235678382054,
-          "hip_r": -0.07742920574846919,
-          "hip_gt_range_deg": [
-            2.1,
-            42.4
-          ],
-          "knee": 24.623713099520938,
-          "knee_r": 0.02166310074601957,
-          "knee_gt_range_deg": [
-            -73.0,
-            -8.7
-          ],
-          "mean": 41.86303494167074
-        },
-        "far": {
-          "hip": 67.57396529218984,
-          "hip_r": -0.13720607161737639,
-          "hip_gt_range_deg": [
-            -1.2,
-            47.2
-          ],
-          "knee": 54.83426616950849,
-          "knee_r": -0.11543578721000178,
-          "knee_gt_range_deg": [
-            -73.1,
-            -8.9
-          ],
-          "mean": 61.20411573084917
-        }
-      },
-      "seconds": 668.0,
-      "ms_per_frame": 3242.6
+      "jogging_index": 18,
+      "arm": "traces only (uncalibrated camera)",
+      "mae_refused": true,
+      "mae_refused_because": "no camera calibration ships for CP, and flags30 is indexed to the PG recording, which has a different frame count and rate -- so the video-to-mocap correspondence cannot be verified from the dataset's own documentation. Estimating it would disqualify the MAE under the frozen pre-registration.",
+      "err": null
     },
     {
       "subject": "Subject_10",
       "camera": "PG1",
       "jogging_index": 16,
+      "arm": "detector",
       "video": "F_PG1_Subject_10_L.avi",
       "video_meta": {
         "fps_from_file": 30.0,
@@ -428,84 +348,56 @@
           "mean": 10.240756864910077
         }
       },
-      "seconds": 248.8,
-      "ms_per_frame": 1023.8
+      "seconds": 198.4,
+      "ms_per_frame": 816.7
     },
     {
       "subject": "Subject_11",
       "camera": "PG1",
-      "jogging_index": 15,
       "video": "F_PG1_Subject_11_L.avi",
-      "video_meta": {
-        "fps_from_file": 30.0,
-        "n_frames_from_file": 5540,
-        "width": 800,
-        "height": 600,
-        "n_decoded": 441,
-        "range_requested": [
-          3244,
-          3684
-        ]
+      "jogging_index": 15,
+      "arm": "excluded (subject fails a pre-registered check)",
+      "mae_refused": true,
+      "mae_refused_because": "subject fails pre-registered check(s): 1 (mocap units / segment lengths inside pre-registered human ranges). results/phase15.md freezes the rule that a failed check stops the MAE for the affected clips; the exclusion is prescribed, not chosen after seeing the error.",
+      "failed_checks": {
+        "check1_units": "1 (mocap units / segment lengths inside pre-registered human ranges)"
       },
-      "fps_from_file": 30.0,
-      "n_video_frames": 441,
-      "n_frames_scored": {
-        "near": 256,
-        "far": 256
-      },
-      "near_limb": "l",
-      "near_limb_from": "ground truth (calibrated)",
-      "mocap_frames": [
-        12973,
-        14733
-      ],
-      "detector_meta": {
-        "frames_with_person": 441,
-        "frames_crowded": 1,
-        "frames_on_crop": 440,
-        "full_frame_redetections": 0,
-        "detector_min_size": 600
-      },
-      "n_detected": 441,
-      "raw_conf_range": [
-        0.054,
-        23.236
-      ],
-      "detection_rate": 1.0,
-      "err": {
-        "near": {
-          "hip": 10.107117629756665,
-          "hip_r": 0.7090421690966251,
-          "hip_gt_range_deg": [
-            6.3,
-            35.8
-          ],
-          "knee": 9.827864708600387,
-          "knee_r": 0.9370268216737877,
-          "knee_gt_range_deg": [
-            -74.0,
-            -7.3
-          ],
-          "mean": 9.967491169178526
+      "gap_sentinel": {
+        "n_frames": 1761,
+        "n_frames_with_a_gap_in_any_mapped_marker": 768,
+        "fraction_if_excluded_globally": 0.4361,
+        "per_side_for_hip_and_knee": {
+          "l": {
+            "n_usable": 1022,
+            "n_excluded": 739,
+            "fraction_excluded": 0.4196
+          },
+          "r": {
+            "n_usable": 1022,
+            "n_excluded": 739,
+            "fraction_excluded": 0.4196
+          }
         },
-        "far": {
-          "hip": 10.664690090640386,
-          "hip_r": 0.7552235298368338,
-          "hip_gt_range_deg": [
-            4.7,
-            36.9
-          ],
-          "knee": 10.258342322698574,
-          "knee_r": 0.8853962297263939,
-          "knee_gt_range_deg": [
-            -74.0,
-            -9.1
-          ],
-          "mean": 10.46151620666948
-        }
+        "joints_each_angle_reads": [
+          "pelvis",
+          "thorax",
+          "l_hip",
+          "r_hip",
+          "<side>_hip",
+          "<side>_knee",
+          "<side>_ankle"
+        ],
+        "gapped_frames_per_marker": {
+          "CLAV": 244,
+          "LFWT": 346,
+          "LKJC": 21,
+          "LWJC": 82,
+          "RFWT": 208,
+          "THORAX": 244
+        },
+        "handling": "excluded, never interpolated"
       },
-      "seconds": 393.3,
-      "ms_per_frame": 891.9
+      "err": null
     }
   ]
 }

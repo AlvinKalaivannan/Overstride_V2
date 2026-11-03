@@ -240,3 +240,63 @@ that opened this file, not a backfill.
 - Go deeper: Mardia & Jupp, *Directional Statistics* (2000), ch. 2 for the
   circular mean; for the debugging method, delta debugging / bisection as in
   Zeller, *Why Programs Fail*, ch. 13.
+
+## 2026-11-02 — Signed bias and correlation separate a convention error from noise
+
+- What it is: an MAE is a magnitude and throws away the sign, so it cannot tell
+  "this measurement is noisy" from "this measurement is consistently shifted".
+  Two cheap extras do: **Pearson r** against the reference, and the **mean
+  signed error**. High r with a large MAE and a one-signed bias is a *systematic
+  offset*; low r with a large MAE is an unrelated signal; high r with a small
+  bias is genuine noise.
+- Where it shows up here: `scripts/diagnostics/diag_bisect.py`, and
+  `results/phase15.md` Results. Feeding the lifter a **perfect** 2D on MoVi gave
+  hip MAE 8.29° with r = +0.885 and a signed bias of **−7.235°** — so almost all
+  of the hip error is a constant shift, present with no detector in the loop at
+  all. That points at a **convention** difference (which trunk reference defines
+  "hip flexion") rather than at anything the detector or lifter is doing wrong.
+- Gap I had: I reported MAE alone for several phases and read a large number as
+  "degraded measurement". Twice this session a near-zero r showed the signal was
+  *unrelated* rather than degraded (the confidence bug, then the CP1 window bug),
+  and once a large bias showed it was *shifted*. Three different faults that an
+  MAE renders identically.
+- Also learned, and uncomfortable: **the lifter is sensitive to the VALUE of its
+  confidence channel, not just its scale.** The same perfect-2D arm scores 4.49°
+  with channel 2 = 1.0 and 5.98° with 0.8676, the tune-set mean — ~1.5° from a
+  constant, against a 0.2° resolution floor. The tempting move is to pick 1.0
+  because it scores better, and that would be **tuning on a held-out set**. The
+  a priori choice stands and the sensitivity is reported instead.
+- Go deeper: this is the bias–variance decomposition of an error, applied to a
+  measurement rather than to a model. For the circular case see Mardia & Jupp,
+  *Directional Statistics*, ch. 2 on the mean resultant direction.
+
+## 2026-11-02 — A missing value dressed as a valid number will always be consumed
+
+- What it is: whenever "absent" is encoded as something the type system accepts
+  — `0`, `999`, `[0,0,0]`, a zeroed row — some consumer downstream will read it
+  as data, because nothing distinguishes it from a real measurement. Three
+  instances in one phase: MoVi's `markerGaps` writes `[0,0,0]` for a dropped
+  marker (knee centre at the lab origin, +148.7° flexion); `detect_coco17`
+  leaves an undetected frame all-zero; and my own perfect-2D arm called
+  `np.nan_to_num(kp, nan=0.0)`, feeding the lifter 45 skeletons at the image
+  origin.
+- Where it shows up here: `scripts/phase15_checks.py:to_h36m`,
+  `scripts/phase15_movi.py` (the `detected` mask and the perfect-2D drop), and
+  `results/phase15.md` D5.
+- Gap I had: I treated "excluded from scoring" as equivalent to "removed". It is
+  not. The third bug excluded the bad frames from the **error computation** but
+  still handed them to the **model**, and `lift` blends 50%-overlap windows, so
+  each zero frame corrupted its neighbours too. **Masking an output is not the
+  same as never putting the value in.** Remove it at the earliest stage that
+  touches it.
+- How it was caught, and this is the transferable part: **two code paths
+  computed the same quantity and disagreed.** `diag_bisect.py` and
+  `phase15_movi --perfect-2d` matched exactly on the subject with no gaps and
+  differed by 2° on the subject with 45 gapped frames. Neither number was
+  obviously wrong on its own. A redundant implementation is a cheap oracle, and
+  the disagreement pattern — identical where the suspected cause is absent —
+  localises the fault immediately.
+- Go deeper: this is the "nullable by sentinel" anti-pattern; Hoare's
+  "null references: my billion-dollar mistake" is the usual reference, and in
+  arrays the right answer is a separate validity mask or a masked array
+  (`numpy.ma`) rather than an in-band magic value.

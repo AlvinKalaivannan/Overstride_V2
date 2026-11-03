@@ -253,7 +253,27 @@ def run_clip(subject: str, cam: str, mat: Path, video: Path, det_model,
         mk_all = int(f120[0]) + MOCAP_PER_VIDEO * np.arange(len(frames))
         mk_all = mk_all[mk_all < gt_world.shape[0]]
         kp = project_reference(gt_world[mk_all], cam)
+        # A frame whose reference markers were gapped projects to NaN. DROP it
+        # before lifting rather than zero-filling: a skeleton at the image
+        # origin is wildly out of distribution, and `lift` blends 50%-overlap
+        # windows, so one zero frame corrupts its neighbours' estimates too.
+        # Measured: Subject_1 scored 7.999 deg zero-filled against 5.983 deg
+        # dropped, on 45 incomplete frames of 206. Subject_10, with no gapped
+        # frames, was identical either way -- which is how this was found.
+        # Dropping breaks temporal contiguity, which the lifter also dislikes,
+        # but a gap in the time axis is far closer to the training distribution
+        # than a limb at the origin.
+        complete = np.isfinite(kp).all(axis=(1, 2))
+        if complete.sum() < 20:
+            print(f"    {cam}: only {complete.sum()} fully projected frames")
+            return None
+        if not complete.all():
+            print(f"    {cam}: dropping {int((~complete).sum())} of "
+                  f"{len(kp)} frames with an incomplete projected skeleton "
+                  f"(NOT zero-filled)")
+        kp, mk_all = kp[complete], mk_all[complete]
         frames = frames[:len(kp)]
+        perfect_mk = mk_all
         dmeta = {"source": "projected reference 3D (perfect 2D arm)"}
     else:
         kp_coco, dmeta = detect_coco17(frames, crop=True, model=det_model)
@@ -283,7 +303,8 @@ def run_clip(subject: str, cam: str, mat: Path, video: Path, det_model,
     est = resample(est_model, n_v)                   # back onto the video grid
 
     # Ground truth at the EXACT corresponding mocap frames. Never resampled.
-    mk = int(f120[0]) + MOCAP_PER_VIDEO * np.arange(n_v)
+    mk = (perfect_mk if perfect
+          else int(f120[0]) + MOCAP_PER_VIDEO * np.arange(n_v))
     keep_mk = (mk < gt_world.shape[0]) & detected
     mk, est = mk[keep_mk], est[keep_mk]
     gt = gt_world[mk]

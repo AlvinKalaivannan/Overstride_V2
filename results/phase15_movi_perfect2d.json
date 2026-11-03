@@ -1,0 +1,374 @@
+{
+  "dataset": "BML MoVi round F",
+  "doi": "doi:10.5683/SP2/JRHDRN",
+  "role": "held-out test, opened 2026-11-02",
+  "pre_registration": "results/phase15.md, frozen 64fb0bc",
+  "pipeline": {
+    "detector": "coco",
+    "padding": "edge",
+    "windows": "overlap",
+    "lowpass_hz": 0.0,
+    "model_fps": 100.0,
+    "checkpoint": "motionagformer-b-ath-det-coco-v1.ckpt"
+  },
+  "movement": "jogging only; running_in_spot excluded",
+  "alignment": "exact: flags30/flags120 give the same boundaries in both rates, so video frame k scores against mocap frame f120[0] + 4k; the reference 3D is never resampled",
+  "athleticspose_baseline": {
+    "near": 3.5093,
+    "far": 3.6177,
+    "note": "different dataset, camera, population and movement"
+  },
+  "arm": "perfect 2D (projected reference) -- DIAGNOSTIC, nothing is selected on it",
+  "no_error_figure": [
+    {
+      "subject": "Subject_11",
+      "camera": "PG1",
+      "video": "F_PG1_Subject_11_L.avi",
+      "why": "subject fails pre-registered check(s): 1 (mocap units / segment lengths inside pre-registered human ranges). results/phase15.md freezes the rule that a failed check stops the MAE for the affected clips; the exclusion is prescribed, not chosen after seeing the error.",
+      "failed_checks": {
+        "check1_units": "1 (mocap units / segment lengths inside pre-registered human ranges)"
+      }
+    }
+  ],
+  "by_camera": {
+    "PG1": {
+      "n_subjects": 2,
+      "n_clips": 2,
+      "limbs": {
+        "near": {
+          "mae_deg": 6.510783649446036,
+          "ci95": [
+            5.982569938698898,
+            7.038997360193173
+          ],
+          "per_subject": {
+            "Subject_1": 5.982569938698898,
+            "Subject_10": 7.038997360193173
+          },
+          "per_joint": {
+            "hip": 8.365741630770675,
+            "knee": 4.655825668121396
+          }
+        },
+        "far": {
+          "mae_deg": 7.015140356054667,
+          "ci95": [
+            6.576435835268408,
+            7.453844876840925
+          ],
+          "per_subject": {
+            "Subject_1": 6.576435835268408,
+            "Subject_10": 7.453844876840925
+          },
+          "per_joint": {
+            "hip": 9.017072082928754,
+            "knee": 5.013208629180578
+          }
+        }
+      }
+    },
+    "PG2": {
+      "n_subjects": 1,
+      "n_clips": 1,
+      "limbs": {
+        "near": {
+          "mae_deg": 7.046065711772579,
+          "ci95": [
+            NaN,
+            NaN
+          ],
+          "per_subject": {
+            "Subject_1": 7.046065711772579
+          },
+          "per_joint": {
+            "hip": 7.08735208241579,
+            "knee": 7.004779341129369
+          }
+        },
+        "far": {
+          "mae_deg": 7.2943135443903735,
+          "ci95": [
+            NaN,
+            NaN
+          ],
+          "per_subject": {
+            "Subject_1": 7.2943135443903735
+          },
+          "per_joint": {
+            "hip": 6.863211087585459,
+            "knee": 7.725416001195289
+          }
+        }
+      }
+    }
+  },
+  "clips": [
+    {
+      "subject": "Subject_1",
+      "camera": "PG1",
+      "jogging_index": 18,
+      "arm": "perfect 2D (projected reference)",
+      "video": "F_PG1_Subject_1_L.avi",
+      "video_meta": {
+        "fps_from_file": 30.0,
+        "n_frames_from_file": 3441,
+        "width": 800,
+        "height": 600,
+        "n_decoded": 206,
+        "range_requested": [
+          2884,
+          3089
+        ]
+      },
+      "fps_from_file": 30.0,
+      "n_video_frames": 161,
+      "n_frames_scored": {
+        "near": 161,
+        "far": 161
+      },
+      "near_limb": "l",
+      "near_limb_from": "ground truth (calibrated)",
+      "mocap_frames": [
+        11533,
+        12353
+      ],
+      "detector_meta": {
+        "source": "projected reference 3D (perfect 2D arm)"
+      },
+      "n_detected": 161,
+      "raw_conf_range": [
+        0.868,
+        0.868
+      ],
+      "detection_rate": 1.0,
+      "err": {
+        "near": {
+          "hip": 8.291181835602611,
+          "hip_r": 0.8848692512089722,
+          "hip_gt_range_deg": [
+            -1.2,
+            47.2
+          ],
+          "knee": 3.6739580417951854,
+          "knee_r": 0.9556252979888789,
+          "knee_gt_range_deg": [
+            -73.1,
+            -10.8
+          ],
+          "mean": 5.982569938698898
+        },
+        "far": {
+          "hip": 9.381510871385501,
+          "hip_r": 0.7529016483580674,
+          "hip_gt_range_deg": [
+            2.1,
+            42.4
+          ],
+          "knee": 3.7713607991513154,
+          "knee_r": 0.9660179970967727,
+          "knee_gt_range_deg": [
+            -73.0,
+            -8.7
+          ],
+          "mean": 6.576435835268408
+        }
+      },
+      "seconds": 8.8,
+      "ms_per_frame": 54.4
+    },
+    {
+      "subject": "Subject_1",
+      "camera": "PG2",
+      "jogging_index": 18,
+      "arm": "perfect 2D (projected reference)",
+      "video": "F_PG2_Subject_1_L.avi",
+      "video_meta": {
+        "fps_from_file": 30.0,
+        "n_frames_from_file": 3441,
+        "width": 800,
+        "height": 600,
+        "n_decoded": 206,
+        "range_requested": [
+          2884,
+          3089
+        ]
+      },
+      "fps_from_file": 30.0,
+      "n_video_frames": 161,
+      "n_frames_scored": {
+        "near": 161,
+        "far": 161
+      },
+      "near_limb": "r",
+      "near_limb_from": "ground truth (calibrated)",
+      "mocap_frames": [
+        11533,
+        12353
+      ],
+      "detector_meta": {
+        "source": "projected reference 3D (perfect 2D arm)"
+      },
+      "n_detected": 161,
+      "raw_conf_range": [
+        0.868,
+        0.868
+      ],
+      "detection_rate": 1.0,
+      "err": {
+        "near": {
+          "hip": 7.08735208241579,
+          "hip_r": 0.8366880050681306,
+          "hip_gt_range_deg": [
+            2.1,
+            42.4
+          ],
+          "knee": 7.004779341129369,
+          "knee_r": 0.9301853470994162,
+          "knee_gt_range_deg": [
+            -73.0,
+            -8.7
+          ],
+          "mean": 7.046065711772579
+        },
+        "far": {
+          "hip": 6.863211087585459,
+          "hip_r": 0.8060783320366285,
+          "hip_gt_range_deg": [
+            -1.2,
+            47.2
+          ],
+          "knee": 7.725416001195289,
+          "knee_r": 0.8723471212540231,
+          "knee_gt_range_deg": [
+            -73.1,
+            -10.8
+          ],
+          "mean": 7.2943135443903735
+        }
+      },
+      "seconds": 9.1,
+      "ms_per_frame": 56.3
+    },
+    {
+      "subject": "Subject_10",
+      "camera": "PG1",
+      "jogging_index": 16,
+      "arm": "perfect 2D (projected reference)",
+      "video": "F_PG1_Subject_10_L.avi",
+      "video_meta": {
+        "fps_from_file": 30.0,
+        "n_frames_from_file": 4644,
+        "width": 800,
+        "height": 600,
+        "n_decoded": 243,
+        "range_requested": [
+          3261,
+          3503
+        ]
+      },
+      "fps_from_file": 30.0,
+      "n_video_frames": 243,
+      "n_frames_scored": {
+        "near": 243,
+        "far": 243
+      },
+      "near_limb": "l",
+      "near_limb_from": "ground truth (calibrated)",
+      "mocap_frames": [
+        13041,
+        14009
+      ],
+      "detector_meta": {
+        "source": "projected reference 3D (perfect 2D arm)"
+      },
+      "n_detected": 243,
+      "raw_conf_range": [
+        0.868,
+        0.868
+      ],
+      "detection_rate": 1.0,
+      "err": {
+        "near": {
+          "hip": 8.44030142593874,
+          "hip_r": 0.5871182922594737,
+          "hip_gt_range_deg": [
+            -6.4,
+            40.1
+          ],
+          "knee": 5.637693294447606,
+          "knee_r": 0.9722177141995325,
+          "knee_gt_range_deg": [
+            -115.7,
+            0.7
+          ],
+          "mean": 7.038997360193173
+        },
+        "far": {
+          "hip": 8.652633294472007,
+          "hip_r": 0.6291197093019757,
+          "hip_gt_range_deg": [
+            -9.1,
+            37.8
+          ],
+          "knee": 6.255056459209842,
+          "knee_r": 0.9655469042944009,
+          "knee_gt_range_deg": [
+            -116.3,
+            3.2
+          ],
+          "mean": 7.453844876840925
+        }
+      },
+      "seconds": 12.2,
+      "ms_per_frame": 50.0
+    },
+    {
+      "subject": "Subject_11",
+      "camera": "PG1",
+      "video": "F_PG1_Subject_11_L.avi",
+      "jogging_index": 15,
+      "arm": "excluded (subject fails a pre-registered check)",
+      "mae_refused": true,
+      "mae_refused_because": "subject fails pre-registered check(s): 1 (mocap units / segment lengths inside pre-registered human ranges). results/phase15.md freezes the rule that a failed check stops the MAE for the affected clips; the exclusion is prescribed, not chosen after seeing the error.",
+      "failed_checks": {
+        "check1_units": "1 (mocap units / segment lengths inside pre-registered human ranges)"
+      },
+      "gap_sentinel": {
+        "n_frames": 1761,
+        "n_frames_with_a_gap_in_any_mapped_marker": 768,
+        "fraction_if_excluded_globally": 0.4361,
+        "per_side_for_hip_and_knee": {
+          "l": {
+            "n_usable": 1022,
+            "n_excluded": 739,
+            "fraction_excluded": 0.4196
+          },
+          "r": {
+            "n_usable": 1022,
+            "n_excluded": 739,
+            "fraction_excluded": 0.4196
+          }
+        },
+        "joints_each_angle_reads": [
+          "pelvis",
+          "thorax",
+          "l_hip",
+          "r_hip",
+          "<side>_hip",
+          "<side>_knee",
+          "<side>_ankle"
+        ],
+        "gapped_frames_per_marker": {
+          "CLAV": 244,
+          "LFWT": 346,
+          "LKJC": 21,
+          "LWJC": 82,
+          "RFWT": 208,
+          "THORAX": 244
+        },
+        "handling": "excluded, never interpolated"
+      },
+      "err": null
+    }
+  ]
+}

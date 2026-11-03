@@ -90,6 +90,38 @@ band at 18.1°, which is what validates the setup.
 
 ![recovered vs true joint angles](figures/phase6_angle_recovery.png)
 
+> ## And on a lab it has never seen, it is 9.73° — about 2.8× worse
+>
+> **Phase 15 ran the frozen pipeline on BML MoVi, held out until that phase, and
+> this is a loss reported as prominently as the win above.** Side-on
+> machine-vision video, jogging: **9.61° near / 10.60° far**, against the
+> 3.51° / 3.62° the tool scores on AthleticsPose — about **2.7× worse**.
+>
+> **n = 2.** A third subject was **excluded**, because it failed a check that was
+> pre-registered before the data was downloaded — 42% of its frames lose the
+> very markers the measurement's reference frame is built from. That exclusion is
+> prescribed by the frozen protocol, is enforced in code, and moved the figure by
+> 0.12°. The pre-exclusion figure (n=3) was 9.73° / 10.56° and is kept in
+> the record. **At two subjects a bootstrap interval is just the range of the two
+> means and carries no information beyond them** — do not read the CIs in that
+> report as uncertainty about a population.
+>
+> That baseline is **a different dataset, camera, population and movement**, so
+> the ratio is not attributable to any one of them. Feeding the same lifter a
+> perfect 2D — the reference 3D projected through the same camera — gives
+> **6.51°**, so roughly a third of the error is the 2D detector and two thirds
+> is already there without it. **That split does not generalise:** the detector's
+> share is 4.35° on one subject and 1.85° on the other. The hip error is a
+> one-signed offset on both, but −7.2° against −3.3°, so it is **not**
+> a single fixed convention offset either.
+>
+> Two things this does **not** show. **It is still not a test on phone footage:**
+> MoVi's hand-held iPhone clips ship no calibration and their synchronisation
+> cannot be verified from the dataset's own flags, so they are reported as traces
+> with no error figure, and §7.5 stays open. And the **viewpoint curve below
+> did not replicate** on the one frontal clip measured. See
+> `results/phase15.md`.
+
 Two findings make the camera path *better* than expected:
 
 - **The far-limb occlusion penalty is ~0** and does not grow with viewing angle.

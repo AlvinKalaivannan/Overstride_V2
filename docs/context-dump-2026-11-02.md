@@ -207,10 +207,17 @@ outside `video_kinematics.PLAUSIBLE["knee"] = (−170, 20)`.
 
 #### (c) 4.49° — GT 2D (projected reference), same clip
 
-Produced by a **scratchpad** diagnostic (`diag_bisect.py`) in the session
-scratchpad, which is transient. The committed equivalent is
-`scripts/phase15_checks.py:project_reference` + `phase15_movi.py --perfect-2d`,
-which **has not been run yet**.
+Produced by a **scratchpad** diagnostic, now committed as
+`scripts/diagnostics/diag_bisect.py`.
+
+> **SUPERSEDED — the committed version gives 5.983° near / 6.576° far,
+> not 4.493° / 5.474°.** The scratchpad set the confidence channel to
+> **1.0**; `project_reference` sets it to `TRAIN_CONF_MEAN` (0.8676, the
+> tune-set mean). ~1.5° from that constant alone, which is a measured
+> sensitivity worth knowing. The a priori choice stands — picking 1.0 because
+> it scores better on MoVi would be tuning on a held-out set. It also exposed
+> the hip **signed bias**: −7.235° near, −7.903° far, against
+> +2.100° / +3.045° at the knees. See `results/phase15.md` Results.
 
 - Same subject, camera, mocap, window — but the **full** 206-frame jogging
   window, of which **161 frames** had a complete projected skeleton
@@ -770,23 +777,35 @@ frame of video.
 
 ### 7.2 Measured on MoVi — **full run, supersedes the smoke figures**
 
-| clip | resolution | frames | **ms/frame** |
-|---|---|---|---|
-| Subject_1 PG1 | 800 × 600 | 206 | **1056** |
-| Subject_1 PG2 | 800 × 600 | 206 | **904** |
-| Subject_1 **CP1** | **1920 × 1080** | 206 | **3243** |
-| Subject_10 PG1 | 800 × 600 | 243 | **1024** |
-| Subject_11 PG1 | 800 × 600 | 441 | **892** |
+**These figures are LOAD-DEPENDENT and should be read as a range, not a
+measurement.** The same code on the same clips was re-run after the CP refusal
+was added, and PG came out **1.5–1.6× faster** purely because the machine was
+less busy — the first run overlapped a 1.2 GB download and several other
+Python processes. Both runs are given so the spread is visible.
 
-**PG is 892–1,056 ms/frame on real 800×600 footage — roughly 4.3–5.1× the
-206.7 ms the synthetic profile in §7.1 measured**, and 18–21× the 50 ms budget.
-Two reasons: §7.1 used synthetic frames on a *tight 192×256 person crop*,
-whereas these are real 800×600 frames where the subject is ~325 px tall and the
-padded crop is correspondingly larger; and the per-clip model build amortises
-over only a few hundred frames.
+| clip | resolution | frames | run 1 ms/frame | run 2 ms/frame |
+|---|---|---|---|---|
+| Subject_1 PG1 | 800 × 600 | 206 | 1056 | **538** |
+| Subject_1 PG2 | 800 × 600 | 206 | 904 | **580** |
+| Subject_1 **CP1** | **1920 × 1080** | 206 | **3243** | refused (no MAE) |
+| Subject_10 PG1 | 800 × 600 | 243 | 1024 | **645** |
+| Subject_11 PG1 | 800 × 600 | 441 | 892 | **639** |
 
-**CP1 at 1920×1080 costs 3,243 ms/frame — 3.1× the PG cost**, which is the
-expected consequence of `min_size = min(h, w) = 1080` instead of 600.
+**PG is roughly 540–1,060 ms/frame on real 800×600 footage**, i.e. **2.6–5.1×
+the 206.7 ms the synthetic profile in §7.1 measured** and **11–21× the 50 ms
+budget**. Two reasons for the gap to §7.1 beyond load: that profile used
+synthetic frames on a *tight 192×256 person crop*, whereas these are real
+800×600 frames where the subject is ~325 px tall so the padded crop is much
+larger; and the per-clip model build amortises over only a few hundred frames.
+
+**The honest conclusion is unchanged and does not depend on the spread:** the
+tool is an order of magnitude from the 20 fps gate on this CPU, and no figure
+in this range changes that. Any future timing claim needs a quiet machine and
+repeated runs, which none of these were.
+
+**CP1 at 1920×1080 cost 3,243 ms/frame — 3.1× the PG cost in the same run**,
+the expected consequence of `min_size = min(h, w) = 1080` instead of 600. It is
+no longer measured at all: an uncalibrated camera is refused before decoding.
 
 Superseded smoke figures, kept for the record: 551.2 ms/frame (150 frames),
 562 ms (60), 573 ms (90) — all **understated**, because a short window was
