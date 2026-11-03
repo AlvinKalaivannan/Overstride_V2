@@ -342,6 +342,14 @@ def run_clip(subject: str, cam: str, mat: Path, video: Path, det_model,
                 float(np.corrcoef(gv[ok], ev[ok])[0, 1])
                 if ok.sum() > 5 and np.std(gv[ok]) > 1e-6
                 and np.std(ev[ok]) > 1e-6 else float("nan"))
+            # Bias and SD beside the MAE, because an MAE alone cannot tell a
+            # shifted measurement from a noisy one. Signed, estimate minus
+            # reference, so a negative bias means the estimate reads low.
+            err[limb][f"{j}_bias"] = (float((ev - gv)[ok].mean())
+                                      if ok.any() else float("nan"))
+            err[limb][f"{j}_sd"] = (float((ev - gv)[ok].std(ddof=1))
+                                    if ok.sum() > 1 else float("nan"))
+            err[limb][f"{j}_n"] = int(ok.sum())
             err[limb][f"{j}_gt_range_deg"] = (
                 [round(float(gv[ok].min()), 1), round(float(gv[ok].max()), 1)]
                 if ok.any() else [float("nan")] * 2)

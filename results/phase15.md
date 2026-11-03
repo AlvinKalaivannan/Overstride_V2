@@ -494,6 +494,148 @@ run on real footage"*. It still has not, in the sense that matters:
 calibrated machine-vision cameras. MoVi has the phone footage §7.5 needs, and
 this phase could not score it. §7.5 stays **open**.
 
+### D6 — check 1's femur band is MIS-SPECIFIED, and it is not being relaxed
+
+Running the pre-registered checks across all seven round F subjects now on disk
+turned up a problem with the check itself:
+
+| subject | femur in band | tibia | hip width | check 1 | gap rate (left) |
+|---|---|---|---|---|---|
+| `Subject_1` | yes | yes | yes | **PASS** | 3.9% |
+| `Subject_10` | yes | yes | yes | **PASS** | 0.0% |
+| `Subject_11` | **no** | yes | yes | **FAIL** | **42.0%** |
+| `Subject_12` | yes | yes | yes | **PASS** | 2.1% |
+| `Subject_13` | yes | yes | yes | **PASS** | 0.0% |
+| `Subject_14` | yes | yes | yes | PASS *(no video)* | 2.5% |
+| `Subject_15` | **no** | yes | yes | **FAIL** | **3.9%** |
+
+**Every failure is the femur, and only the femur.** Tibia and hip width pass for
+all seven.
+
+**`Subject_15` has clean data.** Its gap rate is 3.9% — identical to
+`Subject_1`, which passes — so unlike `Subject_11` (42%, with `LFWT`, `RFWT`
+and `THORAX` gapped) its failure is **not** caused by missing markers. It is a
+genuine segment length above the bar.
+
+**The bar is wrong for the quantity it is applied to.** `FEMUR_MM = (350, 550)`
+is the **anatomical** femur range. What `check_subject` actually measures is the
+distance from H36M's hip — `mean(ASIS, PSIS)`, a point **inside the pelvis**
+— to the knee joint centre. That is longer than an anatomical femur by roughly
+the hip-centre offset, which **this very phase measured at 88–110 mm**.
+`Subject_1` passes at 531.9 mm, 18 mm under the ceiling. A tall subject exceeds
+550 mm **by construction**, with nothing wrong with the data.
+
+So check 1 still does the job it was written for — confirming the units are
+millimetres and not metres, where the two differ by 1000× — but **as a
+subject gate it rejects tall subjects for a definitional reason.** Two of seven,
+29%.
+
+**The bar is NOT being widened.** Changing a pre-registered threshold after
+seeing which subjects it rejects is precisely the tuning this protocol exists to
+prevent, and it would be worse here because the rejected subjects' error figures
+are already computable. `Subject_11` and `Subject_15` are excluded, as the frozen
+rule says, and the rule is applied in code before their video is decoded.
+
+**What should happen instead, and the order matters.** Before the **sealed test
+set** is opened, check 1 should be **re-registered** — split into the unit test
+it was meant to be (is any length within 1000× of human?) and, if a
+plausibility gate is wanted at all, a bound derived from the *definition*: the
+anatomical range **plus** the measured 88–110 mm hip-centre offset. That
+re-registration must be written down and committed **before** the sealed subjects
+are downloaded, with its justification resting on the marker definition rather
+than on which subjects pass. Until then the frozen bar stands.
+
+**Cost of this defect so far:** it is the reason n = 2 rather than n = 4 on the
+headline, and n = 4 rather than n = 5 on the diagnostic rows below. At least one
+of those two exclusions is, on the evidence, a false positive.
+
+### D7 — check 1's femur bar, RE-REGISTERED 2026-11-02
+
+**This is a re-registration, not a relaxation**, and it is committed on its own
+*before* the pass/fail is recomputed, so the derivation cannot have been steered
+by which subjects it lets through. The superseded bar stays in the code and in
+this record.
+
+| | bar |
+|---|---|
+| superseded, pre-registered before MoVi was downloaded | `FEMUR_MM = (350.0, 550.0)` |
+| **re-registered 2026-11-02** | **`FEMUR_MM = (420.0, 700.0)`** |
+
+#### What this check is for
+
+**It detects a unit error — millimetres read as centimetres (10×) or as
+metres (1000×).** That is the trap that cost this project two wrong claims on
+AthleticsPose's `p2mm` factor (`results/phase03b.md`). **It is not an anatomical
+outlier detector** and was never meant to rank subjects by body proportion. Used
+as one, it rejected 2 of 7 round F subjects for being tall.
+
+#### Derivation — two terms, neither from MoVi
+
+A bar must not be fitted to the subjects it judges, so **no MoVi subject's
+measurement appears anywhere below.**
+
+**Term 1 — anatomical femur length, from a population-general ratio.** The
+previous draft of this derivation used a single Indian dry-bone series
+(max 490 mm), which **under-covers MoVi's population** — mostly North American
+university students and staff — so tall subjects would still have failed for
+being tall. Replaced with Feldesman et al.'s **generic femur:stature ratio**,
+derived from a systematic review of **51 population means**, which puts femur
+length at **26.5–27.0% of standing height** in adults (mean 26.74%). Cited via
+[Mays, *Am J Phys Anthropol* 2016](https://onlinelibrary.wiley.com/doi/10.1002/ajpa.23068)
+and the femur/stature-ratio literature that reports it
+([Feldesman — femur/stature ratio in children](https://www.researchgate.net/publication/21576082_Femurstature_ratio_and_estimates_of_stature_in_children)).
+**The primary 1992 record was not verified first-hand and sources differ between
+26.74% and 26.75%**, so the **range** is used rather than the point value.
+
+Applied to a **deliberately over-wide adult stature span of 1,450–2,100 mm** —
+wider than any published adult 1st–99th percentile interval for this
+population, and chosen wide on purpose, because a bar that exists to catch a
+factor of ten loses nothing by being generous and loses real subjects by being
+tight:
+
+> 0.265 × 1,450 mm = **384 mm**  …  0.270 × 2,100 mm = **567 mm**
+
+[ANSUR II](https://ergoassessment.cam/ansur-2-data-explorer/) (Natick 2012,
+n = 11,961 US Army personnel) is the obvious percentile source for a North
+American adult population, but **its 1st/99th stature values could not be
+verified from the primary report**, so no percentile figure is quoted.
+
+**Term 2 — the pelvis-landmark-to-hip-joint-centre offset.** **This project
+measured it at 81 mm on AthleticsPose** (phase 12, `results/phase12.md`) — an
+independent dataset, not MoVi. [Harrington et al., *J Biomech* 40(3):595–602
+(2007)](https://pmc.ncbi.nlm.nih.gov/articles/PMC4893978) is the established and
+best-validated regression for the hip joint centre from pelvic landmarks, cited
+for the existence and sense of the displacement; **its coefficients are not
+quoted, because they were not verified against the paper.** A ±50% tolerance
+on the single measured value gives **40–122 mm** — a declared judgement.
+
+> **bar = (384 + 40, 567 + 122) = (424, 689) → rounded outwards to
+> (420, 700).**
+
+#### The bar is justified by its purpose, not by the subjects
+
+Across the **whole** plausible human range for the measured quantity
+*L* = |mean(ASIS, PSIS) → knee joint centre|, i.e. 424–689 mm:
+
+| scale | plausible *L* becomes | vs bar (420, 700) |
+|---|---|---|
+| 1/1000 (metres) | 0.42 – 0.69 | **rejected** (below) |
+| 1/10 (centimetres) | 42.4 – 68.9 | **rejected** (below) |
+| **1× (millimetres)** | **424 – 689** | **accepted** |
+| 10× | 4,240 – 6,890 | **rejected** (above) |
+| 1000× | 424,000 – 689,000 | **rejected** (above) |
+
+The widest plausible true value (689) sits **6.2× below** the smallest 10×
+value (4,240), and the narrowest plausible true value (424) sits **6.2× above**
+the largest 1/10 value (68.9). **No unit error of 10× or more can masquerade as
+a valid length anywhere in the human range** — which is the check's entire job.
+`tests/test_phase15_checks_bar.py` asserts that table, requires ≥ 3× headroom
+at both ends, and asserts that the **old** bar fails the same test by excluding
+tall-but-real adults.
+
+**Tibia is unchanged at (300, 500).** Both of its endpoints are joint centres,
+so it carries no definitional offset — and it never failed for any subject.
+
 ## Subject designation, fixed 2026-11-02 before any further download
 
 The result above rests on **two** subjects, and they disagree by **2.3×** on

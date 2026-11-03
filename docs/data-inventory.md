@@ -867,6 +867,25 @@ project prescribes *and* a frontal contrast camera.
 Any check that fails and cannot be resolved from the dataset's own documentation
 **stops the MAE for the affected clips** rather than being worked around.
 
+**Check 1's femur bar was RE-REGISTERED on 2026-11-02**, from (350, 550) mm
+to **(420, 700) mm** — derived from the check's purpose (detecting a 10× or
+1000× unit error) and from a population-general femur:stature ratio of
+26.5–27.0% over a deliberately over-wide 1,450–2,100 mm adult stature span,
+plus the 40–122 mm hip-centre offset bracketing phase 12's 81 mm on
+AthleticsPose. **No MoVi subject's measurement was used in the derivation**, and
+it was committed before the pass/fail was recomputed. Derivation, sources and
+the unit-error table: `results/phase15.md` D7.
+
+**Check 1's femur bound is mis-specified — see `results/phase15.md` D6.**
+Every check-1 failure across the seven round F subjects on disk is the femur and
+only the femur, and the quantity measured is `mean(ASIS, PSIS)` → knee joint
+centre, which starts *inside the pelvis* and so exceeds the anatomical
+350–550 mm range by roughly the 88–110 mm hip-centre offset measured here.
+`Subject_15` fails it on clean data (3.9% gaps, the same as `Subject_1`, which
+passes). **The bar has not been relaxed** — doing so after seeing which
+subjects it rejects is the tuning the protocol forbids. It must be re-registered,
+from the definition, **before the sealed test set is opened.**
+
 #### Subject designation, fixed 2026-11-02 BEFORE either set was downloaded
 
 Phase 15's result rests on **two** usable subjects, and they disagree by

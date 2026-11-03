@@ -72,6 +72,21 @@ SLICE_F = [
     (86002, "F_CP1_Subject_1.mp4", 309.6),
 ]
 
+# The DIAGNOSTIC set, designated in commit f549bfd BEFORE it was downloaded:
+# Subject_12, Subject_13, Subject_15, PG1 only. Spent on arrival -- used to
+# diagnose the hip bias and the detector split, never to show that a fix works.
+# Subject_14 is skipped: it has no round F video of any kind.
+#
+# The SEALED TEST set (Subject_16, _17, _18, _19, _2) is deliberately NOT here.
+# It is named and costed in docs/data-inventory.md 8.5 and must stay untouched
+# until a fix is frozen. Do not add it to this list to "save a trip".
+SLICE_F_DIAG = [
+    (85270, "F_PG1_Subject_12_L.avi", 247.0),
+    (85234, "F_PG1_Subject_13_L.avi", 260.0),
+    (85255, "F_PG1_Subject_15_L.avi", 234.0),
+]
+DIAG_SUBJECTS = ("Subject_12", "Subject_13", "Subject_15")
+
 # The round F mocap is one 1.81 GB tar, but it is SEQUENTIAL: members are laid
 # out in archive order, so a ranged GET of a prefix yields the first few without
 # transferring the rest. Subjects 1, 10 and 11 are members 1-3.
@@ -122,7 +137,11 @@ def fetch_mocap_prefix(dest_dir: Path, n_want: int = MOCAP_WANT) -> list[dict]:
     fid, name, _mb = MOCAP_TAR
     dest_dir.mkdir(parents=True, exist_ok=True)
     prefix = dest_dir / f"prefix_{fid}.tarpart"
-    n = int(MOCAP_PREFIX_MB * 1e6)
+    # Enough bytes to reach `n_want` members. The measured cumulative size to
+    # the 7th member is ~290 MB; 40 MB of headroom covers the variation, and
+    # anything not needed is simply never read.
+    need_mb = max(MOCAP_PREFIX_MB, 40.0 * n_want + 60.0)
+    n = int(need_mb * 1e6)
     req = urllib.request.Request(
         API.format(id=fid), headers={"User-Agent": "overstride-phase15",
                                      "Range": f"bytes=0-{n - 1}"})
@@ -179,12 +198,25 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--round", choices=["F", "S"], default="F",
                     help="F is what phase 15 runs on; S is the wrong round")
+    ap.add_argument("--diagnostic", action="store_true",
+                    help="fetch the DIAGNOSTIC set (Subject_12/13/15, PG1 "
+                         "only) designated in commit f549bfd")
     ap.add_argument("--no-mocap", action="store_true",
                     help="skip the mocap tar prefix (video only)")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
-    slice_ = SLICE_F if args.round == "F" else SLICE_S
+    if args.diagnostic:
+        if args.round != "F":
+            raise SystemExit("--diagnostic is round F only")
+        slice_ = SLICE_F_DIAG
+        # Subject_15 is the 7th member in the archive's lexicographic order,
+        # so the prefix has to run that far. 1, 10, 11 are already on disk and
+        # are re-extracted harmlessly; 14 has no video but still occupies a slot.
+        want_members = 7
+    else:
+        slice_ = SLICE_F if args.round == "F" else SLICE_S
+        want_members = MOCAP_WANT
     raw = RAW / f"round_{args.round.lower()}"
     raw.mkdir(parents=True, exist_ok=True)
     total = sum(mb for _, _, mb in slice_)
@@ -195,13 +227,14 @@ def main() -> int:
         for fid, name, mb in slice_:
             print(f"    would fetch {fid:>6}  {name:<28} {mb:>7.1f} MB")
         if args.round == "F" and not args.no_mocap:
-            print(f"    would range-fetch {MOCAP_PREFIX_MB:.0f} MB of "
-                  f"{MOCAP_TAR[1]} for {MOCAP_WANT} subjects")
+            need = max(MOCAP_PREFIX_MB, 40.0 * want_members + 60.0)
+            print(f"    would range-fetch {need:.0f} MB of {MOCAP_TAR[1]} "
+                  f"for the first {want_members} archive members")
         return 0
 
     rows = []
     if args.round == "F" and not args.no_mocap:
-        rows += fetch_mocap_prefix(raw / "mocap")
+        rows += fetch_mocap_prefix(raw / "mocap", want_members)
     for fid, name, mb in slice_:
         dest = raw / name
         if dest.exists() and dest.stat().st_size > 0.9 * mb * 1e6:

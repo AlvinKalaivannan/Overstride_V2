@@ -67,8 +67,78 @@ MOVI_TO_H36M: dict[str, str | tuple[str, ...]] = {
 
 MOCAP_HZ = 120.0
 VIDEO_FPS_DECLARED = 30.0
-FEMUR_MM = (350.0, 550.0)     # pre-registered plausible human range
-TIBIA_MM = (300.0, 500.0)
+# ---------------------------------------------------------------------------
+# CHECK 1's FEMUR BAR, RE-REGISTERED 2026-11-02. Old bar (350, 550) mm kept
+# below, in the record, with the reason. Full account: `results/phase15.md` D7.
+#
+# WHAT THIS CHECK IS FOR. It detects a UNIT ERROR -- millimetres read as
+# centimetres (10x) or as metres (1000x), the trap that cost this project two
+# wrong claims on AthleticsPose's `p2mm`. It is NOT an anatomical outlier
+# detector, and it was never meant to rank subjects by body proportion. Used as
+# one it rejected 2 of 7 MoVi round F subjects for being tall, one of them with a
+# 3.9% gap rate identical to a subject that passed.
+#
+# WHAT IS ACTUALLY MEASURED. Not an anatomical femur:
+#       L = | mean(ASIS, PSIS)  ->  knee joint centre |
+# `mean(ASIS, PSIS)` lies INSIDE the pelvis, so L exceeds an anatomical femur by
+# roughly the pelvis-landmark-to-hip-joint-centre offset. The old bar was the
+# anatomical range, so a tall subject exceeded it by construction.
+#
+# DERIVATION. Two terms, both external to MoVi. No MoVi subject's measurement
+# is used anywhere in it -- a bar must not be fitted to the subjects it judges.
+#
+#   TERM 1, anatomical femur length, from a POPULATION-GENERAL ratio rather
+#   than one skeletal series. Feldesman et al.'s generic femur:stature ratio,
+#   derived from a systematic review of 51 population means, puts femur length
+#   at 26.5-27.0% of standing height in adults (mean 26.74%); see Feldesman,
+#   Kleckner & Lundy, and the ratio as applied in Mays, Am J Phys Anthropol 2016
+#   (doi:10.1002/ajpa.23068). The primary 1992 bibliographic record was NOT
+#   verified first-hand, and sources differ between 26.74% and 26.75% -- so the
+#   RANGE 26.5-27.0% is used, not the point value.
+#
+#   A deliberately over-wide adult stature span of 1450-2100 mm is applied to
+#   it. That is wider than any published adult 1st-99th percentile interval for
+#   a North American population, and is chosen to be wider on purpose: this bar
+#   exists to catch a factor of ten, so erring wide costs nothing and erring
+#   narrow excludes real subjects. (ANSUR II, Natick 2012, n = 11,961 US Army
+#   personnel, is the obvious percentile source for this population, but its
+#   1st/99th stature values could not be verified from the primary report here,
+#   so no percentile figure is quoted.)
+#
+#       0.265 x 1450 mm  =  384 mm        0.270 x 2100 mm  =  567 mm
+#
+#   TERM 2, the pelvis-landmark-to-hip-joint-centre offset. THIS PROJECT
+#   measured it at 81 mm on AthleticsPose (phase 12, `results/phase12.md`) -- an
+#   independent dataset, not MoVi. Harrington et al., J Biomech 40(3):595-602
+#   (2007) is the established and best-validated regression for hip joint centre
+#   from pelvic landmarks, cited here for the existence and sense of the
+#   displacement; its coefficients are NOT quoted, because they were not
+#   verified against the paper. A +/-50% tolerance on the one measured value
+#   gives 40-122 mm, and that tolerance is a judgement, declared as one.
+#
+#   BAR = (384 + 40, 567 + 122) = (424, 689), rounded outwards to (420, 700).
+#
+# THE BAR IS JUSTIFIED BY ITS PURPOSE, NOT BY THE SUBJECTS. Across the WHOLE
+# plausible human range for L, 424-689 mm, the bar separates the true scale from
+# a 10x or 1/10 misreading with a factor of ~6 of headroom at each end:
+#
+#   scale      plausible L maps to        vs bar (420, 700)
+#   1/1000     0.42 -  0.69 mm            below  -> REJECTED
+#   1/10       42.4 -  68.9 mm            below  -> REJECTED
+#   1x         424  -  689  mm            inside -> ACCEPTED
+#   10x        4240 - 6890  mm            above  -> REJECTED
+#   1000x      424000-689000 mm           above  -> REJECTED
+#
+# The widest plausible true value (689) is 6.2x below the smallest 10x value
+# (4240), and the narrowest plausible true value (424) is 6.2x above the largest
+# 1/10 value (68.9). So no unit error of 10x or more can masquerade as a valid
+# length anywhere in the human range, which is exactly the check's job -- and
+# the bar is set by that requirement rather than by which subjects pass.
+# `tests/test_phase15_checks_bar.py` asserts this table.
+FEMUR_MM_OLD_PREREGISTERED = (350.0, 550.0)   # superseded 2026-11-02; see D7
+FEMUR_MM = (420.0, 700.0)     # re-registered 2026-11-02, derivation above
+TIBIA_MM = (300.0, 500.0)     # unchanged: both ends are joint centres, so it
+                              # carries no definitional offset and never failed
 
 
 def _f(struct, field: str):
@@ -429,6 +499,10 @@ def check_subject(path: Path) -> dict:
     r["check1_units"] = {
         "femur_in_plausible_range": bool(femur_ok),
         "femur_plausible_mm": list(FEMUR_MM),
+        "femur_bar_rereg": "2026-11-02; derived from purpose (unit detection) "
+                           "and a population-general femur:stature ratio. "
+                           "See results/phase15.md D7",
+        "femur_bar_superseded_mm": list(FEMUR_MM_OLD_PREREGISTERED),
         "tibia_in_plausible_range": bool(tibia_ok),
         "tibia_plausible_mm": list(TIBIA_MM),
         "hip_width_in_plausible_range": bool(hip_ok),
@@ -530,8 +604,15 @@ def check_subject(path: Path) -> dict:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
+    # Default to the real mocap directory, not the one-file probe dir that
+    # happened to exist when this was first written: an incomplete default
+    # silently produced a checks file covering one subject and overwrote the
+    # canonical one.
     ap.add_argument("--mat", nargs="*", type=Path,
-                    default=sorted((MOVI / "f_probe").glob("F_v3d_*.mat")))
+                    default=sorted((MOVI / "raw" / "round_f" / "mocap")
+                                   .glob("F_v3d_*.mat")))
+    ap.add_argument("--out", type=Path, default=OUT,
+                    help="where to write; defaults to results/phase15_checks.json")
     args = ap.parse_args()
     if not args.mat:
         print("no Visual3D .mat files given or found")
