@@ -98,8 +98,29 @@
       "n_frames_jogging_mocap": 821,
       "gap_sentinel": {
         "n_frames": 821,
-        "n_frames_with_any_gap": 174,
-        "fraction_excluded": 0.2119,
+        "n_frames_with_a_gap_in_any_mapped_marker": 174,
+        "fraction_if_excluded_globally": 0.2119,
+        "per_side_for_hip_and_knee": {
+          "l": {
+            "n_usable": 789,
+            "n_excluded": 32,
+            "fraction_excluded": 0.039
+          },
+          "r": {
+            "n_usable": 784,
+            "n_excluded": 37,
+            "fraction_excluded": 0.0451
+          }
+        },
+        "joints_each_angle_reads": [
+          "pelvis",
+          "thorax",
+          "l_hip",
+          "r_hip",
+          "<side>_hip",
+          "<side>_knee",
+          "<side>_ankle"
+        ],
         "gapped_frames_per_marker": {
           "LEJC": 121,
           "LKJC": 20,
@@ -137,9 +158,9 @@
         ],
         "vertical_axis_from_posture": 2,
         "knee_flexion_deg": {
-          "min": -73.45,
-          "max": -8.87,
-          "median": -26.44
+          "min": -73.53,
+          "max": -8.68,
+          "median": -28.59
         },
         "note": "a mirrored axis would flip flexion sign; jogging knee flexion must be one-signed and inside the tool's own plausible band, hip (-40,60) knee (-170,20)",
         "pass": true
@@ -147,13 +168,199 @@
       "viewpoint": {
         "PG1": {
           "view_ratio": 0.7197,
-          "travel_azimuth_deg": 88.6,
+          "travel_azimuth_deg": 75.7,
+          "travel_azimuth_iqr_deg": [
+            62.1,
+            83.7
+          ],
           "n_frames_scored": 809
         },
         "PG2": {
           "view_ratio": 0.4677,
-          "travel_azimuth_deg": 5.3,
+          "travel_azimuth_deg": 11.0,
+          "travel_azimuth_iqr_deg": [
+            5.8,
+            22.9
+          ],
           "n_frames_scored": 809
+        }
+      },
+      "left_limb_nearer_camera": {
+        "PG1": true,
+        "PG2": false
+      }
+    },
+    {
+      "file": "F_v3d_Subject_10.mat",
+      "subject_id": "Subject_10",
+      "n_markers": 87,
+      "n_frames_mocap": 18573,
+      "check6_subject_identity": {
+        "mat_field": "Subject_10",
+        "filename": "Subject_10",
+        "video_stem_would_be": "F_PG1_Subject_10_L.avi",
+        "pass": true
+      },
+      "motions_list": [
+        "jumping_jack",
+        "checking_watch",
+        "walking",
+        "crawling",
+        "hand_clapping",
+        "hand_waving",
+        "crossarms",
+        "vertical_jumping",
+        "stretching",
+        "taking_photo",
+        "sitting_down",
+        "cross_legged_sitting",
+        "kicking",
+        "pointing",
+        "yoga_rm",
+        "scratching_head",
+        "jogging",
+        "sideways",
+        "throw/catch",
+        "running_in_spot",
+        "phone_talking"
+      ],
+      "jogging_index_0based": 16,
+      "excluded_running_in_spot_index_0based": [
+        19
+      ],
+      "jogging_frames": {
+        "video_30fps": [
+          3261,
+          3503
+        ],
+        "mocap_120hz": [
+          13041,
+          14009
+        ],
+        "n_video": 243,
+        "n_mocap": 969,
+        "seconds_at_30fps": 8.1
+      },
+      "check5_sync": {
+        "mocap_hz": 120.0,
+        "video_fps_declared": 30.0,
+        "expected_ratio": 4.0,
+        "median_flag_ratio": 3.9987270836857975,
+        "max_abs_dev_from_4": 0.018987341772152,
+        "note": "flags30 and flags120 are the SAME movement boundaries expressed in video and mocap frames, so the dataset ships the correspondence rather than leaving it to be estimated",
+        "pass": true
+      },
+      "check3_mapping": {
+        "pelvis": [
+          "LFWT",
+          "LBWT",
+          "RFWT",
+          "RBWT"
+        ],
+        "r_hip": [
+          "RFWT",
+          "RBWT"
+        ],
+        "r_knee": "RKJC",
+        "r_ankle": "RAJC",
+        "l_hip": [
+          "LFWT",
+          "LBWT"
+        ],
+        "l_knee": "LKJC",
+        "l_ankle": "LAJC",
+        "spine": "midpoint(pelvis, THORAX)",
+        "thorax": "THORAX",
+        "neck": "CLAV",
+        "head": "HEAD",
+        "l_shoulder": "LSJC",
+        "l_elbow": "LEJC",
+        "l_wrist": "LWJC",
+        "r_shoulder": "RSJC",
+        "r_elbow": "REJC",
+        "r_wrist": "RWJC"
+      },
+      "n_frames_jogging_mocap": 969,
+      "gap_sentinel": {
+        "n_frames": 969,
+        "n_frames_with_a_gap_in_any_mapped_marker": 0,
+        "fraction_if_excluded_globally": 0.0,
+        "per_side_for_hip_and_knee": {
+          "l": {
+            "n_usable": 969,
+            "n_excluded": 0,
+            "fraction_excluded": 0.0
+          },
+          "r": {
+            "n_usable": 969,
+            "n_excluded": 0,
+            "fraction_excluded": 0.0
+          }
+        },
+        "joints_each_angle_reads": [
+          "pelvis",
+          "thorax",
+          "l_hip",
+          "r_hip",
+          "<side>_hip",
+          "<side>_knee",
+          "<side>_ankle"
+        ],
+        "gapped_frames_per_marker": {},
+        "handling": "excluded, never interpolated"
+      },
+      "h36m_hip_vs_joint_centre_mm": {
+        "left": 90.4,
+        "right": 92.2,
+        "phase12_measured_mm": 81.0,
+        "note": "distance from H36M's mean(ASIS,PSIS) hip to the dataset's own hip joint centre -- the irreducible offset no image-based detector can mark"
+      },
+      "check1_units": {
+        "femur_plausible_mm": [
+          350.0,
+          550.0
+        ],
+        "tibia_plausible_mm": [
+          300.0,
+          500.0
+        ],
+        "units": "millimetres",
+        "pass": true
+      },
+      "check2_convention": {
+        "vertical_axis_from_camera_height": 2,
+        "mean_head_minus_pelvis_mm": [
+          31.8,
+          -24.1,
+          637.8
+        ],
+        "vertical_axis_from_posture": 2,
+        "knee_flexion_deg": {
+          "min": -116.26,
+          "max": 3.23,
+          "median": -32.95
+        },
+        "note": "a mirrored axis would flip flexion sign; jogging knee flexion must be one-signed and inside the tool's own plausible band, hip (-40,60) knee (-170,20)",
+        "pass": true
+      },
+      "viewpoint": {
+        "PG1": {
+          "view_ratio": 0.7052,
+          "travel_azimuth_deg": 75.0,
+          "travel_azimuth_iqr_deg": [
+            65.5,
+            81.9
+          ],
+          "n_frames_scored": 969
+        },
+        "PG2": {
+          "view_ratio": 0.4651,
+          "travel_azimuth_deg": 10.5,
+          "travel_azimuth_iqr_deg": [
+            4.0,
+            20.8
+          ],
+          "n_frames_scored": 969
         }
       },
       "left_limb_nearer_camera": {

@@ -145,20 +145,52 @@ def to_h36m(v: dict) -> np.ndarray:
     return out
 
 
-def gap_report(v: dict, sl: slice) -> dict:
-    """How many frames the gap sentinel costs, over the markers actually used."""
+# The joints `sagittal_angles` actually reads. Its body frame is pelvis->thorax
+# and hip<->hip, then the limb chain for one side -- so an elbow or wrist gap is
+# irrelevant to a knee angle and must not cost that frame.
+FRAME_JOINTS = ("pelvis", "thorax", "l_hip", "r_hip")
+
+
+def angle_mask(gt: np.ndarray, side: str) -> np.ndarray:
+    """Frames where the hip and knee angles for `side` are actually measured.
+
+    Derived from the GT array rather than from a hand-kept marker list, so it
+    cannot drift out of step with `MOVI_TO_H36M` or with `sagittal_angles`.
+
+    **Per quantity, not global.** Excluding every frame with a gap in ANY mapped
+    marker threw away 21.2% of subject 1's jogging window, and most of that was
+    `LEJC`, `REJC` and `LWJC` -- elbows and a wrist, which no sagittal hip or
+    knee angle reads. Discarding good frames is not a conservative choice; it is
+    a smaller n reported as if it were the data's fault.
+    """
+    need = list(FRAME_JOINTS) + [f"{side}_hip", f"{side}_knee", f"{side}_ankle"]
+    idx = [H36M[j] for j in need]
+    return np.isfinite(gt[:, idx]).all(axis=(1, 2))
+
+
+def gap_report(v: dict, sl: slice, gt: np.ndarray) -> dict:
+    """What the gap sentinel costs -- globally, and per measured quantity."""
     used: set[str] = set()
     for src in MOVI_TO_H36M.values():
         used.update((src,) if isinstance(src, str) else src)
     idx = {n: i for i, n in enumerate(v["marker_names"])}
+    gaps = np.asarray(v["marker_gaps"])[sl]
     cols = [idx[n] for n in sorted(used) if n in idx]
-    g = np.asarray(v["marker_gaps"])[sl][:, cols]
-    per_marker = {n: int(np.asarray(v["marker_gaps"])[sl][:, idx[n]].sum())
-                  for n in sorted(used) if n in idx}
-    bad = (g == 1).any(axis=1)
-    return {"n_frames": int(g.shape[0]),
-            "n_frames_with_any_gap": int(bad.sum()),
-            "fraction_excluded": round(float(bad.mean()), 4),
+    per_marker = {n: int(gaps[:, idx[n]].sum()) for n in sorted(used) if n in idx}
+    any_bad = (gaps[:, cols] == 1).any(axis=1)
+    per_side = {}
+    for side in ("l", "r"):
+        m = angle_mask(gt, side)
+        per_side[side] = {"n_usable": int(m.sum()),
+                          "n_excluded": int((~m).sum()),
+                          "fraction_excluded": round(float((~m).mean()), 4)}
+    return {"n_frames": int(gaps.shape[0]),
+            "n_frames_with_a_gap_in_any_mapped_marker": int(any_bad.sum()),
+            "fraction_if_excluded_globally": round(float(any_bad.mean()), 4),
+            "per_side_for_hip_and_knee": per_side,
+            "joints_each_angle_reads": list(FRAME_JOINTS) + ["<side>_hip",
+                                                             "<side>_knee",
+                                                             "<side>_ankle"],
             "gapped_frames_per_marker": {k: n for k, n in per_marker.items() if n},
             "handling": "excluded, never interpolated"}
 
@@ -183,27 +215,41 @@ def to_camera(kp_world: np.ndarray, R_cv: np.ndarray, t_cv: np.ndarray) -> np.nd
     return kp_world @ R_cv.T + t_cv
 
 
-def travel_azimuth(pelvis: np.ndarray, centre: np.ndarray,
-                   up_axis: int) -> dict:
+def travel_azimuth(pelvis: np.ndarray, centre: np.ndarray, up_axis: int,
+                   win: int = 10) -> dict:
     """Angle between the camera's line of sight and the direction of travel.
 
-    Both projected onto the horizontal plane. 90 deg is side-on, 0 deg is the
-    camera looking along the runner's path. Reported beside `view_ratio` as an
-    independent construction of the same geometry.
+    Both projected onto the horizontal plane, **per frame**, and summarised by
+    the median. 90 deg is side-on, 0 deg is the camera looking along the path.
+    Reported beside `view_ratio` as an independent construction of the same
+    geometry.
+
+    PER FRAME, not from the mean velocity. A jogging trial inside a 15-camera
+    lab volume is a shuttle or a loop, not a straight line, so the direction of
+    the MEAN velocity is close to meaningless -- it read 88.6 deg for subject 1
+    and 36.3 deg for subject 10 while `view_ratio` sat at 0.72 and 0.71 for the
+    same clips. The sign of travel is also irrelevant here (a camera is equally
+    side-on to a runner going either way), hence |cos| rather than cos.
     """
     hor = [a for a in range(3) if a != up_axis]
     p = pelvis[:, hor]
-    vel = np.diff(p, axis=0)
-    keep = np.isfinite(vel).all(axis=1) & (np.linalg.norm(vel, axis=1) > 1e-6)
-    if keep.sum() < 5:
-        return {"deg": float("nan"), "n": int(keep.sum())}
-    travel = vel[keep].mean(axis=0)
-    travel /= np.linalg.norm(travel)
-    sight = p.mean(axis=0) - centre[hor]
-    sight /= np.linalg.norm(sight)
-    cos = abs(float(np.dot(travel, sight)))
-    return {"deg": float(np.degrees(np.arccos(np.clip(cos, 0, 1)))),
-            "n": int(keep.sum())}
+    # Central difference over ~win frames: at 120 Hz that is ~83 ms, long
+    # enough to beat marker noise and short enough to track a turn.
+    vel = p[win:] - p[:-win]
+    mid = 0.5 * (p[win:] + p[:-win])
+    sight = mid - centre[hor]
+    ok = (np.isfinite(vel).all(axis=1) & np.isfinite(sight).all(axis=1)
+          & (np.linalg.norm(vel, axis=1) > 1e-3)
+          & (np.linalg.norm(sight, axis=1) > 1e-3))
+    if ok.sum() < 5:
+        return {"deg": float("nan"), "n": int(ok.sum())}
+    v = vel[ok] / np.linalg.norm(vel[ok], axis=1, keepdims=True)
+    s = sight[ok] / np.linalg.norm(sight[ok], axis=1, keepdims=True)
+    cos = np.abs(np.sum(v * s, axis=1))
+    deg = np.degrees(np.arccos(np.clip(cos, 0.0, 1.0)))
+    return {"deg": float(np.median(deg)), "n": int(ok.sum()),
+            "p25": float(np.percentile(deg, 25)),
+            "p75": float(np.percentile(deg, 75))}
 
 
 def check_subject(path: Path) -> dict:
@@ -284,12 +330,17 @@ def check_subject(path: Path) -> dict:
     jogsl = slice(int(f120[0]), int(f120[1]) + 1)
     g = gt[jogsl]
     r["n_frames_jogging_mocap"] = int(g.shape[0])
-    r["gap_sentinel"] = gap_report(v, jogsl)
-    print(f"  gaps: {r['gap_sentinel']['n_frames_with_any_gap']} of "
-          f"{r['gap_sentinel']['n_frames']} jogging frames carry a gapped "
-          f"marker ({100 * r['gap_sentinel']['fraction_excluded']:.1f}%), "
-          f"excluded not interpolated")
-    print(f"        per marker: {r['gap_sentinel']['gapped_frames_per_marker']}")
+    r["gap_sentinel"] = gap_report(v, jogsl, g)
+    gs = r["gap_sentinel"]
+    print(f"  gaps: {gs['n_frames_with_a_gap_in_any_mapped_marker']} of "
+          f"{gs['n_frames']} jogging frames have a gap in SOME mapped marker "
+          f"({100 * gs['fraction_if_excluded_globally']:.1f}%), but hip and "
+          f"knee read only {len(FRAME_JOINTS) + 3} joints:")
+    for side in ("l", "r"):
+        ps = gs["per_side_for_hip_and_knee"][side]
+        print(f"        {side}: {ps['n_usable']} usable, {ps['n_excluded']} "
+              f"excluded ({100 * ps['fraction_excluded']:.1f}%)")
+    print(f"        per marker: {gs['gapped_frames_per_marker']}")
 
     # The H36M hip is mean(ASIS, PSIS) -- inside the pelvis. MoVi also ships
     # the anatomical hip joint centre, so the offset phase 12 measured at 81 mm
@@ -344,17 +395,24 @@ def check_subject(path: Path) -> dict:
         R_cv, t_cv, centre = camera_pose(name)
         cams[name] = (R_cv, t_cv, centre)
     heights = {n: cams[n][2].tolist() for n in cams}
-    up_axis = int(np.argmax([abs(np.mean([cams[n][2][a] for n in cams]))
-                             if a != int(np.argmax(np.abs(cams["PG1"][2])))
-                             else 0.0 for a in range(3)]))
-    # more direct: the axis on which both camera centres sit near 1.0-2.0 m
+    # The axis on which BOTH camera rigs sit between 0.8 m and 2.5 m: that has
+    # to be a mounting height, which is a fact about the rig rather than a guess
+    # about the convention.
     cand = [a for a in range(3)
             if all(800.0 < abs(cams[n][2][a]) < 2500.0 for n in cams)]
     up_axis = cand[0] if len(cand) == 1 else 2
     head_minus_pelvis = np.nanmean(g[:, H36M["head"]] - g[:, H36M["pelvis"]],
                                    axis=0)
-    ang = sagittal_angles(g, "l")
-    knee = ang["knee"][np.isfinite(ang["knee"])]
+    knees = {}
+    for side in ("l", "r"):
+        m = angle_mask(g, side)
+        k = sagittal_angles(g, side)["knee"][m]
+        knees[side] = {"n": int(m.sum()),
+                       "min": round(float(k.min()), 2),
+                       "max": round(float(k.max()), 2),
+                       "median": round(float(np.median(k)), 2)}
+    knee = np.concatenate([sagittal_angles(g, s)["knee"][angle_mask(g, s)]
+                           for s in ("l", "r")])
     r["check2_convention"] = {
         "camera_centres_world_mm": heights,
         "vertical_axis_from_camera_height": up_axis,
@@ -390,13 +448,17 @@ def check_subject(path: Path) -> dict:
         r["viewpoint"][name] = {
             "view_ratio": round(vr, 4),
             "travel_azimuth_deg": round(az["deg"], 1),
+            "travel_azimuth_iqr_deg": [round(az.get("p25", float("nan")), 1),
+                                       round(az.get("p75", float("nan")), 1)],
             "camera_centre_mm": [round(x, 1) for x in centre],
             "n_frames_scored": int(ok.sum()),
             "distance_to_subject_mm": round(float(np.linalg.norm(
                 np.nanmean(g[:, H36M["pelvis"]], axis=0) - centre)), 1)}
         print(f"  [side-on] {name}: view_ratio {vr:.4f} "
               f"(1 = side-on, AthleticsPose median 0.751), "
-              f"travel azimuth {az['deg']:.1f} deg (90 = side-on), "
+              f"travel azimuth {az['deg']:.1f} deg "
+              f"[{az.get('p25', float('nan')):.0f}, "
+              f"{az.get('p75', float('nan')):.0f}] (90 = side-on), "
               f"{r['viewpoint'][name]['distance_to_subject_mm'] / 1000:.2f} m away")
     r["left_limb_nearer_camera"] = {
         name: bool(np.nanmean(to_camera(g, *cams[name][:2])[:, H36M["l_hip"], 2])
