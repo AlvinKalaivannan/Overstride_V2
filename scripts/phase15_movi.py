@@ -45,7 +45,7 @@ from phase3_infer import load_model  # noqa: E402
 from phase7_inference_fix import CKPT_FOR, lift  # noqa: E402
 from phase12_scan import subject_bootstrap_ci  # noqa: E402
 from phase15_checks import (angle_mask, camera_pose, load_v3d,  # noqa: E402
-                            to_camera, to_h36m)
+                            project_reference, to_camera, to_h36m)
 from video_kinematics import (LOWPASS_HZ, MODEL_FPS, coco17_to_h36m17,  # noqa: E402
                               detect_coco17, resample, scores_to_train_scale)
 
@@ -136,7 +136,7 @@ def near_limb(gt_cam: np.ndarray | None, est: np.ndarray) -> tuple[str, str]:
 
 
 def run_clip(subject: str, cam: str, mat: Path, video: Path, det_model,
-             lift_model, max_frames: int) -> dict | None:
+             lift_model, max_frames: int, perfect: bool = False) -> dict | None:
     v = load_v3d(mat)
     ji, f30, f120 = jogging_window(v)
     gt_world = to_h36m(v)
@@ -150,9 +150,19 @@ def run_clip(subject: str, cam: str, mat: Path, video: Path, det_model,
         print(f"    {cam}: only {len(frames)} frames decoded, skipping")
         return None
 
-    kp_coco, dmeta = detect_coco17(frames, crop=True, model=det_model)
-    kp = coco17_to_h36m17(kp_coco)
     assert LOWPASS_HZ == 0.0, "phase 13 measured 2D smoothing harmful"
+    if perfect:
+        # The diagnostic arm: the reference 3D projected through this camera's
+        # own calibration, H36M-ordered by construction. Separates the 2D
+        # detector's cost from the lifter's cost of arriving in a new lab.
+        mk_all = int(f120[0]) + MOCAP_PER_VIDEO * np.arange(len(frames))
+        mk_all = mk_all[mk_all < gt_world.shape[0]]
+        kp = project_reference(gt_world[mk_all], cam)
+        frames = frames[:len(kp)]
+        dmeta = {"source": "projected reference 3D (perfect 2D arm)"}
+    else:
+        kp_coco, dmeta = detect_coco17(frames, crop=True, model=det_model)
+        kp = coco17_to_h36m17(kp_coco)
 
     # A frame where the detector found nobody is left as ALL ZEROS by
     # `detect_coco17`. That is a sentinel, exactly like MoVi's own gap zeros,
@@ -168,7 +178,9 @@ def run_clip(subject: str, cam: str, mat: Path, video: Path, det_model,
     # r = +0.02, against 4.5 deg for the same clip's projected reference 2D.
     # See the TRAIN_CONF_MEAN comment in video_kinematics.
     raw_conf = kp[:, :, 2].copy()
-    kp = scores_to_train_scale(kp)
+    if not perfect:
+        kp = scores_to_train_scale(kp)
+    kp = np.nan_to_num(kp, nan=0.0)
 
     n_v = len(frames)
     n_model = max(int(round(n_v * MODEL_FPS / max(fps, 1e-6))), 2)
@@ -221,6 +233,7 @@ def run_clip(subject: str, cam: str, mat: Path, video: Path, det_model,
 
     dt = time.time() - t0
     row = {"subject": subject, "camera": cam, "jogging_index": ji,
+           "arm": "perfect 2D (projected reference)" if perfect else "detector",
            "video": video.name, "video_meta": vmeta,
            "fps_from_file": fps, "n_video_frames": n_v,
            "n_frames_scored": n_scored,
@@ -280,6 +293,9 @@ def main() -> int:
     ap.add_argument("--cameras", nargs="*", default=list(CAMERAS))
     ap.add_argument("--max-frames", type=int, default=0,
                     help="smoke test: cap the jogging window")
+    ap.add_argument("--perfect-2d", action="store_true",
+                    help="diagnostic arm: project the reference 3D through the "
+                         "camera instead of detecting. Calibrated cameras only")
     ap.add_argument("--out", type=Path, default=OUT)
     args = ap.parse_args()
 
@@ -317,8 +333,11 @@ def main() -> int:
             # detector with min_size set to the frame's own shortest side, so a
             # model reused across cameras of different resolutions would be
             # running at the wrong scale. PG is 800x600, CP is phone video.
+            if args.perfect_2d and not CAMERAS[cam]["calibrated"]:
+                print(f"    {cam}: no calibration, perfect-2D arm needs it")
+                continue
             r = run_clip(subject, cam, mat, video, det_model, lift_model,
-                         args.max_frames)
+                         args.max_frames, perfect=args.perfect_2d)
             if r:
                 rows.append(r)
 
@@ -340,6 +359,9 @@ def main() -> int:
            "athleticspose_baseline": {"near": AP_NEAR, "far": AP_FAR,
                                       "note": "different dataset, camera, "
                                               "population and movement"},
+           "arm": ("perfect 2D (projected reference) -- DIAGNOSTIC, "
+                   "nothing is selected on it" if args.perfect_2d
+                   else "detector (the deployable path)"),
            "by_camera": agg, "clips": rows}
     args.out.write_text(json.dumps(out, indent=2), encoding="utf-8")
 

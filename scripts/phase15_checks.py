@@ -215,6 +215,44 @@ def to_camera(kp_world: np.ndarray, R_cv: np.ndarray, t_cv: np.ndarray) -> np.nd
     return kp_world @ R_cv.T + t_cv
 
 
+def project_reference(kp_world: np.ndarray, cam: str) -> np.ndarray:
+    """Project the reference 3D into a PG camera: (n, 17, 3), H36M-ordered.
+
+    This is a PERFECT 2D detector for this dataset, and it exists only because
+    MoVi ships intrinsics, extrinsics and radial distortion for the Point Grey
+    rigs. Its purpose is diagnostic: it bounds how much of the measured error is
+    the 2D detector and how much is the lifter arriving in a lab it has never
+    seen. Phase 7 section 5 did the same thing on AthleticsPose and got 5.16 deg
+    for this checkpoint, so the figure has a reference point.
+
+    It is NOT a tuning instrument. Nothing is selected on its output; it is
+    reported beside the real number as a decomposition.
+
+    Channel 2 is set to the trained confidence constant, matching what the real
+    path now feeds the lifter, so the only difference between the two arms is
+    the 2D coordinates themselves.
+
+    MATLAB intrinsics are the row-vector form, so `IntrinsicMatrix` holds fx and
+    fy on the diagonal and the principal point in its LAST ROW.
+    """
+    from video_kinematics import TRAIN_CONF_MEAN
+
+    R_cv, t_cv, _centre = camera_pose(cam)
+    cc = to_camera(kp_world, R_cv, t_cv)
+    z = np.load(CALIB / f"cameraParams_{cam}.npz")
+    K = np.asarray(z["IntrinsicMatrix"], float)
+    k1, k2 = np.asarray(z["RadialDistortion"], float).ravel()[:2]
+    u = cc[..., 0] / cc[..., 2]
+    w = cc[..., 1] / cc[..., 2]
+    r2 = u ** 2 + w ** 2
+    f = 1.0 + k1 * r2 + k2 * r2 ** 2
+    px = u * f * K[0, 0] + K[2, 0]
+    py = w * f * K[1, 1] + K[2, 1]
+    out = np.stack([px, py, np.full_like(px, TRAIN_CONF_MEAN)], axis=-1)
+    out[~np.isfinite(out).all(axis=-1)] = np.nan
+    return out
+
+
 def travel_azimuth(pelvis: np.ndarray, centre: np.ndarray, up_axis: int,
                    win: int = 10) -> dict:
     """Angle between the camera's line of sight and the direction of travel.
