@@ -417,6 +417,69 @@ them.** The same AthleticsPose figure at subject level is 3.4528°
 [3.266, 3.695] near and 3.5597° [3.130, 3.903] far
 (`results/phase7_baseline_ci.json`).
 
+## Hip and knee, reported separately
+
+**The combined figure above stays** — it is the pre-registered headline,
+**9.610° near / 10.604° far on PG1 at n = 2**, and nothing here replaces it.
+But averaging the two joints hides the single most useful thing in this phase,
+so both are also given on their own, each against its own AthleticsPose
+baseline. **No number below is new; these are the same measurements
+disaggregated.**
+
+| joint | limb | MoVi PG1, n = 2 | 95% CI | AthleticsPose deployable | ratio |
+|---|---|---|---|---|---|
+| **knee** | near | **8.163°** | [6.950, 9.376] | **4.071°** [3.836, 4.459] | **2.00×** |
+| **knee** | far | **10.510°** | [7.844, 13.175] | **4.100°** [3.574, 4.762] | **2.56×** |
+| **hip** | near | **11.057°** | [8.408, 13.706] | **2.834°** [2.695, 2.930] | **3.90×** |
+| **hip** | far | **10.698°** | [7.306, 14.089] | **3.019°** [2.687, 3.326] | **3.54×** |
+
+*MoVi: `Subject_1` and `Subject_10`, PG1, jogging, detected 2D. AthleticsPose:
+592 clips, S11/S13/S16, running and sprint, subject-level with subject
+bootstrap, `results/phase7_baseline_ci.json`. Per-subject MoVi values in
+`results/phase15_movi.json`. Both CIs are two- and three-subject intervals —
+see the warning above about what those can and cannot mean.*
+
+**The ordering inverts between the two datasets, and that is the finding.**
+On AthleticsPose the **knee is the worse joint** (4.07° against the hip's
+2.83°). On MoVi the **hip is the worse joint** (11.06° against the knee's
+8.16°). The hip degrades **3.90×** across labs; the knee **2.00×**. A combined
+mean cannot show that, because the two joints move in opposite directions
+relative to each other.
+
+### Why, and it is a definitional problem rather than a camera one
+
+**Phase 15C settled the mechanism** (`results/phase15c.md`):
+
+- On **AthleticsPose**, the lifter's output thorax **is `CLAV`** — trunk-axis
+  offset **0.750°**, the released reference's own thorax matching CLAV to
+  **5.04 mm**, and a hip MAE of 4.118° at −1.8° bias that reproduces the
+  frozen baseline. Three independent measures, one answer.
+- On **MoVi**, the **same checkpoint's** thorax lands **87–144 mm from CLAV**,
+  and is nearer Visual3D's `THORAX` on **7 of 7 subjects** — 0.3–5.7° away in
+  the sagittal plane against 9.0–16.2° from CLAV.
+
+`sagittal_angles` measures hip flexion **against the pelvis→thorax axis**, so
+the thorax definition *is* the hip angle's reference direction. **The lifter
+does not place its own thorax on the same anatomical point in the two datasets**
+— the shift is 8–16° of trunk direction, two to four times the entire
+AthleticsPose hip MAE. **So the trunk-referenced hip angle does not transfer
+across labs**, and its cross-lab degradation is measuring a convention drift as
+much as a camera.
+
+**The knee is invariant to the thorax definition, and that is structural, not
+luck.** Knee flexion is the signed angle *from thigh to shank*, both projected
+into the same sagittal frame, and a difference of two angles measured in one
+frame is unchanged by rotating that frame within its plane. Changing the thorax
+rotates the frame inside the plane; the plane itself comes from the hip axis.
+Phase 15C demonstrated it empirically too: **24 of 24 knee MAE rows were
+bit-identical** across the two thorax definitions, to three decimals.
+
+**What follows for how these numbers should be read.** The knee figure is a
+measurement of the camera path. The hip figure is a measurement of the camera
+path **plus** an unquantified convention term that the model itself does not
+hold fixed between datasets. They are not interchangeable and should not be
+averaged without saying so.
+
 ### What the structure of the error says
 
 - **The measurement is tracking, not guessing.** Knee correlation against the

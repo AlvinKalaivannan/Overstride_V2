@@ -122,6 +122,34 @@ band at 18.1°, which is what validates the setup.
 > did not replicate** on the one frontal clip measured. See
 > `results/phase15.md`.
 
+> ### Hip and knee are not one measurement, and they disagree about which lab is hard
+>
+> The combined figure stays as the pre-registered headline. Split by joint,
+> each against its own AthleticsPose baseline:
+>
+> | joint | MoVi PG1 (n=2) | AthleticsPose | ratio |
+> |---|---|---|---|
+> | **knee**, near | **8.16°** | **4.07°** | **2.00×** |
+> | **hip**, near | **11.06°** | **2.83°** | **3.90×** |
+>
+> **The ordering inverts.** On AthleticsPose the knee is the worse joint; on
+> MoVi the hip is. A combined mean cannot show that.
+>
+> **The reason is definitional, not optical.** Hip flexion is measured against
+> the pelvis→thorax axis, and phase 15C found that **the lifter does not put
+> its own thorax on the same anatomical point in the two datasets** — `CLAV`
+> to within **0.75°** on AthleticsPose, but **87–144 mm** from CLAV on MoVi,
+> nearer Visual3D's `THORAX` on 7 of 7 subjects. That is 8–16° of trunk
+> direction, 2–4× the whole AthleticsPose hip error.
+>
+> **The knee is immune to this by construction** — it is a difference of two
+> angles inside one frame, so rotating the frame cannot change it, and 24 of 24
+> rows in phase 15C were bit-identical across thorax definitions.
+>
+> So: **the knee number measures the camera path; the hip number measures the
+> camera path plus a convention the model does not hold fixed.** See
+> `results/phase15c.md`.
+
 Two findings make the camera path *better* than expected:
 
 - **The far-limb occlusion penalty is ~0** and does not grow with viewing angle.
