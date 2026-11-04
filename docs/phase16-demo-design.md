@@ -1,9 +1,13 @@
 # Phase 16 — demo design
 
 > **Design document, 2026-11-04. Step 1 of phase 16: no app code is written
-> yet.** Every number here is measured and carries its source file and the
-> conditions it was measured under. Where a condition was never measured, this
-> document says so instead of interpolating.
+> yet. AMENDED 2026-11-04 after design review** — five amendments, marked
+> `[A1]`-`[A5]` where they land, plus a licence action item.
+>
+> Every number here is measured and carries its source file and the conditions
+> it was measured under. Where a condition was never measured, this document
+> says so instead of interpolating. **Superseded text is struck or replaced in
+> place and the reason is stated**, so the amendments are auditable.
 
 ---
 
@@ -19,6 +23,7 @@ It runs **nothing but the frozen pipeline the sealed test measured**:
 | stage | component | pinned as |
 |---|---|---|
 | decode | OpenCV / imageio | — |
+| **resize** `[A1]` | **short side → 600 px**, `INTER_AREA` down / `INTER_LINEAR` up | `overstride/preprocess.py` |
 | detect 2D | `keypointrcnn_resnet50_fpn`, generic COCO weights, native resolution, padded person crop | `video_kinematics.detect_coco17` |
 | reorder | COCO-17 → H36M-17 | `video_kinematics.coco17_to_h36m17` |
 | confidence | overwrite to `TRAIN_CONF_MEAN = 0.8676` | `video_kinematics.scores_to_train_scale` |
@@ -35,6 +40,57 @@ detector or lifter does not make the budget uncertain; it makes it void.** If
 the detector is ever replaced, the lifter must be retrained to match it and
 every number in §3 must be re-measured.
 
+### `[A1]` A fixed resize to short side 600 px, before detection
+
+**Every clip is resized so its short side is 600 px before the detector runs.**
+This is a **condition-matching step, not a speed optimisation**, and the reason
+is structural: `detect_coco17` sets `min_size = min(h, w)`, so **the input's
+short side *is* the detector's working resolution**. The sealed test — every
+number in Row B of §3 — was measured on MoVi PG1 at **800×600**, i.e. short side
+**600**. A clip at 1920×1080 runs the detector at `min_size=1080`, which changes
+the pixel scale of every keypoint, and the lifter is measurably sensitive to
+exactly that (phase 7 §5; phase 15F reproduced it a third time).
+
+So resizing to short side 600 puts a clip of any resolution into **the condition
+the error budget describes**. Not resizing would make the budget inapplicable.
+
+It is also faster, which is a consequence and not the justification.
+
+### Measured per-frame cost, on REAL frames
+
+**The 207 ms/frame figure quoted in the first draft of this document is
+superseded for runtime estimation.** `results/phase16_detector_speed.json` timed
+**synthetic** frames, and says so in its own note: a synthetic frame contains no
+person, so the crop tracker never engages and the keypoint head sees no
+detections. Good for comparing call paths; wrong for estimating runtime.
+
+`scripts/phase16a_timing.py` → `results/phase16a_timing.json`, real decoded MoVi
+frames, deployed path, 16 threads, 24 timed frames per configuration after 4
+warm-up:
+
+| configuration | resolution | detector `min_size` | **ms/frame** | fps |
+|---|---|---|---|---|
+| **PG1 native — exactly the sealed condition** | 800×600 | 600 | **426.5** | 2.34 |
+| CP1 native, unresized | 1920×1080 | 1080 | **1,452.0** | 0.69 |
+| **CP1 resized to short side 600** `[A1]` | 1067×600 | 600 | **680.4** | 1.47 |
+
+1080p unresized costs **3.4× the PG1 frame** (4.32× the pixels); the resize
+recovers **2.13×** of that. A 16:9 clip at short side 600 is 1067×600, so it
+still carries 1.33× the pixels of 4:3 800×600 — **the detector's working
+resolution is matched exactly, the total frame area is not**, and that residual
+is why 680 ms ≠ 426 ms.
+
+> **A measurement discrepancy, recorded rather than reconciled away.** The
+> design review cited 892–1,056 ms/frame at 800×600 and 3,243 ms at 1920×1080.
+> **Those figures are not recorded anywhere in this repository**, and the
+> measurement above gives 426.5 and 1,452 — roughly **2.2× lower in absolute
+> terms** while the *ratio* between the two resolutions agrees closely (cited
+> 3.33×, measured 3.4×). Two measurements of the same resolution effect at
+> different absolute levels, most likely thread count or machine load. This
+> document uses the scripted, committed figures and names the others; phase 7 §6
+> recorded the identical pattern when it superseded an ad-hoc 2,790 ms figure
+> with a measured 1,055 ms.
+
 ### Real-time is out of scope, and the gate is recorded as failed
 
 **Phase 16's pre-registered `>= 20 fps` gate is NOT MET.** It is not being
@@ -42,16 +98,18 @@ lowered, redefined or quietly dropped.
 
 | stage | measured | source |
 |---|---|---|
-| detector, as the tool now calls it (crop, native resolution, 16 threads) | **207 ms/frame** (4.84 fps) | `results/phase16_detector_speed.json`, `results/phase07.md` §6 |
-| detector, before the call-path fix (`min_size=800`, 640×480) | 1,055 ms/frame (0.95 fps) | same |
+| **detector, real frames at short side 600** `[A1]` | **426–680 ms/frame** (1.5–2.3 fps) | `results/phase16a_timing.json` |
+| detector, synthetic frames, same call path | 207 ms/frame (4.84 fps) | `results/phase16_detector_speed.json` — **synthetic, superseded for runtime** |
+| detector, before the call-path fix (`min_size=800`) | 1,055 ms/frame | same |
 | lifter | **11.2 ms/frame** | same |
-| **total** | **~218 ms/frame, ~4.6 fps** | sum |
+| **total, real frames** | **~437–692 ms/frame, ~1.4–2.3 fps** | sum |
 | budget for 20 fps | 50 ms/frame | pre-registered |
-| **shortfall** | **4.4× over** | — |
+| **shortfall** | **8.7–13.8× over** | — |
 
 The 5.1× already recovered came entirely from *how the detector is called*, with
 the same weights — no retraining and no shift in the keypoint distribution the
-lifter was trained against. The remaining 4.4× needs a different architecture,
+lifter was trained against. The remaining **8.7–13.8×** needs a different
+architecture,
 and §5 of phase 7 measured what that costs without a matched lifter. **So the
 demo is an offline analyzer, by decision and on the record.**
 
@@ -117,10 +175,18 @@ Phase 15F sharpened this into a one-line reason the UI can carry:
 > set. **So the hip error is a learned convention, not a measurement limit** —
 > and a number whose error is a convention is not a measurement.
 
-A collapsed "diagnostics" section may show the hip trace **labelled "internal,
-not a measurement"**, because it is needed to explain the identity
-`hip bias = thigh bias + trunk-lean bias` if anyone asks. It is never in the
-primary readout, never in an export, and never in a summary table.
+**`[A4]` The hip trace is NOT in the report at all.** The first draft allowed a
+collapsed "diagnostics" block; that is removed. There is no hip trace, no hip
+number and no hip axis anywhere in `report.html` — not collapsed, not greyed,
+not behind a toggle, because a collapsed block is still a shipped number and the
+reason the hip is excluded is that **its error is a learned convention**, which
+no amount of labelling fixes.
+
+It remains computable for internal work: `--debug` writes a **separate**
+`report-debug.html` (or `.json`) carrying the hip trace, clearly marked
+*internal, not a measurement*. **That file is never produced by a normal run,
+never embedded in `report.html`, and never published.** The M6 guard asserts
+`report.html` contains no hip trace.
 
 ### No injury output of any kind
 
@@ -151,7 +217,7 @@ vocabulary; see milestone M6.
 app shows the row matching the clip's own frame rate and says plainly when a
 condition was not measured.
 
-### Row A — tune set, in-domain, 100 Hz capture
+### Row A `[A3]` — BEST CASE: in-domain lab data at 100 Hz
 
 `results/phase15.md`, `results/phase15d.md`, reproduced by `results/phase15e.md`'s
 native arm to within 0.002–0.02°. AthleticsPose, S11/S13/S16, running, generic
@@ -165,9 +231,15 @@ COCO detections, 589 clips (231 for the gravity-referenced thigh).
 | thigh inclination | far | 6.82° | [5.834, 8.142] |
 | *(trunk lean, experimental)* | both | 5.53° | — |
 
-**Conditions:** a calibrated 8-camera lab, athletes, 100 Hz, the dataset this
-checkpoint was fine-tuned on. **This is the floor, not what a user should
-expect.**
+**Conditions:** a calibrated 8-camera lab, athletes, 100 Hz, and **the dataset
+this checkpoint was fine-tuned on** — so this is in-domain performance measured
+on held-out subjects of the *training* dataset.
+
+> **`[A3]` This row is the best case and nothing more.** It is the ceiling the
+> method reaches under ideal, in-domain conditions. **A user filming their own
+> footage should expect Row B**, not Row A. Row A exists in this document so the
+> gap between in-domain and cross-lab is visible, and for no other purpose. It
+> is never shown as the expected error for a user clip.
 
 ### Row B — held-out lab footage at 30 fps. The honest headline.
 
@@ -213,12 +285,41 @@ AthleticsPose, generic COCO, **paired per subject**, native 100 Hz reference.
 30 fps penalty and 84% of the near thigh's is incurred between 50 and 30 fps.
 That is the whole reason §4 warns below 50.
 
-### What the app displays
+### `[A2]` What the app displays — and the rule that B and C are never combined
 
-For a clip at frame rate *f*, the app shows **Row B as the expected error** —
-because Row B is the only row measured on footage the pipeline had never seen —
-and then the **Row C adjustment for the nearest measured rate at or below *f***,
-labelled with the rate actually used.
+**Row B is the expected error on new footage. Full stop.** It is displayed with
+the label:
+
+> **Expected error: measured on held-out lab footage at 30 fps.**
+
+**Rows B and C are never added, subtracted, scaled or combined in any way.**
+The first draft of this document said the app would show "Row B plus the Row C
+adjustment for the clip's frame rate". **That was wrong and is removed.** Row C's
+penalties are measured on the **tune set**, in-domain, at 100 Hz native; Row B is
+a **different lab**. Combining them would manufacture a number for a condition
+nobody measured — precisely the move phase 15E labelled "if it transferred
+unchanged" and whose arithmetic produced **three undefined cells out of eight**
+when the cross-lab loss came out negative.
+
+So:
+
+| the clip is | what the app shows |
+|---|---|
+| at or near 30 fps | **Row B**, labelled "measured on held-out lab footage at 30 fps" |
+| **above 30 fps** | **Row B, plus the words "your clip is faster than the footage this was measured on; the effect of that is UNMEASURED on new footage."** Row B is *not* adjusted downward. |
+| below 25 fps | refused (§4); no number is emitted |
+
+**Row C is shown separately**, in its own panel headed *"Why we ask for 60 fps:
+tune-set context"*, with one sentence making its status explicit:
+
+> These penalties are measured **in-domain on the tune set**, not on new
+> footage. They are the reason the filming instructions ask for 50 fps or
+> better — **67% of the knee's 30 fps penalty is incurred between 50 and 30
+> fps** — and they are **not** a correction you can apply to the expected error
+> above.
+
+An M4 test enforces this: no rendered value may be an arithmetic combination of
+a Row B and a Row C figure.
 
 ### Conditions that were NOT measured, and are stated as such
 
@@ -226,15 +327,16 @@ The app must print these verbatim rather than interpolate:
 
 | condition | status |
 |---|---|
-| **60 fps, anywhere** | **UNMEASURED.** 100/60 is not an integer, so no clean 60 fps decimation exists on the tune set and none was run. The nearest measured rate is **50 fps**, and that is the row shown for a 60 fps clip, labelled "50 fps (nearest measured)". |
-| **any rate above 30 fps on held-out lab footage** | **UNMEASURED.** MoVi PG1 is 30.000 fps; there is no higher-rate held-out footage. Row C's penalties are measured on the **tune set only** and their transfer to another lab is an assumption, not a measurement. |
+| **60 fps, anywhere** | **UNMEASURED.** 100/60 is not an integer, so no clean 60 fps decimation exists on the tune set and none was run. The nearest measured rate on the **tune set** is 50 fps; **no 60 fps figure is shown for a user clip.** |
+| **`[A2]` ANY rate above 30 fps on new footage** | **UNMEASURED, and this is now the explicit rule.** MoVi PG1 is 30.000 fps and there is no higher-rate held-out footage in existence for this pipeline. A 60 fps user clip gets **Row B unchanged** plus a statement that the benefit of the higher rate is unmeasured on new footage. **Row C must not be used to adjust it.** |
 | **phone / consumer footage, at any rate** | **UNMEASURED, and this is the project's largest open gap** (`docs/REVIEW.md` §7.5). MoVi's iPhone cameras ship no calibration and their sync cannot be verified, so the pipeline **refuses** to score them. The demo's own clips are the first phone footage this tool will ever process, and **no error figure applies to them.** The UI says so. |
 | **running faster than jogging, outdoors, on a treadmill, in low light** | UNMEASURED. |
 
-**Subtracting Row C from Row B to produce a "60 fps expected error" is
-forbidden** — Row C is tune-set-measured and Row B is a different lab; phase
-15E's share-of-loss arithmetic was explicitly labelled "if it transferred
-unchanged" and three of its eight cells came out undefined.
+**`[A2]` Subtracting Row C from Row B to produce a "60 fps expected error" is
+forbidden**, and so is adding, scaling or interpolating between them — Row C is
+tune-set-measured and Row B is a different lab. Phase 15E's share-of-loss
+arithmetic was explicitly labelled "if it transferred unchanged" and three of
+its eight cells came out undefined. **The M4 test checks this mechanically.**
 
 ---
 
@@ -252,7 +354,7 @@ extends it.
 | 2 | **resolution** | shortest side < 360 px | shortest side < 480 px | the detector runs at native resolution; MoVi PG1 is 800×600 and is the only resolution with a measured error |
 | 3 | **clip length** | < 3 s | < 8 s | the lifter's window is 81 frames; at 30 fps a 3 s clip is 90 frames, barely one window, and short clips are mostly edge padding (phase 15F measured a 52%-padding handicap costing a checkpoint 20°+) |
 | 4 | **person found** | no person in > 20% of frames, or more than one person in any frame | any frame without a person | the sealed test detected 100% of frames on 11 of 11 subjects with zero re-detections, so a miss rate is an input problem |
-| 5 | **viewpoint** | `view_ratio` < 0.35 | `view_ratio` < 0.55 | below |
+| 5 | **viewpoint** `[A5]` | `view_ratio` **< 0.35** | `view_ratio` **< 0.50** | below |
 
 ### The viewpoint check, in detail
 
@@ -262,21 +364,42 @@ separation over apparent trunk length, against a population ratio — which phas
 metric, with no depth, no millimetres and no ground truth required. The near
 limb is also identifiable from the estimate alone, **592 of 592 clips**.
 
-The thresholds come from measured viewpoints, not taste:
+**`[A5]` The thresholds are derived from the measured evidence, and the binding
+constraint is that no clip inside the measured range may be refused or even
+warned.**
 
 | reference | `view_ratio` | source |
 |---|---|---|
 | AthleticsPose, side-on lab | median **0.751** | phase 3B |
-| MoVi PG1, side-on, where Row B was measured | **0.675** [0.536, 0.720] | `results/phase15_standing_viewpoint.json` |
-| MoVi PG2, near-frontal | 0.44–0.61 | `results/phase15_checks.json` |
+| **MoVi PG1 jogging — where Row B was measured, all 12 subjects** | median 0.675, **full range [0.536, 0.720]** | `results/phase15_standing_viewpoint.json`, `results/phase15_checks.json`, `results/phase15_sealed_checks.json` |
+| — sealed subjects individually | 0.537, 0.555, 0.610, 0.661, 0.698 | `results/phase15_sealed_checks.json` |
+| MoVi PG2, near-frontal | 0.436–0.607 | `results/phase15_checks.json` |
 | MoVi standing, frontal | **0.057** | `results/phase15_standing_viewpoint.json` |
 
-And the cost of getting it wrong is measured: phase 11 found sagittal error
-falling **3.50° → 1.77°** monotonically as the view becomes side-on, on an
-independent lab's four calibrated cameras. **Row B was measured at 0.54–0.70, so
-a clip below 0.55 is outside the conditions the budget describes** — hence warn
-— and below 0.35 it is nearer frontal than side-on, where the measured error is
-twice as large — hence refuse.
+**Derivation:**
+
+1. **PASS at `view_ratio` ≥ 0.50.** Every clip Row B was measured on lies in
+   **[0.536, 0.720]**, and the lowest single sealed subject is **0.537**. A
+   threshold at 0.55 — as the first draft had it — **would have warned on two of
+   the five sealed subjects whose numbers *are* the budget**, which is
+   incoherent. 0.50 sits below the measured minimum with a small margin and
+   **cannot flag a clip inside the measured range.**
+2. **WARN at 0.35 ≤ `view_ratio` < 0.50.** Below any clip the budget was
+   measured on. Phase 11 measured sagittal error falling **3.50° → 1.77°**
+   monotonically as the view becomes side-on across an independent lab's four
+   calibrated cameras, so error is expected to rise through this band — but the
+   *amount* is not measured for this pipeline, so it warns rather than refuses
+   and the warning says the clip is outside the measured conditions.
+3. **REFUSE below 0.35.** This is nearer frontal than side-on. Phase 11's curve
+   puts the error at roughly **double** the side-on value at the frontal end,
+   and phase 15 found **the viewpoint curve did not replicate on the one frontal
+   clip it measured** — so there is not even a usable model of the error there.
+   MoVi's frontal standing geometry sits at **0.057**, far below this line, so
+   the refuse band is where a genuinely mis-aimed camera lands.
+
+**Range check, stated as a requirement:** `0.536 ≥ 0.50`, so **all 12 measured
+MoVi jogging clips pass without warning.** An M2 test asserts this against the
+committed per-subject values.
 
 ### Viewpoint quality, not degrees
 
@@ -318,7 +441,8 @@ overstride-analyze  clip.mp4  --out report.html
         +-- 1. probe      fps, resolution, duration, frame count        (< 1 s)
         +-- 2. checks     §4 checks 1-3; refuse early, before decoding
         +-- 3. decode     frames to memory, one pass                    (~2 s)
-        +-- 4. detect     video_kinematics.detect_coco17, crop-tracked  (207 ms/frame)
+        +-- 3b. RESIZE    short side -> 600 px  [A1]  condition-matching (~1 s)
+        +-- 4. detect     video_kinematics.detect_coco17, crop-tracked  (680 ms/frame)
         +-- 5. checks     §4 checks 4-5 on the detected 2D; refuse here
         +-- 6. prepare    coco17_to_h36m17 -> scores_to_train_scale
         +-- 7. lift       resample -> 81-frame overlap windows -> 3D    (11.2 ms/frame)
@@ -354,32 +478,42 @@ pipeline: `torch` (CPU), `torchvision`, `numpy`, `scipy`, `opencv-python`. The
 checkpoint is 141,862,608 bytes and loads in a few seconds. 16 threads, which is
 the configuration the 207 ms/frame figure was measured at.
 
-### Processing time for a 10 s, 60 fps clip — 600 frames
+### `[A1]` Processing time, re-estimated from the REAL measured timings
 
-From the measured per-stage costs in §1:
+At the measured **680 ms/frame** for a 16:9 clip resized to short side 600
+(`results/phase16a_timing.json`), plus the 11.2 ms/frame lifter on model-frames
+after resampling to 100 Hz:
 
-| stage | arithmetic | time |
-|---|---|---|
-| probe + checks | — | < 1 s |
-| decode 600 frames | — | ~2 s |
-| **detect** | 600 × 207 ms | **124 s** |
-| resample to the lifter's 100 Hz | 600 × 100/60 = 1,000 model-frames | < 1 s |
-| **lift** | 1,000 × 11.2 ms | **11 s** |
-| angles + strides | vectorised | < 1 s |
-| render overlay (600 PNGs) | — | ~5 s |
-| **total** | | **~145 s, about 2½ minutes** |
+| clip | frames | model-frames | detect | lift | decode+render | **total** | × real time |
+|---|---|---|---|---|---|---|---|
+| 10 s @ 60 fps | 600 | 1,000 | 408 s | 11 s | 8 s | **427 s ≈ 7.1 min** | **43×** |
+| 15 s @ 60 fps | 900 | 1,500 | 612 s | 17 s | 8 s | **637 s ≈ 10.6 min** | 42× |
+| 10 s @ 30 fps | 300 | 1,000 | 204 s | 11 s | 8 s | **223 s ≈ 3.7 min** | 22× |
+| **8 s @ 60 fps** (the default analysis window, below) | 480 | 800 | 326 s | 9 s | 8 s | **343 s ≈ 5.7 min** | 43× |
 
-That is **~14× slower than real time**, and ~97% of it is the 2D detector.
-Model load adds a few seconds once. A 15 s clip at 60 fps — the upper end of the
-filming instructions — is **~3½ minutes**.
+**This is 3× worse than the first draft's estimate**, which used the synthetic
+207 ms/frame. **~95% of it is the 2D detector.** It strengthens rather than
+weakens §5's argument: at 6–11 minutes per clip there is categorically nothing
+to be interactive about, and a server would be adding machinery to a batch job.
 
-**Two speed-ups available without touching the measured pipeline**, because both
-change only *how* the same weights are called: batching detector crops
-(measured at 238 ms/frame in a batch of 4, so no help as measured) and
-**processing every frame but rendering an overlay only every 3rd frame**, which
-cuts the render but not the 124 s detector cost. **There is no honest way to make
-this fast without replacing the detector, and that voids the budget.** The
-design accepts 2½ minutes.
+### `[A1]` Consequence: analyse a window, not the whole clip
+
+Because the cost is linear in frames and a 15 s clip is now **10.6 minutes**,
+the analyzer **selects an analysis window rather than processing the whole
+clip**, defaulting to the **longest contiguous stretch in which the runner is
+fully in frame, capped at 8 s**, overridable with `--window START END`.
+
+This does not touch the error budget: the window has **the same frame rate and
+the same resolution** as the clip, so it is the same measured condition — only
+shorter. The user still films 10–15 s (§7), because the extra footage is what
+makes a clean 8 s window available. Filming instructions are unchanged.
+
+**No further speed-up is taken.** Batching crops measured no better
+(238 ms/frame in a batch of 4), and frame skipping is not available — the lifter
+consumes a contiguous sequence at a known rate, so dropping frames changes the
+rate it sees, which is exactly the penalty Row C measures. **There is no honest
+way to make this fast without replacing the detector, and that voids the
+budget.** The design accepts ~6 minutes for an 8 s window.
 
 ---
 
@@ -459,9 +593,13 @@ this project with the runner's consent.
 
 **Settings**
 5. **60 fps if the phone offers it**, 50 fps at minimum. Below 50 the penalty
-   curve steepens sharply (§3 Row C) and the analyzer warns; below 25 it
-   refuses. **60 fps itself is unmeasured** — the app will show the 50 fps row —
-   but more frames is never worse.
+   curve steepens sharply — **67% of the knee's 30 fps penalty is incurred
+   between 50 and 30 fps** (§3 Row C, tune-set context) — and the analyzer
+   warns; below 25 it refuses. **`[A2]` The benefit of 60 fps is UNMEASURED on
+   new footage**, so the report shows **Row B unchanged** and says the effect of
+   the higher rate is unmeasured. It does **not** show a 50 fps or 60 fps
+   figure for your clip. More frames should not be worse, but on this pipeline
+   that is an expectation, not a measurement.
 6. **Shortest side ≥ 720 px.** Do not use a "slow motion" mode that drops
    resolution.
 7. Lock exposure and focus if the phone allows it.
@@ -537,11 +675,29 @@ design does not assume it.**
    reading.
 3. **Publishing the demo *with weights* is BLOCKED pending clarification.**
    Shipping a downloadable bundle, a hosted page, a container image or a
-   release asset containing the checkpoint requires an explicit grant. **Action,
-   not an assumption:** open an issue on `SZucchini/AthleticsPose` asking which
-   licence covers `checkpoints.zip`. Until it is answered, the demo is
-   distributed as **code plus instructions to obtain the checkpoint from
-   upstream**, which is how this project already obtains it.
+   release asset containing the checkpoint requires an explicit grant.
+
+> ### ACTION ITEM — open before any publishing step
+>
+> **Open a GitHub issue on `SZucchini/AthleticsPose` asking which licence covers
+> the released checkpoints** (`checkpoints.zip`, obtained via `make
+> checkpoints`), noting that `LICENSE-DATASET` scopes itself to
+> `AthleticsPoseDataset.zip` and that the README's `- [ ] Add license for codes`
+> is unchecked. Ask specifically whether the fine-tuned weights may be
+> redistributed for non-commercial research use, and whether CC BY-NC-SA 4.0's
+> ShareAlike term is intended to carry through to them.
+>
+> **Until that is answered:**
+> - **the demo stays local** — a CLI the user runs on their own machine, loading
+>   the checkpoint they obtained themselves. **No weights are served, bundled,
+>   containerised or uploaded.**
+> - **only reports of the user's own filmed footage are published.** No dataset
+>   frame, no dataset-derived overlay, and no report generated from MoVi,
+>   AthleticsPose or AthletePose3D footage leaves this machine.
+> - the demo is distributed as **code plus instructions to obtain the checkpoint
+>   from upstream**, which is how this project already obtains it.
+>
+> Record the answer, with a date and a link, in this section when it arrives.
 4. **Source code of the demo** is this project's own and carries this
    repository's licence.
 
@@ -576,13 +732,13 @@ alone, and assume the measured pipeline is reused rather than reimplemented.
 | # | milestone | deliverable | test | estimate |
 |---|---|---|---|---|
 | **M0** | **Design approved** | this document | approved by the operator; sections 2, 3, 5, 9 reviewed | done |
-| **M1** | **Processing path extracted** | `overstride/analyze.py` — stages 1, 3–8 of §5, importing the frozen functions, no new maths | **the §6 regression test**: `Subject_17` reproduces knee 5.130°, thigh 3.274°, near limb LEFT, 221/221 detected, `atol 1e-3`; plus `Subject_2` at the other extreme | **1 day** |
+| **M1** | **Processing path extracted** | `overstride/analyze.py` — stages 1, 3, **3b**, 4–8 of §5, importing the frozen functions, no new maths | **the §6 regression test**: `Subject_17` reproduces knee 5.130°, thigh 3.274°, near limb LEFT, 221/221 detected, `atol 1e-3`; plus `Subject_2` at the other extreme. **`[A1]` plus two resize tests:** (a) the resize is applied and the detector's `min_size` is 600 for inputs at 800×600, 1280×720 and 1920×1080; (b) a 1080p clip completes within the §5 re-estimate — asserted as a per-frame ceiling of **900 ms/frame**, 1.3× the measured 680, so the test fails on a regression but not on machine noise | **1 day** |
 | **M2** | **Input checks** | `overstride/checks.py` — the five checks in §4 with their measured thresholds, returning pass/warn/refuse | unit tests per check with synthetic inputs at each threshold boundary; a frontal-view fixture (`view_ratio` ≈ 0.06, from the measured standing geometry) must **refuse**; a 30 fps clip must **warn** and still process | **0.5 day** |
 | **M3** | **Stride segmentation** | heel-strike detection → per-stride averages and a stride count | **this is new code and the only unmeasured component.** Test: on a sealed MoVi clip the detected stride count matches a manually counted ground truth within ±1, on 3 clips; and per-stride knee peaks have a CV below the across-subject spread. **If it fails, the demo ships per-frame traces only** — stride averaging is a convenience, not part of the budget | **1 day** |
-| **M4** | **Error-budget renderer** | §3's three rows as data, not prose: a table keyed by quantity × limb × frame rate, with source file and conditions per cell | a test asserts every displayed number is present in the source JSON it cites (`phase15_sealed.json`, `phase15e.json`, `phase15f.json`) — **no number may be hardcoded without a matching source**; and that an unmeasured condition renders the word "UNMEASURED" | **0.5 day** |
+| **M4** | **Error-budget renderer** | §3's three rows as data, not prose: a table keyed by quantity × limb × frame rate, with source file and conditions per cell | a test asserts every displayed number is present in the source JSON it cites (`phase15_sealed.json`, `phase15e.json`, `phase15f.json`) — **no number may be hardcoded without a matching source**; and that an unmeasured condition renders the word "UNMEASURED". **`[A2]` plus the no-combination test:** for a 60 fps clip the rendered expected error must equal a Row B value **exactly**, and must not equal any Row B ± Row C arithmetic combination; Row A must be labelled "best case, in-domain" `[A3]`; and the word UNMEASURED must appear for the above-30-fps case | **0.5 day** |
 | **M5** | **HTML report** | one self-contained `.html`: overlay strip, per-frame traces, stride table, budget, viewpoint-quality badge, attribution footer | the output contains no `http://` or `https://` resource reference except the attribution citations; it opens with JavaScript disabled; the file is under 25 MB for a 15 s clip | **1.5 days** |
-| **M6** | **Vocabulary and output guard** | CI check over UI strings, templates, exports and docstrings | greps for **"risk"**, **"predict"**, "injury", "diagnos", "abnormal", "asymmetry index", "normal range" and **fails the build** on a hit; asserts the hip appears nowhere outside a collapsed block labelled "internal, not a measurement" | **0.5 day** |
-| **M7** | **Film and run on own footage** | 2–3 consented clips per §7, processed end to end | the analyzer's checks pass on at least one clip; `view_ratio` ≥ 0.55; processing time recorded against §5's ~145 s estimate; **this closes `docs/REVIEW.md` §7.5's substance** — the first real phone footage through this tool | **0.5 day** + filming |
+| **M6** | **Vocabulary and output guard** | CI check over UI strings, templates, exports and docstrings | greps for **"risk"**, **"predict"**, "injury", "diagnos", "abnormal", "asymmetry index", "normal range" and **fails the build** on a hit. **`[A4]` asserts `report.html` contains NO hip trace at all** — no hip series, no hip axis label, no hip summary cell — and that a hip trace appears only in a `--debug` file that a normal run does not produce | **0.5 day** |
+| **M7** | **Film and run on own footage** | 2–3 consented clips per §7, processed end to end | **`[A5]`** the analyzer's checks pass on at least one clip with **`view_ratio` ≥ 0.50** (the §4 pass threshold, which the full measured MoVi range [0.536, 0.720] clears); the resize to short side 600 is confirmed applied; processing time recorded against §5's re-estimated **~5.7 min for an 8 s window**; **this closes `docs/REVIEW.md` §7.5's substance** — the first real phone footage through this tool | **0.5 day** + filming |
 | **M8** | **Write-up** | `results/phase16a.md`: what was measured, the 20 fps gate recorded as **NOT MET** with its ms/frame, the licence position from §8, and the §7.5 status change | the report's numbers match `results/phase16a.json`; the gate is recorded as failed, not redefined | **0.5 day** |
 
 **Total: ~6.5 working days**, plus filming. **M3 carries the only real uncertainty** —

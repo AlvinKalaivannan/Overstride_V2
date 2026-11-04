@@ -1,0 +1,93 @@
+{
+  "what": "Per-frame cost of the deployed detection path on REAL MoVi frames. Supersedes the synthetic-frame figures in results/phase16_detector_speed.json for runtime estimation.",
+  "why_not_the_synthetic_figures": "phase16_detector_speed.json timed synthetic frames, which contain no person, so the crop tracker never engages and the keypoint head sees no detections. Good for comparing call paths, wrong for a runtime estimate.",
+  "detector": "keypointrcnn_resnet50_fpn, COCO weights, crop=True, min_size = short side of the input",
+  "resize_rule": "short side -> 600 px before detection",
+  "threads": 16,
+  "n_frames_timed": 24,
+  "n_warmup": 4,
+  "lifter_ms_per_frame": 11.2,
+  "lifter_source": "results/phase16_detector_speed.json",
+  "no_movi_pixels_written": true,
+  "rows": [
+    {
+      "config": "PG1 native (sealed condition)",
+      "width": 800,
+      "height": 600,
+      "detector_min_size": 600,
+      "ms_per_frame": 426.5,
+      "fps": 2.345,
+      "n_frames_timed": 24,
+      "frames_with_person": 24,
+      "re_detections": -1,
+      "megapixels": 0.48,
+      "note": "exactly the input the sealed test measured"
+    },
+    {
+      "config": "CP1 native, unresized",
+      "width": 1920,
+      "height": 1080,
+      "detector_min_size": 1080,
+      "ms_per_frame": 1452.0,
+      "fps": 0.689,
+      "n_frames_timed": 24,
+      "frames_with_person": 24,
+      "re_detections": -1,
+      "megapixels": 2.074,
+      "note": "phone resolution; min_size=1080 is 3.24x the pixels of 800x600"
+    },
+    {
+      "config": "CP1 resized to short side 600",
+      "width": 1067,
+      "height": 600,
+      "detector_min_size": 600,
+      "ms_per_frame": 680.4,
+      "fps": 1.47,
+      "n_frames_timed": 24,
+      "frames_with_person": 24,
+      "re_detections": -1,
+      "megapixels": 0.64,
+      "note": "the demo's fixed preprocessing step: puts any clip into the sealed test's condition"
+    }
+  ],
+  "ratios": {
+    "cp1_native_over_pg1": 3.4,
+    "cp1_resized_over_pg1": 1.6,
+    "resize_speedup_on_1080p": 2.13,
+    "pixel_ratio_1080_over_600": 4.32
+  },
+  "runtime_estimate_after_resize": {
+    "10s_at_60fps": {
+      "frames": 600,
+      "model_frames": 1000,
+      "detect_s": 408.2,
+      "lift_s": 11.2,
+      "decode_render_s": 8.0,
+      "total_s": 427.4,
+      "total_min": 7.12,
+      "x_real_time": 42.7
+    },
+    "10s_at_30fps": {
+      "frames": 300,
+      "model_frames": 1000,
+      "detect_s": 204.1,
+      "lift_s": 11.2,
+      "decode_render_s": 8.0,
+      "total_s": 223.3,
+      "total_min": 3.72,
+      "x_real_time": 22.3
+    },
+    "15s_at_60fps": {
+      "frames": 900,
+      "model_frames": 1500,
+      "detect_s": 612.4,
+      "lift_s": 16.8,
+      "decode_render_s": 8.0,
+      "total_s": 637.2,
+      "total_min": 10.62,
+      "x_real_time": 42.5
+    }
+  },
+  "runtime_basis_ms_per_frame": 680.4,
+  "pg1_native_ms_per_frame": 426.5
+}
