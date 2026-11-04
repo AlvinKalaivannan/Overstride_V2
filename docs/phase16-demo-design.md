@@ -141,7 +141,7 @@ trace and their own numbers. An average would hide a real asymmetry: the sealed
 test measured a far-limb thigh penalty of **+1.971° [+0.977, +3.187]**, same
 sign on all five subjects.
 
-> ### `[M1]` The demo does NOT claim which leg is near the camera
+> ### `[M1]` The demo does not INFER which leg is near the camera — the user declares it
 >
 > **Found while building M1, and it changes what the report can say.** The
 > sealed test used the **camera** to decide which limb was nearer. The demo has
@@ -164,9 +164,70 @@ sign on all five subjects.
 > azimuth proxy cannot rescue it either: it recovers `|cos θ|`, a **magnitude**,
 > so it gives how side-on the view is and **not which side faces the camera**.
 >
-> **So `near_limb` is not exposed.** `AnalysisResult.near_limb` raises; the
-> value survives as `near_limb_estimate`, documented as 9/11 and used for
-> nothing user-facing. The consequence for the budget is in §3.
+> **So the demo does not infer it. `--near-side left|right` is REQUIRED**, and
+> it is the only thing that sets near and far. `AnalysisResult.near_limb`
+> raises; the depth inference survives as `near_limb_from_depth`, documented as
+> 9/11 and used for nothing. With the side declared, **each leg gets its own
+> budget column** — §3.
+>
+> #### The direction-of-travel suggestion
+>
+> A geometric rule can *suggest* the near side. In the OpenCV camera frame
+> (x right, y down, z into the scene, right-handed), world up is
+> `u = (0, −1, 0)`, and the anatomical identity `anterior × left = superior`
+> gives `left = superior × anterior`. For a runner travelling **rightward**,
+> `anterior = (+1, 0, 0)`:
+>
+> `left = (0,−1,0) × (1,0,0) = (0, 0, +1)` — **+z, away from the camera.**
+>
+> | travel across the image | side facing the camera |
+> |---|---|
+> | rightward | **RIGHT** |
+> | leftward | **LEFT** |
+>
+> **Measured on all 11 spent MoVi PG1 subjects against the calibrated near
+> limb** (`scripts/phase16a_travelrule.py`,
+> `results/phase16a_travelrule.json`):
+>
+> | | result |
+> |---|---|
+> | **hit rate, abstentions counted as misses** | **6/11** |
+> | **accuracy when it was confident** | **6 of 6** |
+> | abstained (travel too small to read) | 5 of 11 |
+> | if forced to answer on every clip | 8/11 |
+>
+> **The rule is never wrong when it speaks, and the confidence floor is clean.**
+> Confident clips carry `|dx|` of **0.0102–0.0310** hip widths per frame;
+> abstained clips **0.0012–0.0095**. Those ranges **do not overlap**, so the
+> 0.01 floor separates them exactly — unlike the near-limb separators above,
+> every one of which overlapped. Forced to answer on all eleven it would score
+> 8/11, so the abstention is doing real work rather than hiding failures.
+>
+> **Why 6/11 is a floor set by the test footage.** MoVi's jogging windows
+> carry almost no net horizontal travel — subjects jog *within* a lab volume
+> rather than crossing the camera's view — so five clips simply do not say which
+> way the runner is going, and one can even reverse direction inside the window,
+> in which case *there is no single near limb for the clip*. The geometry is
+> exact and is verified against synthetic clips in
+> `tests/test_demo_regression.py`. The demo's filming instructions (§7) ask for
+> precisely the condition MoVi lacks: the runner crossing the full frame,
+> ideally more than once.
+>
+> **So the suggestion is a WARNING ONLY, never a default**, per the design review's rule for a
+> result below 11/11. It appears in the report, it warns when it disagrees
+> with `--near-side`, and **it never overrides the flag.**
+>
+> #### Mirroring, which cannot be detected
+>
+> The rule inverts under mirroring, and mirroring breaks more than the rule: the
+> 2D detector assigns left and right from learned appearance, so **in a mirrored
+> frame it labels the anatomical left limb as the right one.** The anatomical
+> labels themselves are wrong, not just the suggestion.
+>
+> **There is no reliable image-only test for it** — a mirrored runner looks
+> exactly like an unmirrored runner going the other way. So the demo states the
+> assumption, warns, and the filming instructions say **use the rear camera**.
+> Nothing here pretends to detect it.
 
 ### EXPERIMENTAL — shown, labelled, with its bias stated
 
@@ -320,23 +381,27 @@ the label:
 
 > **Expected error: measured on held-out lab footage at 30 fps.**
 
-> ### `[M1]` And it is Row B's **FAR** column, for both legs
+> ### `[M1]` Each leg gets its own column, from `--near-side`
 >
-> Because the demo cannot tell which leg is nearer the camera (§2), it cannot
-> know which of Row B's two columns applies to which leg. **It therefore quotes
-> the far-limb figures for both legs**, which is the worse of the two and so
-> cannot understate the error:
+> `--near-side left|right` is required, so the demo knows which leg the camera
+> was on and quotes **Row B's near column for the near leg and the far column
+> for the far leg**:
 >
-> | quantity | quoted for BOTH legs | (the near column, not used) |
+> | quantity | near leg | far leg |
 > |---|---|---|
-> | **knee flexion** | **8.69°** [6.552, 10.679] | 8.41° |
-> | **thigh inclination** | **7.37°** [5.456, 9.258] | 5.40° |
+> | **knee flexion** | **8.41°** [6.275, 10.975] | **8.69°** [6.552, 10.679] |
+> | **thigh inclination** | **5.40°** [4.136, 6.837] | **7.37°** [5.456, 9.258] |
 >
-> This costs real precision and the report says so: the thigh's stated error
-> rises from 5.40° to **7.37°, a 36% increase**, purely because there is no
-> calibration to identify the limbs. **That is the honest price of a phone
-> instead of a lab**, and it is quoted rather than hidden. `budget_limb()`
-> returns `"far"` and an M4 test asserts it.
+> **This is what the flag buys.** Without it the demo would have to quote the
+> far column for both legs — the worse of the two — and the thigh's stated error
+> would rise from 5.40° to 7.37°, a 36% increase, on a leg that does not deserve
+> it. One piece of information the user trivially has, and which no amount of
+> computation recovers from the video, removes that penalty.
+>
+> `budget_limb(side)` returns `"near"` for the declared near side and `"far"`
+> for the other, and an M4 test asserts both. **If the user declares the wrong
+> side, the two columns are swapped and the error is understated on one leg by
+> the measured gap** — hence the direction-of-travel warning in §2.
 
 **Rows B and C are never added, subtracted, scaled or combined in any way.**
 The first draft of this document said the app would show "Row B plus the Row C
@@ -400,7 +465,7 @@ extends it.
 | 2 | **resolution** | shortest side < 360 px | shortest side < 480 px | the detector runs at native resolution; MoVi PG1 is 800×600 and is the only resolution with a measured error |
 | 3 | **clip length** | < 3 s | < 8 s | the lifter's window is 81 frames; at 30 fps a 3 s clip is 90 frames, barely one window, and short clips are mostly edge padding (phase 15F measured a 52%-padding handicap costing a checkpoint 20°+) |
 | 4 | **person found** | no person in > 20% of frames, or more than one person in any frame | any frame without a person | the sealed test detected 100% of frames on 11 of 11 subjects with zero re-detections, so a miss rate is an input problem |
-| 5 | **viewpoint** `[A5]` | `view_ratio` **< 0.35** | `view_ratio` **< 0.50** | below |
+| 5 | **viewpoint** `[A5]` `[M2]` | estimated `view_ratio` **< 0.49** | estimated `view_ratio` **< 0.60** | below — the bars are in ESTIMATE units, shifted by the measured +0.139 estimator bias |
 
 ### The viewpoint check, in detail
 
@@ -443,9 +508,45 @@ warned.**
    MoVi's frontal standing geometry sits at **0.057**, far below this line, so
    the refuse band is where a genuinely mis-aimed camera lands.
 
-**Range check, stated as a requirement:** `0.536 ≥ 0.50`, so **all 12 measured
-MoVi jogging clips pass without warning.** An M2 test asserts this against the
-committed per-subject values.
+> ### `[M2]` The bars had to be restated in ESTIMATE units
+>
+> The derivation above is in **ground-truth** `view_ratio`, measured from
+> calibrated 3D. **The demo has no calibration** — it computes
+> `overstride.checks.estimate_view_ratio` from the detected 2D via phase 14's
+> azimuth proxy. Phase 14 validated that proxy at Pearson 0.974, but
+> **correlation is not scale, and an absolute threshold needs the scale.**
+>
+> Measured against calibrated ground truth on all 11 spent MoVi PG1 subjects
+> (`scripts/phase16a_viewratio.py`, `results/phase16a_viewratio.json`):
+>
+> | | |
+> |---|---|
+> | **binding check: Row B's own footage passing its own check** | **11/11** |
+> | **est − gt** | **+0.139** mean, sd 0.048, range [+0.025, +0.187] |
+> | Pearson(gt, est) | **0.879** (phase 14 reported 0.974 on AthleticsPose) |
+> | estimate range | [0.633, 0.887] against ground truth [0.537, 0.719] |
+>
+> **The estimate is systematically optimistic by about 0.14**, so the binding
+> check passes — but for the wrong reason. A GT-unit bar applied to that
+> estimate **under-refuses**: a clip whose *true* `view_ratio` is 0.35 estimates
+> near 0.49 and would only warn. So the bars are restated in the units the demo
+> actually computes:
+>
+> | | ground-truth units (derived above) | **estimate units (used)** |
+> |---|---|---|
+> | PASS at or above | 0.50 | **0.60** |
+> | REFUSE below | 0.35 | **0.49** |
+>
+> `REFUSE = 0.35 + 0.139`, the GT bar plus the measured bias. `PASS = 0.60`
+> sits below the **lowest measured estimate (0.633)** with margin, so the
+> binding constraint still holds — now checked in the right units. The
+> estimator's noise (sd 0.048) makes the effective GT cut fuzzy by roughly
+> ±0.05, and the report says so rather than implying a sharp bar.
+
+**Range check, stated as a requirement:** the lowest estimate Row B's own
+footage produced is **0.633**, above the **0.60** pass bar, so **all 11
+measured clips pass without warning.** An M2 test asserts this against the
+committed aggregate.
 
 ### Viewpoint quality, not degrees
 
@@ -624,7 +725,8 @@ this project with the runner's consent.
 1. **Side-on.** Point the camera at a right angle to the direction of travel.
    This is the single most important instruction: error roughly **halves**
    between a frontal and a side-on view (3.50° → 1.77°, phase 11), and the
-   analyzer **refuses** a clip whose estimated `view_ratio` is below 0.35.
+   analyzer **refuses** a clip whose estimated `view_ratio` is below 0.49
+   (about 0.35 in calibrated terms).
 2. **Camera at hip height.** Roughly the runner's greater trochanter. The
    pipeline assumes a level camera; only the *in-plane* component of tilt
    affects a sagittal angle, and the lab camera Row B was measured on had a
@@ -636,6 +738,14 @@ this project with the runner's consent.
 4. **Steady.** Tripod, or braced against something. Hand-held is acceptable but
    hand-held pans are not: the analyzer's crop tracker expects the runner to
    cross the frame, not the frame to follow the runner.
+
+**Before anything else**
+0. **Use the REAR camera, never the front/selfie camera.** Front cameras
+   usually mirror, and `[M1]` **mirroring cannot be detected from the image**.
+   A mirrored clip does not merely flip the near-side suggestion — the 2D
+   detector labels the anatomical left limb as the right one, so **both legs'
+   numbers are attributed to the wrong leg** and nothing in the report would
+   reveal it.
 
 **Settings**
 5. **60 fps if the phone offers it**, 50 fps at minimum. Below 50 the penalty
@@ -781,7 +891,7 @@ alone, and assume the measured pipeline is reused rather than reimplemented.
 |---|---|---|---|---|
 | **M0** | **Design approved** | this document | approved by the operator; sections 2, 3, 5, 9 reviewed | done |
 | **M1** | **Processing path extracted — DONE** | `overstride/analyze.py` + `overstride/preprocess.py` — stages 1, 3, **3b**, 4–8 of §5, importing the frozen functions, no new maths | **the §6 regression test**: `Subject_17` reproduces knee 5.130°, thigh 3.274° on the **left leg**, 221/221 detected, `atol 1e-3`; plus `Subject_2` at the other extreme. *(The first draft said "near limb LEFT"; see the M1 results below — that assertion is wrong to make of the demo, which cannot determine the near limb.)* **`[A1]` plus two resize tests:** (a) the resize is applied and the detector's `min_size` is 600 for inputs at 800×600, 1280×720 and 1920×1080; (b) a 1080p clip completes within the §5 re-estimate — asserted as a per-frame ceiling of **900 ms/frame**, 1.3× the measured 680, so the test fails on a regression but not on machine noise | **1 day** |
-| **M2** | **Input checks** | `overstride/checks.py` — the five checks in §4 with their measured thresholds, returning pass/warn/refuse | unit tests per check with synthetic inputs at each threshold boundary; a frontal-view fixture (`view_ratio` ≈ 0.06, from the measured standing geometry) must **refuse**; a 30 fps clip must **warn** and still process | **0.5 day** |
+| **M2** | **Input checks — DONE** | `overstride/checks.py` — the five checks in §4 with their measured thresholds, returning pass/warn/refuse | unit tests per check with synthetic inputs at each threshold boundary; a frontal-view fixture (GT `view_ratio` ≈ 0.06, about 0.20 estimated) must **refuse**; a 30 fps clip must **warn** and still process; **`[M2]` and the bars must be in ESTIMATE units**, with a test that Row B's own footage (estimated [0.633, 0.887]) all passes | **0.5 day** |
 | **M3** | **Stride segmentation** | heel-strike detection → per-stride averages and a stride count | **this is new code and the only unmeasured component.** Test: on a sealed MoVi clip the detected stride count matches a manually counted ground truth within ±1, on 3 clips; and per-stride knee peaks have a CV below the across-subject spread. **If it fails, the demo ships per-frame traces only** — stride averaging is a convenience, not part of the budget | **1 day** |
 | **M4** | **Error-budget renderer** | §3's three rows as data, not prose: a table keyed by quantity × limb × frame rate, with source file and conditions per cell. **`[M1]` the renderer must select the FAR column for both legs** | a test asserts every displayed number is present in the source JSON it cites (`phase15_sealed.json`, `phase15e.json`, `phase15f.json`) — **no number may be hardcoded without a matching source**; and that an unmeasured condition renders the word "UNMEASURED". **`[A2]` plus the no-combination test:** for a 60 fps clip the rendered expected error must equal a Row B value **exactly**, and must not equal any Row B ± Row C arithmetic combination; Row A must be labelled "best case, in-domain" `[A3]`; and the word UNMEASURED must appear for the above-30-fps case | **0.5 day** |
 | **M5** | **HTML report** | one self-contained `.html`: overlay strip, per-frame traces, stride table, budget, viewpoint-quality badge, attribution footer | the output contains no `http://` or `https://` resource reference except the attribution citations; it opens with JavaScript disabled; the file is under 25 MB for a 15 s clip | **1.5 days** |

@@ -1,0 +1,30 @@
+{
+  "what": "Does the ESTIMATED view_ratio sit on the same scale as the ground-truth thresholds? 11 spent MoVi PG1 subjects.",
+  "why": "the [A5] bars are in ground-truth units; the demo computes an estimate from the detected 2D, and an absolute threshold needs the scale, not just the correlation",
+  "estimator": "overstride.checks.estimate_view_ratio -- phase 14's azimuth proxy, sqrt(1 - (ratio/R_POP)^2)",
+  "bars": {
+    "pass_at_or_above": 0.5,
+    "refuse_below": 0.35
+  },
+  "aggregate_only": "no per-subject MoVi value is written here",
+  "diagnostic_only": "all 11 subjects are spent",
+  "n_subjects": 11,
+  "n_pass": 11,
+  "n_flagged": 0,
+  "binding_check": "11/11 of the footage Row B was measured on passes its own viewpoint check",
+  "est_minus_gt": {
+    "mean": 0.139,
+    "sd": 0.0484,
+    "min": 0.0245,
+    "max": 0.1868
+  },
+  "pearson_gt_est": 0.8793,
+  "gt_range": [
+    0.5367,
+    0.7185
+  ],
+  "est_range": [
+    0.6326,
+    0.887
+  ]
+}

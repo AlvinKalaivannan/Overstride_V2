@@ -6,126 +6,42 @@
   "summary": {
     "n_subjects": 11,
     "n_agree": 9,
-    "agreement_fraction": 0.818,
-    "est_sep_over_width": {
-      "agree_min": 0.0354,
-      "disagree_max": 0.0549
+    "agreement": "9/11",
+    "agreement_fraction": 0.8182,
+    "separators_tested": {
+      "est_depth_sep_over_width": {
+        "agree": {
+          "min": 0.0354,
+          "max": 0.2563
+        },
+        "disagree": {
+          "min": 0.0307,
+          "max": 0.0549
+        }
+      },
+      "per_frame_sign_consistency": {
+        "agree": {
+          "min": 0.476,
+          "max": 0.66
+        },
+        "disagree": {
+          "min": 0.583,
+          "max": 0.688
+        }
+      },
+      "ground_truth_view_ratio": {
+        "agree": {
+          "min": 0.5542,
+          "max": 0.7185
+        },
+        "disagree": {
+          "min": 0.5367,
+          "max": 0.6651
+        }
+      }
     },
-    "per_frame_sign_consistency": {
-      "agree_min": 0.476,
-      "disagree_max": 0.688
-    }
+    "no_separator_exists": "Every separator OVERLAPS, and two are inverted: a disagreeing subject sits above an agreeing one on depth separation, and the disagreeing subjects have HIGHER per-frame sign consistency than the lowest agreeing one. So no threshold on any of these gates the failures."
   },
-  "subjects": [
-    {
-      "subject": "Subject_1",
-      "gt_near": "l",
-      "est_near": "l",
-      "agree": true,
-      "gt_view_ratio": 0.7185,
-      "est_depth_sep_over_width": 0.0354,
-      "per_frame_sign_consistency": 0.476,
-      "n_frames": 206
-    },
-    {
-      "subject": "Subject_10",
-      "gt_near": "l",
-      "est_near": "l",
-      "agree": true,
-      "gt_view_ratio": 0.7031,
-      "est_depth_sep_over_width": 0.2563,
-      "per_frame_sign_consistency": 0.646,
-      "n_frames": 243
-    },
-    {
-      "subject": "Subject_11",
-      "gt_near": "l",
-      "est_near": "r",
-      "agree": false,
-      "gt_view_ratio": 0.6651,
-      "est_depth_sep_over_width": 0.0549,
-      "per_frame_sign_consistency": 0.583,
-      "n_frames": 441
-    },
-    {
-      "subject": "Subject_12",
-      "gt_near": "l",
-      "est_near": "l",
-      "agree": true,
-      "gt_view_ratio": 0.6796,
-      "est_depth_sep_over_width": 0.0402,
-      "per_frame_sign_consistency": 0.479,
-      "n_frames": 432
-    },
-    {
-      "subject": "Subject_13",
-      "gt_near": "r",
-      "est_near": "r",
-      "agree": true,
-      "gt_view_ratio": 0.6671,
-      "est_depth_sep_over_width": 0.2221,
-      "per_frame_sign_consistency": 0.647,
-      "n_frames": 275
-    },
-    {
-      "subject": "Subject_15",
-      "gt_near": "r",
-      "est_near": "r",
-      "agree": true,
-      "gt_view_ratio": 0.7002,
-      "est_depth_sep_over_width": 0.1627,
-      "per_frame_sign_consistency": 0.66,
-      "n_frames": 241
-    },
-    {
-      "subject": "Subject_16",
-      "gt_near": "l",
-      "est_near": "l",
-      "agree": true,
-      "gt_view_ratio": 0.6081,
-      "est_depth_sep_over_width": 0.0611,
-      "per_frame_sign_consistency": 0.546,
-      "n_frames": 227
-    },
-    {
-      "subject": "Subject_17",
-      "gt_near": "l",
-      "est_near": "l",
-      "agree": true,
-      "gt_view_ratio": 0.696,
-      "est_depth_sep_over_width": 0.0706,
-      "per_frame_sign_consistency": 0.525,
-      "n_frames": 221
-    },
-    {
-      "subject": "Subject_18",
-      "gt_near": "l",
-      "est_near": "l",
-      "agree": true,
-      "gt_view_ratio": 0.5542,
-      "est_depth_sep_over_width": 0.0948,
-      "per_frame_sign_consistency": 0.495,
-      "n_frames": 279
-    },
-    {
-      "subject": "Subject_19",
-      "gt_near": "l",
-      "est_near": "l",
-      "agree": true,
-      "gt_view_ratio": 0.6591,
-      "est_depth_sep_over_width": 0.0647,
-      "per_frame_sign_consistency": 0.529,
-      "n_frames": 238
-    },
-    {
-      "subject": "Subject_2",
-      "gt_near": "l",
-      "est_near": "r",
-      "agree": false,
-      "gt_view_ratio": 0.5367,
-      "est_depth_sep_over_width": 0.0307,
-      "per_frame_sign_consistency": 0.688,
-      "n_frames": 157
-    }
-  ]
+  "aggregate_only": "No per-subject MoVi value is written here -- same standard as the scoping files (commit 4b35950). The overlap finding is a statement about ranges, and both bounds are kept, so it remains checkable.",
+  "per_subject": "11 rows, not committed. Reproduce with scripts/phase16a_nearlimb.py --per-subject-out PATH (outside the repo)."
 }

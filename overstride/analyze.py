@@ -38,6 +38,9 @@ from phase3_angles import H36M  # noqa: E402
 from video_kinematics import (coco17_to_h36m17, detect_coco17,  # noqa: E402
                               scores_to_train_scale)
 
+from overstride.nearside import (MIRRORING_NOTICE,  # noqa: E402
+                                  TravelSuggestion, normalize_side,
+                                  reconcile, suggest_from_travel)
 from overstride.preprocess import (SHORT_SIDE, probe,  # noqa: E402
                                    resize_short_side)
 
@@ -55,15 +58,17 @@ REPORTED = PRIMARY + EXPERIMENTAL
 SIDES = ("l", "r")
 
 # `scripts/phase16a_nearlimb.py`, 11 spent MoVi PG1 subjects: the near limb
-# estimated from the lifted 3D's hip depth agrees with the camera-derived truth
-# on only 9 of 11, and NO available signal separates the hits from the misses.
-# Estimated depth separation over width runs down to 0.0354 among the agreeing
-# subjects while a disagreeing one sits higher at 0.0549; per-frame sign
-# consistency is inverted (agree min 0.476, disagree max 0.688); and the
-# ground-truth view_ratio does not separate them either (0.554 agrees, 0.665
-# fails). Phase 14's "592 of 592" was AthleticsPose and does not transfer.
-NEAR_LIMB_AGREEMENT = 9 / 11
-NEAR_LIMB_IS_RELIABLE = False
+# inferred from the lifted 3D's hip depth agrees with the calibrated truth on
+# only 9 of 11, and NO available signal separates the hits from the misses, so
+# it cannot even be gated. Phase 14's "592 of 592" was AthleticsPose and does
+# not transfer. **That inference is therefore not used for anything.**
+#
+# The near side is DECLARED by the user via --near-side, and
+# `overstride.nearside.suggest_from_travel` offers a geometric suggestion that
+# only ever warns. See results/phase16a_nearlimb.json and
+# results/phase16a_travelrule.json.
+NEAR_LIMB_FROM_DEPTH_AGREEMENT = 9 / 11
+NEAR_LIMB_FROM_DEPTH_IS_RELIABLE = False
 
 
 @dataclass
@@ -76,8 +81,13 @@ class AnalysisResult:
     height: int
     resized_from: tuple[int, int] | None
     detector_min_size: int
-    near_limb_estimate: str              # "l"/"r" -- UNRELIABLE, see below
+    near_side: str                       # "l"/"r" -- DECLARED by the user
+    far_side: str                        # the other one
+    near_limb_from_depth: str            # diagnostic only, 9/11 -- never used
     detected: np.ndarray                 # (T,) bool
+    kp2d: np.ndarray | None = None       # detected 2D, H36M-17 order
+    travel: dict = field(default_factory=dict)
+    warnings: list = field(default_factory=list)
     angles: dict = field(default_factory=dict)
     est3d: np.ndarray | None = None
     detect_meta: dict = field(default_factory=dict)
@@ -87,27 +97,33 @@ class AnalysisResult:
 
     @property
     def near_limb(self):
-        """Deliberately absent. Use `near_limb_estimate` and read its caveat.
+        """Deliberately absent: the demo does not INFER a near limb.
 
-        Raising here rather than returning a value is the point: a caller that
-        wants near/far must confront that it is only 9/11 correct.
+        Raising rather than returning is the point -- the depth inference is
+        only 9/11 correct. Use `near_side`, which the user declared.
         """
         raise AttributeError(
-            "the demo does not claim a near limb: the estimate agrees with "
-            "the camera on only 9 of 11 MoVi subjects and no signal separates "
-            "the failures (results/phase16a_nearlimb.json). Report left/right, "
-            "and quote the FAR-limb error budget for both legs.")
+            "the demo does not infer a near limb (9 of 11 against calibrated "
+            "truth, no signal separating the failures -- see "
+            "results/phase16a_nearlimb.json). Use `near_side`, which comes "
+            "from the required --near-side flag.")
 
-    def budget_limb(self) -> str:
-        """Which error-budget column to quote: always 'far', the worse one.
+    def limb(self, which: str) -> str:
+        """'near' or 'far' -> 'l' or 'r', from the DECLARED side."""
+        if which == "near":
+            return self.near_side
+        if which == "far":
+            return self.far_side
+        raise ValueError(which)
 
-        Near and far differ by a measured +1.971 deg on the thigh (sealed test,
-        CI excluding zero, 5 of 5 subjects). Since the demo cannot tell which
-        leg is which, quoting 'near' would understate the error on whichever
-        leg is actually far. 'far' is conservative and never wrong by more than
-        the measured gap.
+    def budget_limb(self, side: str) -> str:
+        """Which error-budget column applies to an anatomical side.
+
+        With the near side declared, each leg gets its OWN column: Row B's near
+        column for the near leg, far for the far leg. They differ by a measured
+        +1.971 deg on the thigh, so this is the precision the flag buys back.
         """
-        return "far"
+        return "near" if side == self.near_side else "far"
 
     def mae_against(self, ref_angles: dict, side: str, quantity: str,
                     mask: np.ndarray | None = None) -> float:
@@ -125,14 +141,19 @@ class AnalysisResult:
         return float(np.abs(est[ok] - ref[ok]).mean())
 
 
-def analyze_frames(frames, fps: float, lifter, detector=None,
-                   resize: bool = True) -> AnalysisResult:
+def analyze_frames(frames, fps: float, lifter, near_side: str,
+                   detector=None, resize: bool = True) -> AnalysisResult:
     """Stages 3b-8 on an in-memory frame list.
+
+    `near_side` is REQUIRED -- "left" or "right", the side of the runner the
+    camera was on. The demo cannot infer it (9/11), so the user declares it and
+    the geometric suggestion only warns.
 
     `lifter` is the MotionAGFormer checkpoint; `detector` is the Keypoint R-CNN
     (None lets `detect_coco17` build it). The two models are separate and are
     passed separately, deliberately.
     """
+    near = normalize_side(near_side)
     frames = list(frames)
     if not frames:
         raise ValueError("no frames")
@@ -153,11 +174,14 @@ def analyze_frames(frames, fps: float, lifter, detector=None,
     # --- 7. lift ----------------------------------------------------------
     est = lift_2d(lifter, prepared, float(fps))
 
-    # The near limb from the ESTIMATE's own hip depth. Kept as a DIAGNOSTIC
-    # only: measured at 9/11 against the camera truth on MoVi, with no signal
-    # that separates the failures. Nothing user-facing may depend on it.
-    near_est = ("l" if np.nanmean(est[:, H36M["l_hip"], 2])
-                < np.nanmean(est[:, H36M["r_hip"], 2]) else "r")
+    # The near limb from the ESTIMATE's own hip depth. DIAGNOSTIC ONLY --
+    # 9/11 against calibrated truth, with no signal separating the failures.
+    # Nothing user-facing depends on it.
+    near_depth = ("l" if np.nanmean(est[:, H36M["l_hip"], 2])
+                  < np.nanmean(est[:, H36M["r_hip"], 2]) else "r")
+
+    # the geometric suggestion, from the 2D alone. It only ever warns.
+    travel = reconcile(near, suggest_from_travel(kp))
 
     # --- 8. angles --------------------------------------------------------
     angles = {}
@@ -168,19 +192,22 @@ def analyze_frames(frames, fps: float, lifter, detector=None,
     return AnalysisResult(
         fps=float(fps), n_frames=len(frames), width=w, height=h,
         resized_from=resized_from, detector_min_size=int(min(h, w)),
-        near_limb_estimate=near_est, detected=detected, angles=angles,
-        est3d=est, detect_meta=meta)
+        near_side=near, far_side=travel["far_side"],
+        near_limb_from_depth=near_depth, kp2d=kp, travel=travel,
+        warnings=list(travel["warnings"]) + [MIRRORING_NOTICE],
+        detected=detected, angles=angles, est3d=est, detect_meta=meta)
 
 
-def analyze_clip(path, lifter, start: int = 0, end: int | None = None,
-                 detector=None, resize: bool = True) -> AnalysisResult:
-    """Stages 1, 3, then `analyze_frames`."""
+def analyze_clip(path, lifter, near_side: str, start: int = 0,
+                 end: int | None = None, detector=None,
+                 resize: bool = True) -> AnalysisResult:
+    """Stages 1, 3, then `analyze_frames`. `near_side` is required."""
     from phase15_movi import decode_range
     info = probe(path)
     lo = int(start)
     hi = int(end) if end is not None else info.n_frames
     frames, fps, _meta = decode_range(Path(path), lo, hi)
-    return analyze_frames(list(frames), float(fps), lifter,
+    return analyze_frames(list(frames), float(fps), lifter, near_side,
                           detector=detector, resize=resize)
 
 

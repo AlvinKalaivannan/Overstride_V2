@@ -48,6 +48,11 @@ SUBJECTS = ("Subject_1", "Subject_10", "Subject_11", "Subject_12",
 
 
 def main() -> int:
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--per-subject-out", type=Path, default=None,
+                    help="optional path OUTSIDE the repo for per-subject rows")
+    args = ap.parse_args()
     R_cv, t_cv, _s = camera_pose(CAM)
     lifter = load_model(CKPT_FOR["coco"], "base")
     if lifter is None:
@@ -142,9 +147,21 @@ def main() -> int:
         "azimuth_proxy_cannot_help": ("it recovers |cos(theta)|, a magnitude, "
                                       "so it gives how side-on the view is and "
                                       "not which side faces the camera"),
-        "camera": CAM, "summary": summary, "subjects": rows}, indent=2),
-        encoding="utf-8")
-    print(f"\nwrote {OUT.relative_to(REPO)}")
+        "camera": CAM, "summary": summary,
+        "aggregate_only": ("no per-subject MoVi value is written here -- same "
+                           "standard as the scoping files"),
+        "per_subject": (f"{len(rows)} rows, not committed; use "
+                        f"--per-subject-out PATH outside the repo")},
+        indent=2), encoding="utf-8")
+    print(f"\nwrote {OUT.relative_to(REPO)}  (aggregate only)")
+    if args.per_subject_out:
+        dest = Path(args.per_subject_out).resolve()
+        if REPO in dest.parents or dest.parent == REPO:
+            print("  REFUSED: --per-subject-out is inside the repository")
+            return 3
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(json.dumps(rows, indent=2), encoding="utf-8")
+        print(f"  per-subject rows -> {dest}  (outside the repo)")
     return 0
 
 
