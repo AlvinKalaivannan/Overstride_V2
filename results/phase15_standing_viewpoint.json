@@ -1,0 +1,25 @@
+{
+  "what": "READ-ONLY: viewpoint of the legs-still standing motions against the jogging window, PG1. No model run, no new subject opened.",
+  "licence": "MoVi forbids distributing the Data in any form. This file carries CROSS-SUBJECT AGGREGATES ONLY -- no per-subject measurement, no frame window, no marker coordinate, no camera parameter. PG1 is named; its calibration is not reproduced.",
+  "camera": "PG1",
+  "view_ratio": "phase 3B, hip depth separation / hip width; 0 = frontal, 1 = side-on; AthleticsPose median 0.751",
+  "still_motions_considered": [
+    "crossarms",
+    "hand_clapping",
+    "scratching_head",
+    "checking_watch"
+  ],
+  "n_subjects": 12,
+  "jogging_view_ratio": {
+    "median": 0.6751,
+    "min": 0.536,
+    "max": 0.7196
+  },
+  "standing_view_ratio": {
+    "median": 0.0571,
+    "min": 0.0223,
+    "max": 0.1092
+  },
+  "near_limb_agrees_standing_vs_jogging": "6/12",
+  "finding": "every stationary frame in round F is essentially frontal (standing view_ratio median 0.057 against jogging 0.675), so MoVi cannot test a side-on standing calibration pass"
+}

@@ -194,11 +194,20 @@ band at 18.1°, which is what validates the setup.
 > confidently wrong about which measurement was good, and only held-out data
 > could show that.**
 >
-> **The error is a per-subject offset, not noise.** Across five subjects MAE
-> tracks `|bias|` at **r = 0.983** (knee), while the waveform shape is tracked
-> well on everyone — knee r **+0.77 to +0.92**. One subject is nearly unbiased
-> (+0.56°, 5.13° MAE); another carries +12.1°. The camera cannot explain it: the
-> level-camera error is −1.4° to −1.9° on all five.
+> **Bias explains which subjects score worse — but most of the error is not a
+> removable offset.** Across five subjects MAE tracks `|bias|` at **r = 0.983**
+> (knee) and 0.917 (thigh), and one subject is nearly unbiased (+0.56°, 5.13°
+> MAE) where another carries +12.1°. The camera cannot explain that spread: the
+> level-camera error is −1.4° to −1.9° on all five. **But r describes
+> between-subject *differences*, not the size of the error** — the
+> within-subject SD is **4.5–9.7°**, comparable to the bias, so **even oracle
+> per-subject offset removal would cut MAE by only 17% (knee), 11% (thigh) and
+> 24% (hip)**, leaving 4.8–7.0° against the 3.51° baseline. The waveform shape
+> *is* tracked well (knee r **+0.77 to +0.92**), but that is partly signal size:
+> knee flexion swings ~100°, so r = 0.9 still permits a residual SD near 10°.
+> An earlier version of this paragraph said the error was "almost entirely a
+> per-subject offset"; that overstated it, and the correction is recorded in
+> `results/phase15_sealed.md`.
 >
 > **The hip's error is a posture term, not a convention offset.** Phase 15
 > saw −7.2° against −3.3° on two subjects; five more extend it to a smooth

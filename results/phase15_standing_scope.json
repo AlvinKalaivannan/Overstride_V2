@@ -1,0 +1,334 @@
+{
+  "what": "READ-ONLY scope for a per-subject offset calibration: is there a standing / neutral pose in MoVi round F? No model was run and no new subject was opened.",
+  "licence": "MoVi forbids distributing the Data in any form. This file carries CROSS-SUBJECT AGGREGATES ONLY -- no per-subject measurement, no frame window, no marker coordinate, no camera parameter. Per-subject detail is reproducible with --per-subject-out, which must point outside this repository.",
+  "still_threshold_mm_s": 100.0,
+  "mocap_hz": 120.0,
+  "video_fps": 30.0,
+  "markers_used": [
+    "LFWT",
+    "LBWT",
+    "RFWT",
+    "RBWT",
+    "LKJC",
+    "RKJC",
+    "LAJC",
+    "RAJC"
+  ],
+  "no_motion_named_standing": true,
+  "motion_names_present": [
+    "checking_watch",
+    "crawling",
+    "cross_legged_sitting",
+    "crossarms",
+    "dancing_rm",
+    "hand_clapping",
+    "hand_waving",
+    "hopping_rm",
+    "jogging",
+    "jumping_jack",
+    "kicking",
+    "phone_talking",
+    "pointing",
+    "random_motion_rm",
+    "running_in_spot",
+    "scratching_head",
+    "sideways",
+    "sitting_down",
+    "squatting_rm",
+    "stretching",
+    "stretching_rm",
+    "swinging_arms_rm",
+    "taking_photo",
+    "throw/catch",
+    "vertical_jumping",
+    "walking",
+    "yoga_rm"
+  ],
+  "aggregate": {
+    "n_subjects": 12,
+    "per_motion": {
+      "hand_clapping": {
+        "n_subjects": 12,
+        "still_seconds": {
+          "median": 3.37,
+          "min": 1.54,
+          "max": 4.33
+        },
+        "limb_speed_mm_s_median_of_medians": 14.4,
+        "window_seconds_median": 3.37
+      },
+      "crossarms": {
+        "n_subjects": 12,
+        "still_seconds": {
+          "median": 3.17,
+          "min": 1.29,
+          "max": 5.1
+        },
+        "limb_speed_mm_s_median_of_medians": 13.2,
+        "window_seconds_median": 3.58
+      },
+      "scratching_head": {
+        "n_subjects": 12,
+        "still_seconds": {
+          "median": 3.1,
+          "min": 0.3,
+          "max": 4.47
+        },
+        "limb_speed_mm_s_median_of_medians": 13.9,
+        "window_seconds_median": 3.48
+      },
+      "checking_watch": {
+        "n_subjects": 12,
+        "still_seconds": {
+          "median": 2.92,
+          "min": 1.08,
+          "max": 4.26
+        },
+        "limb_speed_mm_s_median_of_medians": 18.4,
+        "window_seconds_median": 3.2
+      },
+      "pointing": {
+        "n_subjects": 12,
+        "still_seconds": {
+          "median": 2.56,
+          "min": 1.24,
+          "max": 3.57
+        },
+        "limb_speed_mm_s_median_of_medians": 25.4,
+        "window_seconds_median": 2.87
+      },
+      "hand_waving": {
+        "n_subjects": 12,
+        "still_seconds": {
+          "median": 2.54,
+          "min": 0.62,
+          "max": 4.37
+        },
+        "limb_speed_mm_s_median_of_medians": 29.9,
+        "window_seconds_median": 3.13
+      },
+      "taking_photo": {
+        "n_subjects": 12,
+        "still_seconds": {
+          "median": 2.38,
+          "min": 0.37,
+          "max": 4.02
+        },
+        "limb_speed_mm_s_median_of_medians": 38.5,
+        "window_seconds_median": 3.37
+      },
+      "phone_talking": {
+        "n_subjects": 12,
+        "still_seconds": {
+          "median": 2.26,
+          "min": 0.44,
+          "max": 4.27
+        },
+        "limb_speed_mm_s_median_of_medians": 51.4,
+        "window_seconds_median": 3.67
+      },
+      "stretching": {
+        "n_subjects": 12,
+        "still_seconds": {
+          "median": 2.1,
+          "min": 0.65,
+          "max": 4.93
+        },
+        "limb_speed_mm_s_median_of_medians": 37.0,
+        "window_seconds_median": 4.0
+      },
+      "sitting_down": {
+        "n_subjects": 12,
+        "still_seconds": {
+          "median": 1.55,
+          "min": 0.43,
+          "max": 3.26
+        },
+        "limb_speed_mm_s_median_of_medians": 190.7,
+        "window_seconds_median": 6.9
+      },
+      "cross_legged_sitting": {
+        "n_subjects": 12,
+        "still_seconds": {
+          "median": 1.15,
+          "min": 0.25,
+          "max": 2.92
+        },
+        "limb_speed_mm_s_median_of_medians": 206.4,
+        "window_seconds_median": 7.65
+      },
+      "yoga_rm": {
+        "n_subjects": 2,
+        "still_seconds": {
+          "median": 0.88,
+          "min": 0.33,
+          "max": 1.43
+        },
+        "limb_speed_mm_s_median_of_medians": 105.0,
+        "window_seconds_median": 4.77
+      },
+      "swinging_arms_rm": {
+        "n_subjects": 1,
+        "still_seconds": {
+          "median": 0.71,
+          "min": 0.71,
+          "max": 0.71
+        },
+        "limb_speed_mm_s_median_of_medians": 78.4,
+        "window_seconds_median": 3.3
+      },
+      "squatting_rm": {
+        "n_subjects": 1,
+        "still_seconds": {
+          "median": 0.58,
+          "min": 0.58,
+          "max": 0.58
+        },
+        "limb_speed_mm_s_median_of_medians": 440.7,
+        "window_seconds_median": 4.87
+      },
+      "throw/catch": {
+        "n_subjects": 12,
+        "still_seconds": {
+          "median": 0.57,
+          "min": 0.01,
+          "max": 3.94
+        },
+        "limb_speed_mm_s_median_of_medians": 207.7,
+        "window_seconds_median": 5.33
+      },
+      "dancing_rm": {
+        "n_subjects": 5,
+        "still_seconds": {
+          "median": 0.45,
+          "min": 0.02,
+          "max": 0.58
+        },
+        "limb_speed_mm_s_median_of_medians": 276.2,
+        "window_seconds_median": 4.77
+      },
+      "random_motion_rm": {
+        "n_subjects": 1,
+        "still_seconds": {
+          "median": 0.4,
+          "min": 0.4,
+          "max": 0.4
+        },
+        "limb_speed_mm_s_median_of_medians": 336.1,
+        "window_seconds_median": 4.37
+      },
+      "stretching_rm": {
+        "n_subjects": 1,
+        "still_seconds": {
+          "median": 0.32,
+          "min": 0.32,
+          "max": 0.32
+        },
+        "limb_speed_mm_s_median_of_medians": 138.4,
+        "window_seconds_median": 2.87
+      },
+      "kicking": {
+        "n_subjects": 12,
+        "still_seconds": {
+          "median": 0.29,
+          "min": 0.03,
+          "max": 0.42
+        },
+        "limb_speed_mm_s_median_of_medians": 183.2,
+        "window_seconds_median": 4.62
+      },
+      "walking": {
+        "n_subjects": 12,
+        "still_seconds": {
+          "median": 0.29,
+          "min": 0.0,
+          "max": 0.91
+        },
+        "limb_speed_mm_s_median_of_medians": 676.5,
+        "window_seconds_median": 9.06
+      },
+      "crawling": {
+        "n_subjects": 12,
+        "still_seconds": {
+          "median": 0.28,
+          "min": 0.0,
+          "max": 1.01
+        },
+        "limb_speed_mm_s_median_of_medians": 391.4,
+        "window_seconds_median": 12.21
+      },
+      "sideways": {
+        "n_subjects": 12,
+        "still_seconds": {
+          "median": 0.24,
+          "min": 0.0,
+          "max": 0.55
+        },
+        "limb_speed_mm_s_median_of_medians": 518.4,
+        "window_seconds_median": 8.13
+      },
+      "jumping_jack": {
+        "n_subjects": 12,
+        "still_seconds": {
+          "median": 0.21,
+          "min": 0.0,
+          "max": 0.71
+        },
+        "limb_speed_mm_s_median_of_medians": 712.3,
+        "window_seconds_median": 3.71
+      },
+      "jogging": {
+        "n_subjects": 12,
+        "still_seconds": {
+          "median": 0.21,
+          "min": 0.0,
+          "max": 0.91
+        },
+        "limb_speed_mm_s_median_of_medians": 831.2,
+        "window_seconds_median": 7.95
+      },
+      "running_in_spot": {
+        "n_subjects": 12,
+        "still_seconds": {
+          "median": 0.17,
+          "min": 0.01,
+          "max": 1.34
+        },
+        "limb_speed_mm_s_median_of_medians": 452.1,
+        "window_seconds_median": 4.01
+      },
+      "vertical_jumping": {
+        "n_subjects": 12,
+        "still_seconds": {
+          "median": 0.17,
+          "min": 0.03,
+          "max": 1.79
+        },
+        "limb_speed_mm_s_median_of_medians": 488.5,
+        "window_seconds_median": 3.46
+      },
+      "hopping_rm": {
+        "n_subjects": 1,
+        "still_seconds": {
+          "median": 0.11,
+          "min": 0.11,
+          "max": 0.11
+        },
+        "limb_speed_mm_s_median_of_medians": 527.2,
+        "window_seconds_median": 4.6
+      }
+    },
+    "fraction_of_frames_in_no_motion_window": {
+      "min": 0.115,
+      "max": 0.287
+    },
+    "longest_inter_motion_rest_still_seconds": {
+      "min": 3.17,
+      "max": 8.91
+    },
+    "longest_legs_still_anywhere_seconds": {
+      "min": 4.35,
+      "max": 22.07
+    }
+  }
+}

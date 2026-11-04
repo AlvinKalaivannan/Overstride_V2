@@ -255,6 +255,13 @@ Per subject, detected, **far** limb:
 
 ### The error is almost entirely a per-subject offset
 
+> **OVERSTATED — see "Correction, 2026-11-03" at the end of this file.** The
+> heading and the paragraph below are kept as written. The correlation is real,
+> but it describes *between-subject differences* in MAE, not the magnitude of
+> the error: the within-subject SD is **4.5–9.7°**, comparable to the bias, and
+> even oracle per-subject offset removal cuts MAE by only 17% (knee), 11%
+> (thigh), 24% (hip).
+
 Across the five subjects, near limb, **MAE tracks `|bias|` at Pearson r =
 0.983 for the knee and 0.917 for the thigh.** Subject_17 is nearly unbiased
 (knee +0.562°, thigh −0.052°) and scores 5.13° / 3.27°; Subject_2 carries a
@@ -465,3 +472,134 @@ The MoVi licence forbids distributing the data in any form to any third party.
 This report carries angles and summary statistics only; no participant
 anthropometry, no camera parameters, and no imagery. Same rule as
 `docs/data-inventory.md` §8.5.
+
+---
+
+## Correction, 2026-11-03
+
+**What was claimed.** The section "The error is almost entirely a per-subject
+offset" above, and the matching README paragraph, said the sealed error is a
+per-subject offset rather than noise, on the strength of MAE tracking `|bias|`
+at Pearson **r = 0.983** (knee) and **0.917** (thigh) across the five subjects.
+
+**What is measured.** The correlation is correct and is not withdrawn. The
+inference drawn from it was wrong. **r describes the *between-subject
+differences* in MAE, not the magnitude of the error within a subject.** The
+quantity that decides whether an offset can be removed is the per-subject
+**SD**, and it is large:
+
+| quantity | per-subject SD, near limb, detected |
+|---|---|
+| knee flexion | 7.58, 8.41, 8.71, 9.47, 9.73 deg |
+| thigh inclination | 4.45, 4.48, 5.15, 6.63, 9.31 deg |
+| hip (trunk-referenced) | 5.47, 6.27, 6.97, 7.57, 9.29 deg |
+
+**4.5-9.7 deg, comparable to or larger than the bias itself.** So how much could
+a per-subject offset correction actually remove? Under a folded-normal model --
+which reproduces the five known per-subject MAEs to within **1.4 deg worst case**
+(Subject_18's hip, 9.34 modelled against 7.94 observed), so read these as
+estimates, not measurements:
+
+| quantity | MAE now | subtract a **population** constant | subtract each subject's **own** bias (oracle) |
+|---|---|---|---|
+| hip (trunk-referenced) | 7.75 deg | 5.90 deg (**-24%**) | 5.68 deg (**-27%**) |
+| knee flexion | 8.41 deg | 7.72 deg (-8%) | 7.00 deg (**-17%**) |
+| thigh inclination | 5.40 deg | 5.19 deg (-4%) | 4.79 deg (**-11%**) |
+
+**Even a perfect oracle leaves 4.8-7.0 deg**, against the 3.51 deg deployable
+baseline. The only rigorous part, holding for any distribution, is
+`MAE >= |bias|` by Jensen; the rest is the normal approximation above.
+
+**Why the high shape correlation is not evidence against this.** Knee flexion
+swings roughly 100 deg over a stride, so a shape correlation of r = 0.9 still
+permits a residual SD near 10 deg: `sd_residual ~ sd_gt * sqrt(1 - r^2)`. **r is
+high because the signal is large, not because the error is small.**
+
+**The corrected wording**, which is what the README now carries:
+
+> Bias explains the *between-subject differences* in MAE -- r = 0.983 (knee),
+> 0.917 (thigh) -- but the within-subject SD is 4.5-9.7 deg, so most of the
+> error is not a removable offset. Oracle per-subject offset removal cuts MAE by
+> only 17% (knee), 11% (thigh) and 24% (hip).
+
+Nothing above the Results heading is edited, and no measured number changes --
+this corrects an inference, not a figure.
+
+---
+
+## Scoping, 2026-11-03: the calibration-pass idea, and why MoVi cannot test it
+
+**The idea.** The subject stands still side-on for a few seconds; the tool reads
+its own estimate of that pose, compares it against an assumed population
+standing angle, and subtracts the difference as a per-subject offset. It uses no
+ground truth at run time, which is what would make it deployable.
+
+**MoVi round F cannot test it. Read-only finding, no model run and no new
+subject opened** -- `scripts/phase15_standing_scope.py`,
+`scripts/phase15_standing_viewpoint.py`, over the twelve already-opened
+subjects.
+
+**1. There is no standing pose, by name.** `motions_list` carries 20 motions
+common to all twelve subjects plus one subject-specific `*_rm` motion. Nothing
+matches stand / neutral / T-pose / A-pose / static / calib / rest / idle.
+
+**2. There is plenty of stationary material.** Eight of the 20 are upper-body
+tasks performed from standing. "Legs still" below means lower-limb marker median
+speed under 100 mm/s at 120 Hz -- the four best are present in all twelve
+subjects:
+
+| motion | median continuous still | min across subjects | median limb speed |
+|---|---|---|---|
+| `hand_clapping` | 3.37 s | 1.54 s | 14.4 mm/s |
+| `crossarms` | 3.17 s | 1.29 s | 13.2 mm/s |
+| `scratching_head` | 3.10 s | 0.30 s | 13.9 mm/s |
+| `checking_watch` | 2.92 s | 1.08 s | 18.4 mm/s |
+
+14-18 mm/s is postural sway. **Indices are randomised per subject**, the same
+trap `jogging_window` exists to avoid. Separately, **11.5-28.7% of all frames
+belong to no motion window** -- the rest periods between motions -- giving a
+longest single still run of 3.2-8.9 s and a longest-still-anywhere of
+4.35-22.07 s. Every frame of it is already in the PG1 video on disk, because PG1
+is one continuous recording per subject and `flags30` cuts it.
+
+**3. And all of it is at the wrong viewpoint. This is the disqualifying fact.**
+`view_ratio` is phase 3B's, unchanged (0 = frontal, 1 = side-on):
+
+| window | median `view_ratio` | range |
+|---|---|---|
+| **jogging** | **0.675** | [0.536, 0.720] |
+| the four still motions | **0.057** | [0.022, 0.109] |
+| inter-motion rest | **0.027** | [0.012, 0.090] |
+
+MoVi subjects stand facing the cameras and then run across the volume, so every
+stationary frame is essentially frontal. Two consequences:
+
+- Phase 11 measured sagittal error falling **3.50 deg frontal -> 1.77 deg
+  side-on**, and phase 14 found camera azimuth carries essentially *all* the
+  per-frame confidence signal. An offset read at `view_ratio` 0.03 would be
+  dominated by viewpoint error rather than by the per-subject constant it is
+  meant to capture.
+- **The near limb differs between the standing pose and jogging on 6 of 12
+  subjects**, so on half of them the calibration would be read off the other
+  leg.
+
+**This is a property of MoVi's protocol, not a verdict on the method.** Testing
+the idea needs a subject standing *side-on*: phase 16A's consented clip, or
+possibly the dual-system set, which is unopened.
+
+### Where the population standing value could come from, without touching MoVi
+
+| option | verdict |
+|---|---|
+| **AthleticsPose static frames** | **Measurably unavailable.** Eight actions, none static. The slowest is `sd` (912 clips) at 5.45 mm/frame; **0% of frames below 1 mm/frame**, longest static run **4 frames** (~0.03 s at its ~120 fps inferred in phase 7). `shotput` 2 frames, `discus` 1, `javelin` 0. Closed. |
+| **AddBiomechanics** (CC BY 4.0, 273 subjects, not downloaded) | **Best source.** OpenSim pipelines *require* a per-subject static calibration trial, so neutral-pose joint angles are intrinsic to the processing rather than something to re-derive, and it is the most permissive licence in the dataset table. Its existing role -- "train / reference: joint-angle ranges and segment-length ratios as plausibility bounds" -- already covers this use. **Ships no video**, so it supplies the reference value only, never a check on what the tool reads. |
+| **BEDLAM** (not downloaded) | The only option offering standing *with* rendered video, so it could check both the reference value and what the tool reads at a chosen viewpoint. Synthetic, and brings an SMPL-X convention mapping. |
+| **AMASS** (not downloaded) | Weaker. Poses are relative to SMPL's rest pose, not anatomical standing, so it adds exactly the convention-mapping error class phase 15C measured at 87-144 mm of thorax displacement. |
+| **Literature** | Adequate as a sanity bound, poor as a correction: published "neutral" differs by marker set and by the definition of neutral -- the same convention problem. |
+| **Ferber archive** | Excluded by rule: it plays no part in the measurement track. |
+| **Footage filmed for this project** | The only source of a *side-on* standing pose. No ground truth, so it cannot supply the population value -- but it can test whether the offset is stable across repeat scans. |
+
+**Judgement, given the correction above.** The calibration pass is worth
+building for the **hip**, where a population constant recovers an estimated
+-24%, and is close to pointless for the **thigh** at -4%. It is not a route to
+the 3.51 deg baseline, and a pre-registration should say so before it is built.
