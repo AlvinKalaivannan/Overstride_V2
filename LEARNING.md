@@ -300,3 +300,37 @@ that opened this file, not a backfill.
   "null references: my billion-dollar mistake" is the usual reference, and in
   arrays the right answer is a separate validity mask or a masked array
   (`numpy.ma`) rather than an in-band magic value.
+
+## 2026-11-03 — Reference frames decide which errors cancel, and a tune-set gate can rank measurements wrongly
+- What it is: two ways to report the same limb motion behave completely
+  differently under estimation error. A **within-frame difference** (knee
+  flexion = shank inclination − thigh inclination) is invariant to rotating the
+  frame it is measured in, so any error common to both segments cancels. An
+  angle measured **against an external axis** (thigh vs gravity, hip vs
+  pelvis→thorax) keeps that error in full, because there is nothing to subtract
+  it against.
+- Where it shows up here: `scripts/phase15d_segments.py:inclination` and
+  `segment_angles` (the `knee_from_segments` identity), and the sealed-test
+  far-limb table in `results/phase15_sealed.md`.
+- Gap I had: I expected the far-limb penalty to be one number for the method.
+  It is not — it is a property of the *quantity*. On five held-out subjects the
+  far limb cost **+1.97° (thigh) and +1.51° (hip)**, CIs excluding zero and the
+  same sign on 5/5, but **+0.28° on the knee with the CI spanning zero**.
+  Occlusion degrades the far limb's *depth*; that rotates an externally
+  referenced direction systematically, and largely cancels in a difference.
+  Pooling near and far, or reporting only the knee, would have hidden it.
+- The second, sharper lesson: **a gate set on the tuning set can be confidently
+  wrong about which measurement is good.** Phase 15D's G1 rejected
+  gravity-referenced thigh inclination (6.69° vs a 4.12° bar) because the
+  trunk-referenced hip scored better *on AthleticsPose*. On a lab the model had
+  never seen, the thigh was the only quantity that held its value (5.40°) while
+  the hip degraded 2.73×. The tune set could not distinguish "accurate" from
+  "accurate because the model memorised this dataset's convention" — only
+  held-out data separates those, which is the whole argument for sealing a set
+  and for pre-registering before opening it.
+- Go deeper: this is the measurement-theory distinction between a *relative*
+  and an *absolute* observable, and it is the same reason differential GPS and
+  lock-in amplifiers work — subtract two readings sharing a common-mode error.
+  For the gate half, read on **covariate shift** and the difference between
+  validation and test sets (Hastie, *ESL* §7.2 "Bias, Variance and Model
+  Complexity", especially the distinction between tuning and test error).
