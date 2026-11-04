@@ -214,7 +214,16 @@ and sit-to-stand at 4.8° MAE, not running; cite it, don't train on it).
 
 **Why this mix.** The train sets teach the pipeline what bodies and running
 look like. The tune sets are where decisions get made. The held-out sets are
-where the claim gets tested, and **none of them has been opened.**
+where the claim gets tested.
+
+> **Status, 2026-11-03. MoVi has been opened; the other two have not.** Phase 15
+> tested on MoVi round F, PG1 — and the sealed test spent five further subjects
+> (`Subject_16/17/18/19/2`) that had never been looked at. **Those subjects are
+> now spent and may not be reused as a held-out test.** Round F has more
+> subjects with PG1 video, so a *new* sealed set is still possible inside MoVi,
+> but it must be designated and pre-registered before download, exactly as
+> `268f28b` did. **The dual-system set and Bath BioCV remain unopened and keep
+> their role.** Nothing has been tuned on any of them.
 
 The 2026-10-19 acquisition spike established that all three exist, what each
 licence actually says, and that two of the three release raw video — see
@@ -282,7 +291,11 @@ recorded in `results/`.
 | **12** | **Scan** — per-subject body model from a short calibration pass | Segment lengths within the pre-registered error of mocap GT, stable across a subject's clips | Mixed — stability met (CV 1.7%), accuracy **not met** (0/8 ratios at 3%, errors 4.5–9.2%). The scan is precise but biased: limbs compressed 4.3%, pelvis widened 3.5%. Kill did not fire — keep it as a stabiliser, not anthropometry |
 | **13** | **Decompose & track** — arm 1 filter only (run), arm 2 scan as a *consistency* constraint (deferred, geometric argument), arm 3 both (not run) | Beats **3.51° near / 3.62° far**, same detector both sides, paired per subject, near and far judged separately | **Not met.** Filtering is harmful at every setting, monotonically: +0.12° at the tool's own σ, +4.61° at 6 Hz, all CIs excluding zero. The input-side half of the phase is **closed** — the checkpoint is the binding constraint |
 | **14** | **Per-segment confidence** — calibrated measurement reliability + viewpoint-based expected error | Confidence ranks frames by realized error (ρ ≥ 0.30, every subject) and the stated error is the right size (slope in [0.8, 1.2]) | Mixed — **2 of 4 segments rank their error** (both shanks, ρ 0.34); **1 of 4 is also calibrated**; and the permutation control shows ~4/5 of the skill is **between clips**, not between frames. It is a viewpoint meter. Camera azimuth *is* recoverable from video alone, r = 0.974 |
-| **15** | **Held-out validation** on datasets never touched | Per-dataset MAE with CIs, reported whether it wins or loses | Planned |
+| **15** | **Held-out validation** — BML MoVi opened, PG1 (calibrated machine-vision), jogging | Per-dataset MAE with CIs, reported whether it wins or loses. **No pass/fail gate** | Met as a *report*, lost as a *result* — **9.610° near / 10.604° far** (n=2) against the 3.51°/3.62° deployable baseline, ~2.7×. One subject excluded by a check pre-registered before download. **CP (iPhone) refused: no calibration, sync unverifiable from the shipped flags — §7.5 stayed open here** |
+| **15B** | Why "perfect 2D" underperformed detected 2D on the hip — three pre-registered hypotheses | Each hypothesis has its outcome rule fixed before running | **All three REJECTED.** Detector hip offset is **zero** over 76,813 frames (phase 07's "21–23 px" is a magnitude, not a vector); recipe-matched reference made bias ~9° *worse* on all six rows; posture R² 0.108–0.315, 1 of 4. **Detector cost spans −2.65° to +5.69° and changes sign** |
+| **15C** | Settle the lifter's thorax definition — on AthleticsPose only, then apply to MoVi once | Candidates and decision rule fixed before running | Met, with a transfer failure. The released thorax **is `CLAV`, to 5.04 mm** on AthleticsPose — but on MoVi the same checkpoint is nearer Visual3D `THORAX` on **7 of 7** subjects (0.3–5.7° vs 9.0–16.2°). **The lifter does not put its thorax on the same anatomical point in two datasets.** Knee is immune by construction: 24 of 24 rows bit-identical |
+| **15D** | Report hip and knee separately; segment angles against **gravity** instead of the trunk | G1 thigh MAE ≤ 4.118° on AthleticsPose; G2 thigh \|bias\| < hip \|bias\| on ≥ 3 of 4 subjects | **G1 FAIL** (6.694° [6.290, 7.390]), **G2 PASS 4/4**. Per joint, MoVi vs AthleticsPose: knee 8.163° vs 4.071° (2.00×), hip 11.057° vs 2.834° (3.90×) — **the ordering inverts between labs**. The hip decomposes exactly: `hip bias = thigh bias + trunk-lean bias`, residual ~1e-15 |
+| **15 sealed** | The one run on subjects **never opened** — 5 MoVi subjects, pipeline pinned by content hash, pre-registration pushed before any sealed byte was downloaded | **No gate.** Report as it comes out | Met. **All five passed every check, none excluded** (n=5, the largest MoVi n). Knee **8.410° near** [6.275, 10.975] / 8.685° far; thigh inclination **5.401° near** [4.136, 6.837] / 7.372° far; combined hip+knee **8.078° near**. **Not worse than the spent subjects** — 3 of 4 primary figures lower, every CI containing its comparison, so *indistinguishable*, not better. **The quantity that failed G1 is the one that transfers:** gravity-referenced thigh is 5.401° on held-out MoVi against 6.694° on the tune set, while knee degrades 2.07× and hip 2.73×. Error is a **per-subject offset** (MAE vs \|bias\| r = 0.983 knee / 0.917 thigh; shape r +0.77 to +0.92). **First resolved far-limb penalty** in the project — thigh +1.971° [+0.977, +3.187], hip +1.510° [+0.611, +2.531], 5/5 same sign; knee none. Perfect 2D **still not an upper bound**: worse on the trunk for 5/5 |
 | **16** | **Streaming demo** → split into **16A offline** (one consented clip) and **16C streaming**, deferred | ≥ 20 fps end to end; demo angles match the phase 15 offline numbers | **≥ 20 fps NOT MET and not attemptable** — 207 ms/frame is the floor with these weights, 5.3× over. 16A proceeds; 16C waits for phase 15 |
 
 > **Phase 6 was redefined.** "Demo shell" assumed something worth demonstrating

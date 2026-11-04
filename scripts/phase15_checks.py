@@ -627,8 +627,20 @@ def main() -> int:
            "mocap_hz": MOCAP_HZ, "video_fps_declared": VIDEO_FPS_DECLARED,
            "check4_video_fps": "pending -- read from the video file itself",
            "subjects": rows}
-    OUT.write_text(json.dumps(out, indent=2), encoding="utf-8")
-    print(f"\nwrote {OUT.relative_to(REPO)}")
+    # Write where --out says. This used to write to the module-level OUT
+    # regardless, so running the script on a different subject set silently
+    # overwrote the canonical checks file -- which is exactly what happened
+    # during the sealed test (results/phase15_sealed.md, D-S1). The flag was
+    # parsed and then ignored at the point of use, so it failed by writing to
+    # the wrong place rather than by raising.
+    dest = Path(args.out)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(json.dumps(out, indent=2), encoding="utf-8")
+    try:
+        shown = dest.resolve().relative_to(REPO)
+    except ValueError:
+        shown = dest
+    print(f"\nwrote {shown}")
     return 0
 
 

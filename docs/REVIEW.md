@@ -161,7 +161,7 @@ the argument for the corrections ledger existing at all.
 |---|---|
 | **Research pipeline** | **Complete and reproducible.** 19 phase reports; every number in `results/` regenerable via `scripts/phase6_numbers.py`, which reads all 28 artifacts. |
 | **The finding** | **Settled, and now externally probed.** Degradation measured; the ceiling established as the signal by five internal probes, then by a positive control, a second gait mode and two independent datasets. |
-| **Video tool** | **Partial.** `scripts/video_kinematics.py` runs decode → detect → lift → angles and refuses rather than emitting when it cannot find the subject. **Still never run on real footage** (§7.5). It also has **no stride segmentation**, so there is no path from a video to the analysis the research phases built. |
+| **Video tool** | **Partial, and now measured on real footage.** `scripts/video_kinematics.py` runs decode → detect → lift → angles and refuses rather than emitting when it cannot find the subject. **Run end to end on real lab video with mocap ground truth** — MoVi PG1, 12 subjects across phase 15 and a 5-subject sealed test, detection succeeding on 100% of frames (§7.5). **Never scored on phone footage**, which is the deployment camera and stays open. It also has **no stride segmentation**, so there is no path from a video to the analysis the research phases built. |
 | **External validation** | **Attempted three ways and largely exhausted.** Fukuchi (pipeline), AthletePose3D (lifter, viewpoint), Ferber walking (gait mode). A second *injury cohort* does not publicly exist. |
 | **Tests** | 19, fast, covering the invariants that would silently corrupt results. No integration test. |
 | **Documentation** | `README.md` (the finding), `docs/AGENT_CONTEXT.md` (resuming work), this brief. `CLAUDE.md` amended with outcomes, preserving original intent. |
@@ -210,15 +210,54 @@ The honest soft spots, listed so review is efficient rather than a hunt.
    AthletePose3D records **120 fps in its metadata** for the running captures,
    matching what phase 7 recovered from cadence (113–136 fps). The rate the
    tool's matching step assumes is now documented rather than inferred.
-5. **The video tool has never seen real footage.** Exercised on synthetic video
-   and on AthleticsPose keypoints only. **Phase 11 attempted to close this and
-   could not.** AthletePose3D's raw video (`data.zip`) is the only accessible
-   source pairing running video with 3D ground truth; Google Drive served 3.3 GB
-   and then refused every subsequent request — five attempts, not one further byte
-   — while `pose_3d.zip` at 1.46 GB downloaded without difficulty, so it is
-   per-file share state rather than a size limit. `pose_2d.zip` was refused
-   outright. **The blocker is dataset distribution, not the method**, and no
-   substitute exists. Treat this as open. See `results/phase11.md` Part 3.
+5. ~~**The video tool has never seen real footage.**~~ **HALF CLOSED
+   (phase 15 + the sealed test). Real *lab* footage is now measured end to end;
+   *phone* footage is still open.**
+
+   **What is closed.** The tool has been run on **real video with real
+   synchronised mocap ground truth** — BML MoVi round F, camera **PG1**
+   (calibrated Point Grey, 800×600 at 30.000 fps), jogging trials, decode →
+   detect → lift → angles with no step stubbed. Seven subjects across phase 15
+   and phase 15D, then **five further subjects in a sealed test whose pipeline
+   was pinned by content hash in a pre-registration pushed before a single byte
+   was downloaded**. All five passed every pre-registered check and none was
+   excluded. Results, near limb: **knee 8.410°** [6.275, 10.975], **thigh
+   inclination against gravity 5.401°** [4.136, 6.837], combined hip+knee
+   **8.078°** — against the **3.51° / 3.62°** deployable baseline on
+   AthleticsPose, so roughly **2.1–2.7×** worse depending on the joint. Person
+   detection found the subject in **100% of frames on all five subjects with
+   zero full-frame re-detections**, which is itself the first evidence that the
+   crop tracker survives footage it was not developed on. See
+   `results/phase15.md`, `results/phase15_sealed.md`.
+
+   **What is still open, and it is the deployment-relevant half.** MoVi's
+   **iPhone 7 cameras (CP) ship no calibration**, and their synchronisation
+   cannot be verified from the dataset's own flags — `flags30` is PG-referenced,
+   and the CP recordings are 1920×1080 at 30.009 fps with ~27% more frames per
+   recording. **The frozen pipeline therefore refuses to emit an angle error for
+   them** (`mae_refused`; traces only), and that refusal is structural, before
+   decoding. So the tool has still **never been scored on consumer-phone
+   footage** — the actual deployment camera. The remaining routes are the
+   dual-system set (Zenodo `10.5281/zenodo.19720803`, CC BY 4.0, two smartphones
+   at 30 Hz against OptiTrack, **unopened**) and footage filmed for this project
+   with consent. **Phase 16A is the latter.**
+
+   **One result from the closed half that bears on the whole project.** On
+   held-out subjects the error is **almost entirely a per-subject constant
+   offset** — MAE tracks `|bias|` at **r = 0.983** (knee) and 0.917 (thigh),
+   while waveform shape is tracked well on every subject (**r +0.77 to +0.92**).
+   The tool sees the gait cycle and places it at the wrong absolute angle, by an
+   amount that is a property of the person. A reviewer should read the MAE
+   figures above as *offset-dominated*, not as shape error.
+
+   *Historical note, kept because it explains the delay:* **phase 11 attempted
+   to close this and could not.** AthletePose3D's raw video (`data.zip`) was the
+   only accessible source then pairing running video with 3D ground truth; Google
+   Drive served 3.3 GB and refused every subsequent request — five attempts, not
+   one further byte — while `pose_3d.zip` at 1.46 GB downloaded without
+   difficulty, so it was per-file share state rather than a size limit.
+   `pose_2d.zip` was refused outright. The blocker was dataset distribution, not
+   the method. MoVi supplied the substitute. See `results/phase11.md` Part 3.
 6. **One dataset, one protocol.** Treadmill running, stance phase only, a single
    clinic. The negative result's *generality* rests entirely on that, and no
    external validation exists. **Phase 9 does not close this.** Running the limb
@@ -270,8 +309,10 @@ first asked. Five internal probes said the ceiling is the signal; since then a
 **positive control** showed the design resolves 0.25° (so the ceiling is not
 underpowered), a **second gait mode** failed to replicate it, and **two
 independent datasets** tested the pipeline and the lifter. Nothing remaining is
-both valuable and unblocked: §7.5 needs video that will not download, and §7.6's
-cohort half needs an injury cohort that does not publicly exist.
+both valuable and unblocked: §7.5's lab half is now closed on MoVi and its
+**phone half needs footage filmed for this project** (phase 16A) or the unopened
+dual-system set, and §7.6's cohort half needs an injury cohort that does not
+publicly exist.
 *Recommendation: yes for the research; treat the tool as a separate question.*
 
 **2. Should phase 3's headline become 3.18°?**
@@ -293,7 +334,8 @@ phase 11: `video_kinematics.py` performs no stance segmentation, no event
 detection and no 101-point normalisation.
 *Recommendation: still only if the tool matters beyond demonstration — and note
 that the verdict at the end of that path is the one phases 4B and 5D showed to be
-unsupportable, and that §7.5 blocks validating it on real video anyway.*
+unsupportable. §7.5 no longer blocks validation on real *lab* video — that is
+measured — but it does still block it on phone video.*
 
 **5. External write-up?**
 *Recommendation: worth serious consideration.* A null this well controlled is
