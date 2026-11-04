@@ -1,0 +1,80 @@
+{
+  "what": "DIAGNOSTIC addendum to phase 15C. Nothing is chosen on this; the definition stays the one part 2 decided on AthleticsPose.",
+  "arm": "perfect 2D (projected reference), no detector",
+  "alignment": "per frame, lower body only",
+  "camera": "PG1",
+  "athleticspose_reference": {
+    "lifter_thorax_matches": "CLAV",
+    "sag_offset_deg": 0.75,
+    "released_reference_thorax_vs_CLAV_mm": 5.04
+  },
+  "subjects": {
+    "Subject_1": {
+      "n_frames": 161,
+      "dist_to_THORAX_mm": 79.56938928608537,
+      "dist_to_CLAV_mm": 144.35906870414755,
+      "sag_offset_vs_THORAX_deg": -5.701191737840137,
+      "sag_offset_vs_CLAV_deg": -16.213274386756254,
+      "THORAX_to_CLAV_mm": 94.97423859821558
+    },
+    "Subject_10": {
+      "n_frames": 243,
+      "dist_to_THORAX_mm": 75.6495137356018,
+      "dist_to_CLAV_mm": 100.75577615498132,
+      "sag_offset_vs_THORAX_deg": -1.7674966097969123,
+      "sag_offset_vs_CLAV_deg": -9.136341828024886,
+      "THORAX_to_CLAV_mm": 68.17767717402906
+    },
+    "Subject_11": {
+      "n_frames": 249,
+      "dist_to_THORAX_mm": 77.88533463480101,
+      "dist_to_CLAV_mm": 133.73219218192705,
+      "sag_offset_vs_THORAX_deg": -0.5567490095824107,
+      "sag_offset_vs_CLAV_deg": -12.950190019969337,
+      "THORAX_to_CLAV_mm": 97.74398444073476
+    },
+    "Subject_12": {
+      "n_frames": 416,
+      "dist_to_THORAX_mm": 81.2996631182647,
+      "dist_to_CLAV_mm": 115.37248686084432,
+      "sag_offset_vs_THORAX_deg": -1.255669480118597,
+      "sag_offset_vs_CLAV_deg": -9.622200893726427,
+      "THORAX_to_CLAV_mm": 71.0216475300002
+    },
+    "Subject_13": {
+      "n_frames": 275,
+      "dist_to_THORAX_mm": 77.19407020538048,
+      "dist_to_CLAV_mm": 130.9225389055407,
+      "sag_offset_vs_THORAX_deg": -4.596526890152564,
+      "sag_offset_vs_CLAV_deg": -14.852977674977863,
+      "THORAX_to_CLAV_mm": 87.72125754337446
+    },
+    "Subject_14": {
+      "n_frames": 213,
+      "dist_to_THORAX_mm": 52.131886628309104,
+      "dist_to_CLAV_mm": 86.82107149645589,
+      "sag_offset_vs_THORAX_deg": -0.8228006123697812,
+      "sag_offset_vs_CLAV_deg": -10.37901857733549,
+      "THORAX_to_CLAV_mm": 75.7340911905353
+    },
+    "Subject_15": {
+      "n_frames": 220,
+      "dist_to_THORAX_mm": 78.30965269793725,
+      "dist_to_CLAV_mm": 116.59962648752821,
+      "sag_offset_vs_THORAX_deg": -0.2941305989075471,
+      "sag_offset_vs_CLAV_deg": -8.98915708535072,
+      "THORAX_to_CLAV_mm": 75.91337194394882
+    }
+  },
+  "nearer_point": {
+    "Subject_1": "THORAX_visual3d",
+    "Subject_10": "THORAX_visual3d",
+    "Subject_11": "THORAX_visual3d",
+    "Subject_12": "THORAX_visual3d",
+    "Subject_13": "THORAX_visual3d",
+    "Subject_14": "THORAX_visual3d",
+    "Subject_15": "THORAX_visual3d"
+  },
+  "n_nearer_thorax": 7,
+  "n_subjects": 7
+}

@@ -1,0 +1,223 @@
+{
+  "what": "Phase 15C part 2: the thorax definition, decided on AthleticsPose only. No MoVi subject involved.",
+  "pre_registration": "results/phase15c.md, committed alone in 49428c0",
+  "subjects": [
+    "S11",
+    "S13",
+    "S16"
+  ],
+  "actions": [
+    "running",
+    "sprint"
+  ],
+  "n_clips": 231,
+  "n_frames": 24908,
+  "clip_restriction": "only clips where raw_markers_in_world and gt_markers3d_by_cam have equal frame counts (231 of 592); the dataset records no frame correspondence for the rest",
+  "alignment": "per frame, because p2mm varies per frame and so the released array is perspective-normalised rather than metric; candidate placement and est alignment are fitted on the lower body only",
+  "candidates_athleticspose": {
+    "CLAV": [
+      "CLAV"
+    ],
+    "C7": [
+      "C7"
+    ],
+    "STRN": [
+      "Xiphoid"
+    ],
+    "mid_CLAV_C7": [
+      "CLAV",
+      "C7"
+    ],
+    "mean_Xiphoid_T10": [
+      "Xiphoid",
+      "T10"
+    ]
+  },
+  "step1_recipe_residual_mm": {
+    "r_ankle": 30.931075441296738,
+    "l_elbow": 30.765588786967456,
+    "l_ankle": 30.54311609770738,
+    "r_elbow": 29.49037842200266,
+    "l_wrist": 23.594744563367563,
+    "r_wrist": 22.349082849553582,
+    "l_knee": 20.238853378936252,
+    "r_shoulder": 19.748984284470644,
+    "r_knee": 19.55660502769307,
+    "l_shoulder": 19.53702316061729,
+    "r_hip": 11.327816484792184,
+    "neck": 11.058293640393778,
+    "l_hip": 11.037907473115906,
+    "head": 10.77051728575654,
+    "thorax": 5.042190949442484,
+    "spine": 4.382865545303742,
+    "pelvis": 4.266770538451836
+  },
+  "step2_candidate_offsets": {
+    "CLAV": {
+      "mean_deg": -0.7503068350159555,
+      "abs_mean_deg": 0.7503068350159555,
+      "sd_deg": 3.481537579537922,
+      "per_subject_mean_deg": {
+        "S11": -1.0647030487607938,
+        "S13": -0.12676509470969255,
+        "S16": -0.7505088589999684
+      },
+      "n_frames": 24908,
+      "thorax_to_candidate_mm": 203.39167434838603
+    },
+    "C7": {
+      "mean_deg": 6.837455188392971,
+      "abs_mean_deg": 6.837455188392971,
+      "sd_deg": 3.4346472716892484,
+      "per_subject_mean_deg": {
+        "S11": 6.096572885919286,
+        "S13": 7.137638795361218,
+        "S16": 6.968262083102777
+      },
+      "n_frames": 24908,
+      "thorax_to_candidate_mm": 258.36009489404336
+    },
+    "STRN": {
+      "mean_deg": -22.270214828093852,
+      "abs_mean_deg": 22.270214828093852,
+      "sd_deg": 4.211513695185759,
+      "per_subject_mean_deg": {
+        "S11": -20.524282776531237,
+        "S13": -19.978416902106492,
+        "S16": -22.915229924606233
+      },
+      "n_frames": 24908,
+      "thorax_to_candidate_mm": 275.3152513063096
+    },
+    "mid_CLAV_C7": {
+      "mean_deg": 3.255742912075927,
+      "abs_mean_deg": 3.255742912075927,
+      "sd_deg": 3.4539419767615858,
+      "per_subject_mean_deg": {
+        "S11": 2.71536170217381,
+        "S13": 3.718666720014792,
+        "S16": 3.323755544722008
+      },
+      "n_frames": 24908,
+      "thorax_to_candidate_mm": 228.46068787004518
+    },
+    "mean_Xiphoid_T10": {
+      "mean_deg": 3.5975020725215434,
+      "abs_mean_deg": 3.5975020725215434,
+      "sd_deg": 4.130560080756331,
+      "per_subject_mean_deg": {
+        "S11": 4.485480669393636,
+        "S13": 5.7189662029383435,
+        "S16": 3.1621209131821506
+      },
+      "n_frames": 24908,
+      "thorax_to_candidate_mm": 288.53021108711505
+    }
+  },
+  "step3_decision": {
+    "ranking": [
+      "CLAV",
+      "mid_CLAV_C7",
+      "mean_Xiphoid_T10",
+      "C7",
+      "STRN"
+    ],
+    "gap_deg": 2.5054360770599713,
+    "tie": false,
+    "tie_threshold_deg": 1.0,
+    "chosen": "CLAV",
+    "reason": "smallest |mean| sagittal offset (0.750 deg)"
+  },
+  "step4_hip_error_by_thorax": {
+    "CLAV": {
+      "hip_mae": 4.118395616076888,
+      "hip_bias": -1.7990975432750456,
+      "per_subject": {
+        "S11": {
+          "mae": 3.62354645424614,
+          "bias": -1.8018810682304107
+        },
+        "S13": {
+          "mae": 4.226536487718553,
+          "bias": -0.02292611217457742
+        },
+        "S16": {
+          "mae": 4.355752462935483,
+          "bias": -2.35620565711338
+        }
+      }
+    },
+    "C7": {
+      "hip_mae": 6.144640869773817,
+      "hip_bias": 5.678780178043353,
+      "per_subject": {
+        "S11": {
+          "mae": 5.729007010874496,
+          "bias": 5.357704665937918
+        },
+        "S13": {
+          "mae": 7.7466200490506205,
+          "bias": 7.234734088907505
+        },
+        "S16": {
+          "mae": 5.868720824720255,
+          "bias": 5.365481244974545
+        }
+      }
+    },
+    "STRN": {
+      "hip_mae": 22.78778326778078,
+      "hip_bias": -22.771627199293878,
+      "per_subject": {
+        "S11": {
+          "mae": 21.255546290843895,
+          "bias": -21.246999042543806
+        },
+        "S13": {
+          "mae": 19.903717515503008,
+          "bias": -19.82305256270746
+        },
+        "S16": {
+          "mae": 24.535127451414176,
+          "bias": -24.535087888696097
+        }
+      }
+    },
+    "mid_CLAV_C7": {
+      "hip_mae": 4.0924245002081,
+      "hip_bias": 2.149915183375787,
+      "per_subject": {
+        "S11": {
+          "mae": 3.517599018590122,
+          "bias": 1.9773065094900915
+        },
+        "S13": {
+          "mae": 5.304814348152318,
+          "bias": 3.8190480699734826
+        },
+        "S16": {
+          "mae": 4.026335215370986,
+          "bias": 1.7196023385928614
+        }
+      }
+    },
+    "mean_Xiphoid_T10": {
+      "hip_mae": 4.917614553542323,
+      "hip_bias": 2.931400537556772,
+      "per_subject": {
+        "S11": {
+          "mae": 4.833130847437134,
+          "bias": 3.7609602712810273
+        },
+        "S13": {
+          "mae": 7.053522156364646,
+          "bias": 5.864399810405893
+        },
+        "S16": {
+          "mae": 4.292166936647823,
+          "bias": 1.5540051058280218
+        }
+      }
+    }
+  }
+}
