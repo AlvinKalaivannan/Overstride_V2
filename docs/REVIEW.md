@@ -206,10 +206,21 @@ The honest soft spots, listed so review is efficient rather than a hunt.
    and the fix effect **−0.25°**. The subsample overstated absolute MAE by 22%
    but both deltas held to within 0.09°. What remains is narrower and still
    true: it bounds "generic COCO detector", not Keypoint R-CNN specifically.
-4. ~~**120 fps is inferred**, from stride cadence.~~ **CLOSED (phase 11).**
+4. ~~**120 fps is inferred**, from stride cadence.~~ **CLOSED (phase 11),
+   and the cadence method is now known to have been biased high (phase 15E).**
    AthletePose3D records **120 fps in its metadata** for the running captures,
    matching what phase 7 recovered from cadence (113–136 fps). The rate the
-   tool's matching step assumes is now documented rather than inferred.
+   tool's matching step assumes is documented rather than inferred.
+
+   **Phase 15E found the cadence estimate was 13–36% too high where it can be
+   checked.** AthleticsPose ships its rate in its own Qualisys QCA export
+   (`camera_params/*.json`, `Timebase/Frequency`): **100.0 Hz on all 14 capture
+   sessions**. Phase 7's cadence method gave 113–136 fps for the same data, so
+   its assumed 2.5–3.0 strides/s was wrong — at 100 Hz the measured 0.02206
+   strides/frame is **2.21 strides/s**. The AthletePose3D figure is unaffected
+   (it comes from metadata, not cadence), but **the cadence estimator should not
+   be used again on a dataset that documents its rate**, and 100 Hz happens to
+   be exactly `video_kinematics.MODEL_FPS`.
 5. ~~**The video tool has never seen real footage.**~~ **HALF CLOSED
    (phase 15 + the sealed test). Real *lab* footage is now measured end to end;
    *phone* footage is still open.**

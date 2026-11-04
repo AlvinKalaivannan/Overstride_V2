@@ -205,4 +205,212 @@ prominence.
 
 ## Results
 
-*Not yet run at the time of this commit.*
+**Run 2026-11-04**, after the pre-registration above was committed alone as
+`45dc30a`. `results/phase15e.json`, driver `scripts/phase15e_fps.py`.
+**589 clips** scored (3 of 592 excluded by the pre-registered `n >= 34` rule),
+AthleticsPose running, S11/S13/S16. No gate; no MoVi file was opened.
+
+### First: the native arm reproduces the committed baselines
+
+The control is only worth reading if its native arm really is the baseline path.
+It is, to within rounding:
+
+| quantity | limb | 15E native | 15E native, all frames | committed | source |
+|---|---|---|---|---|---|
+| knee flexion | near | **4.032** | **4.073** | **4.071** | `results/phase15.md` |
+| hip (trunk-ref) | near | **2.838** | **2.833** | **2.834** | `results/phase15.md` |
+| thigh inclination | near | 6.532 | 6.548 | — | — |
+| thigh inclination | far | 6.816 | 6.840 | — | — |
+| thigh, near/far mean | — | **6.674** | 6.694 | **6.694** | `results/phase15d.md` (side-pooled) |
+
+The hip matches to **0.004 deg**, the knee's all-frames figure to **0.002 deg**,
+and the thigh's near/far mean to **0.020 deg**. As pre-registered, this follows
+from `MODEL_FPS == 100 Hz` making `lift_2d(..., fps=100)` a no-op wrapper around
+the committed `lift()` call.
+
+**Restricting the score to the decimated frames moves nothing**: across all four
+quantities and both limbs the subset-vs-all-frames difference is **-0.042 to
++0.005 deg**. So the common scoring grid is not a confound.
+
+### The 30 fps penalty, paired per subject
+
+`penalty = MAE(30 fps) - MAE(native)`, same clips, same scored frames, same
+padding. **Generic COCO detections — the deployable arm:**
+
+| quantity | limb | native | 30 fps | **penalty** | 95% CI | resolved? |
+|---|---|---|---|---|---|---|
+| **knee flexion** | near | 4.032 | 5.866 | **+1.835** | [+0.637, +2.540] | **yes** |
+| **knee flexion** | far | 4.076 | 5.833 | **+1.757** | [+0.429, +2.548] | **yes** |
+| **hip (trunk-ref)** | near | 2.838 | 3.479 | **+0.641** | [+0.201, +0.862] | **yes** |
+| **hip (trunk-ref)** | far | 3.020 | 3.754 | **+0.734** | [+0.164, +1.109] | **yes** |
+| thigh inclination | near | 6.532 | 6.913 | **+0.381** | [+0.104, +0.527] | **yes** |
+| thigh inclination | far | 6.816 | 7.281 | **+0.465** | [+0.092, +0.726] | **yes** |
+| **trunk lean** | near | 5.533 | 5.331 | **-0.202** | [-0.371, -0.002] | **yes, it IMPROVES** |
+| **trunk lean** | far | 5.533 | 5.331 | **-0.202** | [-0.371, -0.002] | **yes, it IMPROVES** |
+
+**Every penalty is resolved** — all eight intervals exclude zero. The knee pays
+**+1.8 deg**, by far the largest; the hip **+0.7 deg**; the thigh **+0.4 deg**;
+and **the trunk gets slightly better.**
+
+### Dose-response: the 33.3 fps sensitivity arm
+
+Strict every-third-frame keeps 11% more frames than the 30.0 fps grid, and
+**every penalty is correspondingly smaller, in the same order**:
+
+| quantity | limb | 33.3 fps | 30.0 fps |
+|---|---|---|---|
+| knee flexion | near | +1.509 | +1.835 |
+| knee flexion | far | +1.597 | +1.757 |
+| hip (trunk-ref) | near | +0.539 | +0.641 |
+| hip (trunk-ref) | far | +0.594 | +0.734 |
+| thigh inclination | near | +0.310 | +0.381 |
+| thigh inclination | far | +0.462 | +0.465 |
+| trunk lean | both | -0.169 | -0.202 |
+
+All eight remain resolved, and **nothing changes sign**. A monotone
+dose-response across two independently chosen decimation rules is stronger
+evidence that this is frame rate than either rule alone.
+
+### Share of the sealed loss, if the penalty transferred unchanged
+
+`loss = sealed MAE - AthleticsPose native MAE`; `share = penalty / loss`.
+Sealed figures quoted from the pre-registration, not recomputed. **COCO arm.**
+
+| quantity | limb | AP native | sealed | loss | penalty | **share** |
+|---|---|---|---|---|---|---|
+| **knee flexion** | near | 4.032 | 8.410 | 4.378 | +1.835 | **41.9%** |
+| **knee flexion** | far | 4.076 | 8.685 | 4.609 | +1.757 | **38.1%** |
+| **hip (trunk-ref)** | near | 2.838 | 7.746 | 4.908 | +0.641 | **13.1%** |
+| **hip (trunk-ref)** | far | 3.020 | 9.257 | 6.237 | +0.734 | **11.8%** |
+| thigh inclination | far | 6.816 | 7.372 | 0.556 | +0.465 | **83.7%** |
+| thigh inclination | near | 6.532 | 5.401 | **-1.131** | +0.381 | **undefined** |
+| trunk lean | near | 5.533 | 5.158 | **-0.375** | -0.202 | **undefined** |
+| trunk lean | far | 5.533 | 5.099 | **-0.434** | -0.202 | **undefined** |
+
+**The headline: roughly 40% of the knee's cross-lab loss is frame rate alone,
+and only about 12% of the hip's.** Three of eight cells are **undefined because
+the loss is negative** — MoVi is *better* than AthleticsPose on the near thigh
+and on trunk lean, so there is no loss for the penalty to be a share of. That
+was pre-registered as the likely outcome for the thigh and is reported as
+undefined rather than as a misleading percentage.
+
+This is **if-it-transferred arithmetic, not a causal decomposition**: the
+penalty is measured on AthleticsPose running at 100 Hz and divided into a
+difference between two datasets that also differ in population, camera, marker
+convention and movement.
+
+### Secondary: sprint, on its own TRAIN subjects — and the knee penalty replicates
+
+**9 subjects, 390 clips, COCO only, penalty only.** These are subjects the
+checkpoint was **trained on**, so no absolute MAE from this arm is a baseline
+and none is quoted as one. A penalty is a difference between two arms on
+identical clips, so training familiarity affects both and largely cancels.
+
+| quantity | limb | sprint penalty (n=9) | 95% CI | running penalty (n=3) |
+|---|---|---|---|---|
+| **knee flexion** | near | **+1.905** | [+1.501, +2.344] | +1.835 |
+| **knee flexion** | far | **+1.829** | [+1.404, +2.207] | +1.757 |
+| **hip (trunk-ref)** | near | **+0.492** | [+0.274, +0.749] | +0.641 |
+| **hip (trunk-ref)** | far | **+0.635** | [+0.421, +0.867] | +0.734 |
+| thigh inclination | near | +0.033 | [-0.096, +0.171] | +0.381 |
+| thigh inclination | far | +0.228 | [+0.086, +0.363] | +0.465 |
+| trunk lean | both | +0.042 | [-0.100, +0.162] | -0.202 |
+
+**The knee and hip penalties replicate on a different movement and three times
+the subjects, with much tighter intervals** — knee +1.905 against +1.835, hip
++0.492 against +0.641. At n=9 the knee interval is [+1.501, +2.344], so the
++1.8 deg knee penalty is the most firmly established number in this phase.
+
+**The thigh and trunk penalties do NOT replicate.** The thigh's near-limb
+penalty falls to +0.033 and becomes unresolved, and **the trunk's improvement
+disappears and flips sign (+0.042, unresolved)**. So the trunk result in the
+primary table should be read as running-specific or as an n=3 artifact, **not as
+"decimation helps the trunk"** — and that caveat is the honest reading even
+though the primary interval excluded zero.
+
+### Input arms: perfect 2D is worse again, and the confidence channel costs real degrees
+
+Native-rate MAE by input, near limb:
+
+| input | knee | hip (trunk-ref) | thigh | trunk |
+|---|---|---|---|---|
+| **generic COCO detections** | **4.032** | **2.838** | 6.532 | 5.533 |
+| GT 2D, confidence at `TRAIN_CONF_MEAN` | 4.496 | 5.350 | **5.461** | **5.129** |
+| GT 2D, raw 1.0 confidence | 5.091 | 5.578 | 7.092 | 6.412 |
+
+Two things fall out:
+
+- **Ground-truth 2D is 2.5 deg WORSE than detections on the hip** (5.350 against
+  2.838) and 0.46 deg worse on the knee, on 589 tune-set clips. The hip bias
+  marches monotonically the wrong way as the input gets cleaner: **-1.243 ->
+  -2.335 -> -4.252**. This is phase 7 section 5's `CKPT_FOR` lesson and the
+  sealed test's trunk result, reproduced a third time and now on the tune set at
+  scale: **the lifter has learned its detector's error distribution, and perfect
+  2D is not an upper bound.** GT 2D does help the thigh and trunk.
+- **The confidence channel is not cosmetic.** Overwriting GT 2D's shipped
+  constant 1.0 with `TRAIN_CONF_MEAN = 0.8676` is worth **0.60 deg on the knee,
+  0.23 deg on the hip and 1.63 deg on the thigh**. The pre-registration called
+  this the same class of defect as the sealed test's 14x bug; it is the same
+  defect, two orders of magnitude smaller.
+
+### The sealed loss is a BIAS gain, not a shape loss
+
+Worth recording beside the correction appended to `results/phase15_sealed.md`.
+On AthleticsPose at native rate, COCO, near limb, the error is **not**
+offset-dominated: bias **+1.388** (knee) and **-1.243** (hip), SD 4.28 and 2.74,
+with **r = +0.990 to +0.991**. On sealed MoVi the same quantities carry bias
+**+5.446** and **-6.054**, SD ~8.7 and ~7.3, and r **+0.77 to +0.92**.
+
+So crossing to MoVi roughly **quadruples the bias and doubles the SD**. And
+within AthleticsPose, **the 30 fps penalty also acts mainly through bias** —
+knee bias +1.388 -> +2.232 while r falls only 0.991 -> 0.979. Decimation shifts
+the angle more than it blurs the trace.
+
+One oddity: **trunk lean has r = +0.764 at native rate**, far below every other
+quantity's 0.99, and it falls further with GT 2D (0.671, then 0.636 at raw 1.0).
+The trunk is the worst-tracked quantity on AthleticsPose at any frame rate and
+with any input, which is consistent with phase 15C finding the lifter's thorax
+is not a stable anatomical point.
+
+### Deviations, recorded
+
+- **D-E1 — sprint is not in the primary.** Pre-registered above, with the
+  reason: sprint and running have disjoint subject sets and `TEST_SUBJECTS`
+  appear in running only. 390 of 414 sprint clips passed `n >= 34`.
+- **D-E2 — the gravity quantities run on 231 clips, not 589, and the
+  pre-registration did not say so.** Thigh and trunk need the world markers
+  aligned to GT to recover the vertical, and only length-matched raw/gt pairs
+  qualify (phase 15C's plumbing constraint, 231 of 592). Knee and
+  trunk-referenced hip need no vertical and use all **589**. This is an omission
+  in the pre-registration, not a choice made after seeing numbers: the
+  constraint is a property of the files and was recorded in phase 15C before
+  this phase existed. Every table above can be read with the per-quantity n from
+  `results/phase15e.json` (`pooled.*.n_clips`).
+- **D-E3 — the secondary used COCO only.** The pre-registration said "the same
+  penalty on sprint" without naming input arms; COCO is the deployable one and
+  the only one the primary headline uses.
+- **D-E4 — a crash in the first smoke run, fixed before the full run.**
+  `args.out.relative_to(REPO)` raised `ValueError` for an output path outside
+  the repository — the identical defect fixed in `phase15_checks.py` in
+  `2b5b74d`, reintroduced in a brand-new file hours later. It affected only the
+  success message, after the JSON was written. No number is affected.
+
+### What surprised me
+
+1. **The knee's 30 fps penalty is large and the hip's is small** — +1.8 deg
+   against +0.7 deg, and it holds at n=9 on a different movement. Before this
+   phase I would have guessed frame rate hurt both about equally.
+2. **About 40% of the knee's cross-lab loss is frame rate**, measured with no
+   change of lab. That makes "it is a different lab" a materially worse
+   explanation of the knee gap than it looked.
+3. **Three of eight share cells are undefined because MoVi is better**, on the
+   near thigh and on trunk lean. The sealed test already showed the thigh
+   transferring without loss; this phase shows there is literally no loss to
+   decompose there.
+4. **The trunk's apparent improvement at 30 fps did not replicate** on sprint at
+   three times the subjects. A resolved CI at n=3 survived a dose-response check
+   and still failed replication, which is a useful reminder about what a
+   three-subject interval is worth.
+5. **Ground-truth 2D is worse than real detections on the hip by 2.5 deg**, now
+   on 589 tune-set clips. The third independent reproduction of that effect in
+   this project.
