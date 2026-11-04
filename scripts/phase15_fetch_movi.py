@@ -87,6 +87,24 @@ SLICE_F_DIAG = [
 ]
 DIAG_SUBJECTS = ("Subject_12", "Subject_13", "Subject_15")
 
+# The SEALED TEST set, designated in f549bfd before any of it was downloaded and
+# with its reporting fixed in 268f28b (pushed) before this slice was fetched.
+# PG1 only. These five are the next subjects in archive order that have PG1
+# video, and they have never been opened.
+SLICE_F_SEALED = [
+    (85266, "F_PG1_Subject_16_L.avi", 213.0),
+    (85241, "F_PG1_Subject_17_L.avi", 199.0),
+    (85248, "F_PG1_Subject_18_L.avi", 240.0),
+    (85244, "F_PG1_Subject_19_L.avi", 218.0),
+    (85251, "F_PG1_Subject_2_L.avi", 91.0),
+]
+SEALED_SUBJECTS = ("Subject_16", "Subject_17", "Subject_18", "Subject_19",
+                   "Subject_2")
+# Subject_2 is the 12th member in the archive's lexicographic order
+# (1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 2), so the ranged prefix has to
+# reach that far.
+SEALED_MEMBERS = 12
+
 # The round F mocap is one 1.81 GB tar, but it is SEQUENTIAL: members are laid
 # out in archive order, so a ranged GET of a prefix yields the first few without
 # transferring the rest. Subjects 1, 10 and 11 are members 1-3.
@@ -201,12 +219,20 @@ def main() -> int:
     ap.add_argument("--diagnostic", action="store_true",
                     help="fetch the DIAGNOSTIC set (Subject_12/13/15, PG1 "
                          "only) designated in commit f549bfd")
+    ap.add_argument("--sealed", action="store_true",
+                    help="fetch the SEALED TEST set (Subject_16/17/18/19/2, "
+                         "PG1 only) designated f549bfd, reporting fixed 268f28b")
     ap.add_argument("--no-mocap", action="store_true",
                     help="skip the mocap tar prefix (video only)")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
-    if args.diagnostic:
+    if args.sealed:
+        if args.round != "F":
+            raise SystemExit("--sealed is round F only")
+        slice_ = SLICE_F_SEALED
+        want_members = SEALED_MEMBERS
+    elif args.diagnostic:
         if args.round != "F":
             raise SystemExit("--diagnostic is round F only")
         slice_ = SLICE_F_DIAG

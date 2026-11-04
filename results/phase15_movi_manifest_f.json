@@ -54,28 +54,79 @@
       "sha256": "b96def3dae1394ded477312ac61e4a6a7aa4cda2a5d101939aa59d90550656a3"
     },
     {
-      "datafile_id": 85270,
-      "filename": "F_PG1_Subject_12_L.avi",
-      "bytes": 246537004,
-      "content_length_header": "246537004",
-      "sha256": "eac293ee1295876318319b618a793848119aae45b41adaacdb5be1082f0fbd9a",
-      "seconds": 6.8
+      "datafile_id": 128299,
+      "from_archive": "F_Subjects_1_45.tar",
+      "filename": "F_v3d_Subject_16.mat",
+      "bytes": 38046990,
+      "sha256": "dfd970c1ae1e7235d55b76b5ebe7793ef51bfeaf2a30c6ae3ce43ae693f86b67"
     },
     {
-      "datafile_id": 85234,
-      "filename": "F_PG1_Subject_13_L.avi",
-      "bytes": 259730648,
-      "content_length_header": "259730648",
-      "sha256": "39b426596ae69148eb73b62f3651511677d25936131446d1e4059cea2e9698f4",
-      "seconds": 7.3
+      "datafile_id": 128299,
+      "from_archive": "F_Subjects_1_45.tar",
+      "filename": "F_v3d_Subject_17.mat",
+      "bytes": 35332425,
+      "sha256": "0a57bc917e4721032e56b0d0cbc8591acb568444953eb3ceebfb5851a963cea2"
     },
     {
-      "datafile_id": 85255,
-      "filename": "F_PG1_Subject_15_L.avi",
-      "bytes": 233796266,
-      "content_length_header": "233796266",
-      "sha256": "0d8b2950415fd6e3308c44aebdac3db3ce058265dda68633a5d19e0935adb3d5",
-      "seconds": 6.3
+      "datafile_id": 128299,
+      "from_archive": "F_Subjects_1_45.tar",
+      "filename": "F_v3d_Subject_18.mat",
+      "bytes": 45087663,
+      "sha256": "ebe6ebcbbdb6c68723006f2632e0f938adfc37b7b2fe270ab01eb5d6fa939a2b"
+    },
+    {
+      "datafile_id": 128299,
+      "from_archive": "F_Subjects_1_45.tar",
+      "filename": "F_v3d_Subject_19.mat",
+      "bytes": 39453106,
+      "sha256": "d7850973b359c3fb92e04e839f1a0b7a0a8a2291439af7ea32821f2630675324"
+    },
+    {
+      "datafile_id": 128299,
+      "from_archive": "F_Subjects_1_45.tar",
+      "filename": "F_v3d_Subject_2.mat",
+      "bytes": 21881891,
+      "sha256": "77b89ad85e4d6dd8118327e0240a70f50ef44ca6e79d1e0e01d3f52ae3bb2a5f"
+    },
+    {
+      "datafile_id": 85266,
+      "filename": "F_PG1_Subject_16_L.avi",
+      "bytes": 213421484,
+      "content_length_header": "213421484",
+      "sha256": "a74cf3cc24077a4f5a2cd7a2b44a47c58e7a538472678c7f02fb60d946f47010",
+      "seconds": 6.6
+    },
+    {
+      "datafile_id": 85241,
+      "filename": "F_PG1_Subject_17_L.avi",
+      "bytes": 198728876,
+      "content_length_header": "198728876",
+      "sha256": "d0a6c9c8f87c55c691f57d7e7166b2c5082dd384343d9f28b96a5a572ae63e23",
+      "seconds": 5.0
+    },
+    {
+      "datafile_id": 85248,
+      "filename": "F_PG1_Subject_18_L.avi",
+      "bytes": 239888184,
+      "content_length_header": "239888184",
+      "sha256": "c61a1f500b5a1136a162078c4d4d6abad21664989365b530799fdd6f64773300",
+      "seconds": 6.6
+    },
+    {
+      "datafile_id": 85244,
+      "filename": "F_PG1_Subject_19_L.avi",
+      "bytes": 217645994,
+      "content_length_header": "217645994",
+      "sha256": "d301e38b04354a72204d5df03fa0815d4cae0d2027fc22d931683360de7e8b40",
+      "seconds": 5.7
+    },
+    {
+      "datafile_id": 85251,
+      "filename": "F_PG1_Subject_2_L.avi",
+      "bytes": 90588408,
+      "content_length_header": "90588408",
+      "sha256": "2904e5f40ff2bcc85e1e83785279fca5ff2e8ac32d21f8c896806fb999b179c8",
+      "seconds": 2.3
     }
   ]
 }

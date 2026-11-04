@@ -90,7 +90,11 @@ band at 18.1°, which is what validates the setup.
 
 ![recovered vs true joint angles](figures/phase6_angle_recovery.png)
 
-> ## And on a lab it has never seen, it is 9.73° — about 2.8× worse
+> ## And on a lab it has never seen, it is 8.1–9.7° — about 2.3–2.8× worse
+>
+> *The range spans two tests on the same dataset: 9.61–9.73° on two subjects that
+> had been inspected repeatedly, and **8.08° on five sealed subjects that had
+> never been opened** — the figure to read as the claim. Both are below.*
 >
 > **Phase 15 ran the frozen pipeline on BML MoVi, held out until that phase, and
 > this is a loss reported as prominently as the win above.** Side-on
@@ -121,6 +125,12 @@ band at 18.1°, which is what validates the setup.
 > with no error figure, and §7.5 stays open. And the **viewpoint curve below
 > did not replicate** on the one frontal clip measured. See
 > `results/phase15.md`.
+>
+> **These two subjects were later superseded as the headline test.** They had
+> been inspected repeatedly by the time this figure was produced. The **sealed
+> test below** ran the same frozen pipeline once on **five subjects that had
+> never been opened** and scored **8.08° combined near** — so read 9.61° as what
+> the spent subjects gave, and the sealed figure as the claim.
 
 > ### Hip and knee are not one measurement, and they disagree about which lab is hard
 >
@@ -150,9 +160,76 @@ band at 18.1°, which is what validates the setup.
 > camera path plus a convention the model does not hold fixed.** See
 > `results/phase15c.md`.
 
+> ### The sealed test: five subjects never opened, and they are not worse
+>
+> Every MoVi number above comes from subjects that were **spent** — measured,
+> inspected, and in two cases used to diagnose defects in the pipeline itself.
+> **Phase 15's sealed test is the one run on people the method had never seen.**
+> Five subjects, the pipeline pinned by **content hash** in a pre-registration
+> that was committed alone and **pushed before a single sealed byte was
+> downloaded**, run once. **All five passed every pre-registered check, so
+> nothing was excluded.** `results/phase15_sealed.md`.
+>
+> | quantity | limb | sealed (n=5) | 95% CI | spent subjects (n=4) |
+> |---|---|---|---|---|
+> | **knee flexion** | near | **8.41°** | [6.28, 10.98] | 9.27° |
+> | **knee flexion** | far | **8.69°** | [6.55, 10.68] | 9.73° |
+> | **thigh inclination** (gravity) | near | **5.40°** | [4.14, 6.84] | 6.28° |
+> | **thigh inclination** (gravity) | far | **7.37°** | [5.46, 9.26] | 6.49° |
+> | hip (trunk-referenced) | near | **7.75°** | [6.30, 8.93] | 12.27° |
+> | combined hip+knee | near | **8.08°** | [6.42, 9.67] | 10.77° |
+>
+> **Three of the four primary figures are lower than on the spent subjects**, and
+> every CI contains the figure it is compared against. These are different
+> people, so no paired test exists — the honest reading is **indistinguishable,
+> not better.** What it rules out is the thing it was built to catch: that the
+> MoVi loss was an artifact of four over-inspected subjects.
+>
+> **The quantity that failed the tune-set gate is the one that transfers.** Phase
+> 15D's G1 rejected gravity-referenced thigh inclination at 6.69° against a
+> 4.12° bar on AthleticsPose. On held-out MoVi it scores **5.40° near — better
+> than on the tune set**, while the knee degrades 2.07× and the hip 2.73×.
+> Gravity is a reference the model does not have to infer; the pelvis→thorax
+> axis is one it re-invents per dataset. **A gate set on the tune set was
+> confidently wrong about which measurement was good, and only held-out data
+> could show that.**
+>
+> **The error is a per-subject offset, not noise.** Across five subjects MAE
+> tracks `|bias|` at **r = 0.983** (knee), while the waveform shape is tracked
+> well on everyone — knee r **+0.77 to +0.92**. One subject is nearly unbiased
+> (+0.56°, 5.13° MAE); another carries +12.1°. The camera cannot explain it: the
+> level-camera error is −1.4° to −1.9° on all five.
+>
+> **The hip's error is a posture term, not a convention offset.** Phase 15
+> saw −7.2° against −3.3° on two subjects; five more extend it to a smooth
+> **−2.92° to −8.23°** spread. The hip is also the one quantity whose intervals
+> **do not overlap** the spent subjects' — 7.75° against 12.27°. **The quantity
+> phase 15C called least transferable improved most on people it had never
+> seen**, because four subjects were not enough to see its spread.
+>
+> **A far-limb penalty, resolved for the first time in this project** — and only
+> for quantities referenced to an external axis. Paired per subject, CI
+> excluding zero, same sign on all five: **thigh +1.97° [+0.98, +3.19]** and
+> **hip +1.51° [+0.61, +2.53]**. The knee shows none (+0.28°, CI spans zero),
+> which is what its structure implies: it is a difference of two angles inside
+> one frame, so an occluded-limb depth error largely cancels. The
+> never-pool-near-and-far rule is the only reason this was visible.
+>
+> **And perfect 2D is still not an upper bound.** Feeding the lifter the
+> reference 3D projected through the camera's own calibration is **worse on the
+> trunk for all five subjects** (−2.5° to −4.6°) and worse on the near hip for
+> four of five. The knee's detector share spans **11.4° and changes sign**
+> (−2.46° to +8.92°). The thigh is the sole exception — positive on all five,
+> **the only quantity here for which "a better detector would help" is
+> measured rather than assumed.**
+
 Two findings make the camera path *better* than expected:
 
-- **The far-limb occlusion penalty is ~0** and does not grow with viewing angle.
+- **The far-limb occlusion penalty is ~0** for the *joint* angles, and does not
+  grow with viewing angle. **Qualified by the sealed test above:** that holds for
+  the knee (+0.28°, CI spans zero), but quantities referenced to an *external*
+  axis do carry a resolved penalty — thigh +1.97°, hip +1.51°, both CIs
+  excluding zero on five held-out subjects.
   Originally +0.07° *extrapolated*; **phase 11 measured it** on an independent
   lab's four calibrated cameras, where sagittal error falls **3.50° → 1.77°**
   monotonically as the view becomes side-on. It shrinks rather than grows.
