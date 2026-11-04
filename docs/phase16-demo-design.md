@@ -135,10 +135,38 @@ quantities that **mean the same thing in two different labs**:
   (`results/phase15f.md`), confirming the sealed test's near-limb finding on
   nearly four times the subjects.
 
-**Near and far limb are always shown separately, never averaged.** The sealed
-test measured a far-limb penalty with an interval excluding zero and the same
-sign on all five subjects — **thigh +1.971° [+0.977, +3.187]** — so an average
-would hide a real asymmetry.
+**Legs are labelled LEFT and RIGHT, never averaged.** The detector
+distinguishes left from right unambiguously, so both legs always get their own
+trace and their own numbers. An average would hide a real asymmetry: the sealed
+test measured a far-limb thigh penalty of **+1.971° [+0.977, +3.187]**, same
+sign on all five subjects.
+
+> ### `[M1]` The demo does NOT claim which leg is near the camera
+>
+> **Found while building M1, and it changes what the report can say.** The
+> sealed test used the **camera** to decide which limb was nearer. The demo has
+> no calibration — that is the point of it — so it must infer the near limb
+> from the lifted 3D's hip depth. **Measured on all 11 spent MoVi PG1 subjects
+> (`scripts/phase16a_nearlimb.py`, `results/phase16a_nearlimb.json`): that
+> inference is correct on 9 of 11.**
+>
+> Worse, **no available signal separates the hits from the misses**, so the demo
+> cannot even flag when it is unsure:
+>
+> | separator | agreeing subjects | disagreeing subjects | separates? |
+> |---|---|---|---|
+> | estimated hip depth separation / width | min **0.0354** | max **0.0549** | **no — overlapping, and inverted** |
+> | per-frame sign consistency | min 0.476 | max 0.688 | **no — inverted** |
+> | ground-truth `view_ratio` | 0.554 agrees | 0.665 fails | **no** |
+>
+> Phase 14's *"the near limb is identifiable from the estimate alone, 592 of 592
+> clips"* was measured on **AthleticsPose** and does not transfer. Phase 14's
+> azimuth proxy cannot rescue it either: it recovers `|cos θ|`, a **magnitude**,
+> so it gives how side-on the view is and **not which side faces the camera**.
+>
+> **So `near_limb` is not exposed.** `AnalysisResult.near_limb` raises; the
+> value survives as `near_limb_estimate`, documented as 9/11 and used for
+> nothing user-facing. The consequence for the budget is in §3.
 
 ### EXPERIMENTAL — shown, labelled, with its bias stated
 
@@ -291,6 +319,24 @@ That is the whole reason §4 warns below 50.
 the label:
 
 > **Expected error: measured on held-out lab footage at 30 fps.**
+
+> ### `[M1]` And it is Row B's **FAR** column, for both legs
+>
+> Because the demo cannot tell which leg is nearer the camera (§2), it cannot
+> know which of Row B's two columns applies to which leg. **It therefore quotes
+> the far-limb figures for both legs**, which is the worse of the two and so
+> cannot understate the error:
+>
+> | quantity | quoted for BOTH legs | (the near column, not used) |
+> |---|---|---|
+> | **knee flexion** | **8.69°** [6.552, 10.679] | 8.41° |
+> | **thigh inclination** | **7.37°** [5.456, 9.258] | 5.40° |
+>
+> This costs real precision and the report says so: the thigh's stated error
+> rises from 5.40° to **7.37°, a 36% increase**, purely because there is no
+> calibration to identify the limbs. **That is the honest price of a phone
+> instead of a lab**, and it is quoted rather than hidden. `budget_limb()`
+> returns `"far"` and an M4 test asserts it.
 
 **Rows B and C are never added, subtracted, scaled or combined in any way.**
 The first draft of this document said the app would show "Row B plus the Row C
@@ -616,9 +662,11 @@ this project with the runner's consent.
     acceleration, not a sprint start. Row B was measured on **jogging**.
 12. The runner should cross the full frame, ideally more than once, giving
     several complete strides per pass.
-13. Film **both directions** (left side to camera, then right side), so each leg
-    gets a turn as the near limb — the far limb carries a measured **+1.97°**
-    penalty on the thigh.
+13. Film **both directions** (left side to camera, then right side). The far
+    limb carries a measured **+1.97°** thigh penalty, and `[M1]` the analyzer
+    **cannot tell which leg is which**, so filming both ways means neither leg
+    is always the far one across your clips. Compare a leg against *itself* in
+    the two passes, not against the other leg in one pass.
 
 ### What the report will say about this footage
 
@@ -732,10 +780,10 @@ alone, and assume the measured pipeline is reused rather than reimplemented.
 | # | milestone | deliverable | test | estimate |
 |---|---|---|---|---|
 | **M0** | **Design approved** | this document | approved by the operator; sections 2, 3, 5, 9 reviewed | done |
-| **M1** | **Processing path extracted** | `overstride/analyze.py` — stages 1, 3, **3b**, 4–8 of §5, importing the frozen functions, no new maths | **the §6 regression test**: `Subject_17` reproduces knee 5.130°, thigh 3.274°, near limb LEFT, 221/221 detected, `atol 1e-3`; plus `Subject_2` at the other extreme. **`[A1]` plus two resize tests:** (a) the resize is applied and the detector's `min_size` is 600 for inputs at 800×600, 1280×720 and 1920×1080; (b) a 1080p clip completes within the §5 re-estimate — asserted as a per-frame ceiling of **900 ms/frame**, 1.3× the measured 680, so the test fails on a regression but not on machine noise | **1 day** |
+| **M1** | **Processing path extracted — DONE** | `overstride/analyze.py` + `overstride/preprocess.py` — stages 1, 3, **3b**, 4–8 of §5, importing the frozen functions, no new maths | **the §6 regression test**: `Subject_17` reproduces knee 5.130°, thigh 3.274°, near limb LEFT, 221/221 detected, `atol 1e-3`; plus `Subject_2` at the other extreme. **`[A1]` plus two resize tests:** (a) the resize is applied and the detector's `min_size` is 600 for inputs at 800×600, 1280×720 and 1920×1080; (b) a 1080p clip completes within the §5 re-estimate — asserted as a per-frame ceiling of **900 ms/frame**, 1.3× the measured 680, so the test fails on a regression but not on machine noise | **1 day** |
 | **M2** | **Input checks** | `overstride/checks.py` — the five checks in §4 with their measured thresholds, returning pass/warn/refuse | unit tests per check with synthetic inputs at each threshold boundary; a frontal-view fixture (`view_ratio` ≈ 0.06, from the measured standing geometry) must **refuse**; a 30 fps clip must **warn** and still process | **0.5 day** |
 | **M3** | **Stride segmentation** | heel-strike detection → per-stride averages and a stride count | **this is new code and the only unmeasured component.** Test: on a sealed MoVi clip the detected stride count matches a manually counted ground truth within ±1, on 3 clips; and per-stride knee peaks have a CV below the across-subject spread. **If it fails, the demo ships per-frame traces only** — stride averaging is a convenience, not part of the budget | **1 day** |
-| **M4** | **Error-budget renderer** | §3's three rows as data, not prose: a table keyed by quantity × limb × frame rate, with source file and conditions per cell | a test asserts every displayed number is present in the source JSON it cites (`phase15_sealed.json`, `phase15e.json`, `phase15f.json`) — **no number may be hardcoded without a matching source**; and that an unmeasured condition renders the word "UNMEASURED". **`[A2]` plus the no-combination test:** for a 60 fps clip the rendered expected error must equal a Row B value **exactly**, and must not equal any Row B ± Row C arithmetic combination; Row A must be labelled "best case, in-domain" `[A3]`; and the word UNMEASURED must appear for the above-30-fps case | **0.5 day** |
+| **M4** | **Error-budget renderer** | §3's three rows as data, not prose: a table keyed by quantity × limb × frame rate, with source file and conditions per cell. **`[M1]` the renderer must select the FAR column for both legs** | a test asserts every displayed number is present in the source JSON it cites (`phase15_sealed.json`, `phase15e.json`, `phase15f.json`) — **no number may be hardcoded without a matching source**; and that an unmeasured condition renders the word "UNMEASURED". **`[A2]` plus the no-combination test:** for a 60 fps clip the rendered expected error must equal a Row B value **exactly**, and must not equal any Row B ± Row C arithmetic combination; Row A must be labelled "best case, in-domain" `[A3]`; and the word UNMEASURED must appear for the above-30-fps case | **0.5 day** |
 | **M5** | **HTML report** | one self-contained `.html`: overlay strip, per-frame traces, stride table, budget, viewpoint-quality badge, attribution footer | the output contains no `http://` or `https://` resource reference except the attribution citations; it opens with JavaScript disabled; the file is under 25 MB for a 15 s clip | **1.5 days** |
 | **M6** | **Vocabulary and output guard** | CI check over UI strings, templates, exports and docstrings | greps for **"risk"**, **"predict"**, "injury", "diagnos", "abnormal", "asymmetry index", "normal range" and **fails the build** on a hit. **`[A4]` asserts `report.html` contains NO hip trace at all** — no hip series, no hip axis label, no hip summary cell — and that a hip trace appears only in a `--debug` file that a normal run does not produce | **0.5 day** |
 | **M7** | **Film and run on own footage** | 2–3 consented clips per §7, processed end to end | **`[A5]`** the analyzer's checks pass on at least one clip with **`view_ratio` ≥ 0.50** (the §4 pass threshold, which the full measured MoVi range [0.536, 0.720] clears); the resize to short side 600 is confirmed applied; processing time recorded against §5's re-estimated **~5.7 min for an 8 s window**; **this closes `docs/REVIEW.md` §7.5's substance** — the first real phone footage through this tool | **0.5 day** + filming |
@@ -748,3 +796,33 @@ fallback that does not block the demo.
 **Ordering constraint:** M1 must pass its regression test before anything is
 rendered. A demo that shows numbers the sealed test cannot reproduce is worse
 than no demo, which is the lesson phase 6 was redefined around.
+
+---
+
+## M1 — complete, 2026-11-04
+
+`overstride/analyze.py`, `overstride/preprocess.py`,
+`tests/test_demo_regression.py`. **13 tests, all passing; 115 in the suite.**
+
+| assertion | result |
+|---|---|
+| Subject_17 left leg, knee flexion MAE | **5.130°** == committed, `atol 1e-3` |
+| Subject_17 left leg, thigh inclination MAE | **3.274°** == committed |
+| Subject_2 left leg, knee flexion MAE | **12.964°** == committed |
+| Subject_2 left leg, thigh inclination MAE | **8.032°** == committed |
+| frame count / detection | 221/221 and 157/157, unchanged |
+| resize applied, detector `min_size` | **600** for 800×600, 1280×720, 1920×1080, 640×480, 1080×1920 |
+| resize is identity at 800×600 | byte-identical — so adding it changed no measured number |
+| 1080p clip, after resize | **passed the 900 ms/frame ceiling** |
+| aspect ratio preserved | within 0.01 |
+
+**The regression test earned its place immediately:** it failed on first run,
+on Subject_2, and the failure was the near-limb claim rather than an angle —
+which is what produced the §2 and §3 findings above. A test that only ever
+passes would not have found it.
+
+**Deviation from the design, recorded:** the test asserts **left/right**, not
+near/far, mapping the sealed near/far columns through the sealed result's own
+`near_limb` field. The first draft of §6 specified "near limb LEFT" as an
+assertion; that assertion is **wrong to make of the demo**, because the demo
+cannot determine it.

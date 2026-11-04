@@ -51,5 +51,10 @@ torchvision = { index = "pytorch-cpu" }
 [dependency-groups]
 dev = ["pytest>=8.0"]
 
+[tool.pytest.ini_options]
+markers = [
+    "slow: runs the real detector on real frames; minutes, not seconds",
+]
+
 [tool.ruff]
 line-length = 100

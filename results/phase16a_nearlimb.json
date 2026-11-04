@@ -1,0 +1,131 @@
+{
+  "what": "Can the demo identify the near limb from video alone? Estimated-3D hip depth against the camera-derived truth, 11 spent MoVi PG1 subjects.",
+  "why": "the error budget reports near and far separately and they differ by a measured +1.971 deg on the thigh; mislabelling shows the user the wrong row",
+  "azimuth_proxy_cannot_help": "it recovers |cos(theta)|, a magnitude, so it gives how side-on the view is and not which side faces the camera",
+  "camera": "PG1",
+  "summary": {
+    "n_subjects": 11,
+    "n_agree": 9,
+    "agreement_fraction": 0.818,
+    "est_sep_over_width": {
+      "agree_min": 0.0354,
+      "disagree_max": 0.0549
+    },
+    "per_frame_sign_consistency": {
+      "agree_min": 0.476,
+      "disagree_max": 0.688
+    }
+  },
+  "subjects": [
+    {
+      "subject": "Subject_1",
+      "gt_near": "l",
+      "est_near": "l",
+      "agree": true,
+      "gt_view_ratio": 0.7185,
+      "est_depth_sep_over_width": 0.0354,
+      "per_frame_sign_consistency": 0.476,
+      "n_frames": 206
+    },
+    {
+      "subject": "Subject_10",
+      "gt_near": "l",
+      "est_near": "l",
+      "agree": true,
+      "gt_view_ratio": 0.7031,
+      "est_depth_sep_over_width": 0.2563,
+      "per_frame_sign_consistency": 0.646,
+      "n_frames": 243
+    },
+    {
+      "subject": "Subject_11",
+      "gt_near": "l",
+      "est_near": "r",
+      "agree": false,
+      "gt_view_ratio": 0.6651,
+      "est_depth_sep_over_width": 0.0549,
+      "per_frame_sign_consistency": 0.583,
+      "n_frames": 441
+    },
+    {
+      "subject": "Subject_12",
+      "gt_near": "l",
+      "est_near": "l",
+      "agree": true,
+      "gt_view_ratio": 0.6796,
+      "est_depth_sep_over_width": 0.0402,
+      "per_frame_sign_consistency": 0.479,
+      "n_frames": 432
+    },
+    {
+      "subject": "Subject_13",
+      "gt_near": "r",
+      "est_near": "r",
+      "agree": true,
+      "gt_view_ratio": 0.6671,
+      "est_depth_sep_over_width": 0.2221,
+      "per_frame_sign_consistency": 0.647,
+      "n_frames": 275
+    },
+    {
+      "subject": "Subject_15",
+      "gt_near": "r",
+      "est_near": "r",
+      "agree": true,
+      "gt_view_ratio": 0.7002,
+      "est_depth_sep_over_width": 0.1627,
+      "per_frame_sign_consistency": 0.66,
+      "n_frames": 241
+    },
+    {
+      "subject": "Subject_16",
+      "gt_near": "l",
+      "est_near": "l",
+      "agree": true,
+      "gt_view_ratio": 0.6081,
+      "est_depth_sep_over_width": 0.0611,
+      "per_frame_sign_consistency": 0.546,
+      "n_frames": 227
+    },
+    {
+      "subject": "Subject_17",
+      "gt_near": "l",
+      "est_near": "l",
+      "agree": true,
+      "gt_view_ratio": 0.696,
+      "est_depth_sep_over_width": 0.0706,
+      "per_frame_sign_consistency": 0.525,
+      "n_frames": 221
+    },
+    {
+      "subject": "Subject_18",
+      "gt_near": "l",
+      "est_near": "l",
+      "agree": true,
+      "gt_view_ratio": 0.5542,
+      "est_depth_sep_over_width": 0.0948,
+      "per_frame_sign_consistency": 0.495,
+      "n_frames": 279
+    },
+    {
+      "subject": "Subject_19",
+      "gt_near": "l",
+      "est_near": "l",
+      "agree": true,
+      "gt_view_ratio": 0.6591,
+      "est_depth_sep_over_width": 0.0647,
+      "per_frame_sign_consistency": 0.529,
+      "n_frames": 238
+    },
+    {
+      "subject": "Subject_2",
+      "gt_near": "l",
+      "est_near": "r",
+      "agree": false,
+      "gt_view_ratio": 0.5367,
+      "est_depth_sep_over_width": 0.0307,
+      "per_frame_sign_consistency": 0.688,
+      "n_frames": 157
+    }
+  ]
+}
