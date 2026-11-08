@@ -10,7 +10,10 @@
 #
 # Run detached; it exits once both files are present.
 
-cd /c/Users/alvin/Overstride_V2 || exit 1
+# Resolve the repository root from this script's own location, so the
+# script runs from any checkout and carries no one's home directory.
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO" || exit 1
 PY=.venv/Scripts/python.exe
 DEST=data/athletepose3d
 INTERVAL=600          # 10 minutes
