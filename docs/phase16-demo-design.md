@@ -893,7 +893,7 @@ alone, and assume the measured pipeline is reused rather than reimplemented.
 | **M1** | **Processing path extracted — DONE** | `overstride/analyze.py` + `overstride/preprocess.py` — stages 1, 3, **3b**, 4–8 of §5, importing the frozen functions, no new maths | **the §6 regression test**: `Subject_17` reproduces knee 5.130°, thigh 3.274° on the **left leg**, 221/221 detected, `atol 1e-3`; plus `Subject_2` at the other extreme. *(The first draft said "near limb LEFT"; see the M1 results below — that assertion is wrong to make of the demo, which cannot determine the near limb.)* **`[A1]` plus two resize tests:** (a) the resize is applied and the detector's `min_size` is 600 for inputs at 800×600, 1280×720 and 1920×1080; (b) a 1080p clip completes within the §5 re-estimate — asserted as a per-frame ceiling of **900 ms/frame**, 1.3× the measured 680, so the test fails on a regression but not on machine noise | **1 day** |
 | **M2** | **Input checks — DONE** | `overstride/checks.py` — the five checks in §4 with their measured thresholds, returning pass/warn/refuse | unit tests per check with synthetic inputs at each threshold boundary; a frontal-view fixture (GT `view_ratio` ≈ 0.06, about 0.20 estimated) must **refuse**; a 30 fps clip must **warn** and still process; **`[M2]` and the bars must be in ESTIMATE units**, with a test that Row B's own footage (estimated [0.633, 0.887]) all passes | **0.5 day** |
 | **M3** | **Stride segmentation — DONE, and its count bar was NOT met** | `overstride/strides.py` — gait cycles bounded at **peak swing-phase knee flexion**, not heel strike `[M3]`; per-stride averages and a cycle count | **this is new code and the only unmeasured component.** Test: on a sealed MoVi clip the detected stride count matches a manually counted ground truth within ±1, on 3 clips; and per-stride knee peaks have a CV below the across-subject spread. **If it fails, the demo ships per-frame traces only** — stride averaging is a convenience, not part of the budget | **1 day** |
-| **M4** | **Error-budget renderer** | §3's three rows as data, not prose: a table keyed by quantity × limb × frame rate, with source file and conditions per cell. **`[M1]` the renderer must select the FAR column for both legs** | a test asserts every displayed number is present in the source JSON it cites (`phase15_sealed.json`, `phase15e.json`, `phase15f.json`) — **no number may be hardcoded without a matching source**; and that an unmeasured condition renders the word "UNMEASURED". **`[A2]` plus the no-combination test:** for a 60 fps clip the rendered expected error must equal a Row B value **exactly**, and must not equal any Row B ± Row C arithmetic combination; Row A must be labelled "best case, in-domain" `[A3]`; and the word UNMEASURED must appear for the above-30-fps case | **0.5 day** |
+| **M4** | **Error-budget renderer — DONE** | §3's three rows as data, not prose: a table keyed by quantity × limb × frame rate, with source file and conditions per cell. **`[M1]` the renderer must select the FAR column for both legs** | a test asserts every displayed number is present in the source JSON it cites (`phase15_sealed.json`, `phase15e.json`, `phase15f.json`) — **no number may be hardcoded without a matching source**; and that an unmeasured condition renders the word "UNMEASURED". **`[A2]` plus the no-combination test:** for a 60 fps clip the rendered expected error must equal a Row B value **exactly**, and must not equal any Row B ± Row C arithmetic combination; Row A must be labelled "best case, in-domain" `[A3]`; and the word UNMEASURED must appear for the above-30-fps case | **0.5 day** |
 | **M5** | **HTML report** | one self-contained `.html`: overlay strip, per-frame traces, stride table, budget, viewpoint-quality badge, attribution footer | the output contains no `http://` or `https://` resource reference except the attribution citations; it opens with JavaScript disabled; the file is under 25 MB for a 15 s clip | **1.5 days** |
 | **M6** | **Vocabulary and output guard** | CI check over UI strings, templates, exports and docstrings | greps for **"risk"**, **"predict"**, "injury", "diagnos", "abnormal", "asymmetry index", "normal range" and **fails the build** on a hit. **`[A4]` asserts `report.html` contains NO hip trace at all** — no hip series, no hip axis label, no hip summary cell — and that a hip trace appears only in a `--debug` file that a normal run does not produce | **0.5 day** |
 | **M7** | **Film and run on own footage** | 2–3 consented clips per §7, processed end to end | **`[A5]`** the analyzer's checks pass on at least one clip with **`view_ratio` ≥ 0.50** (the §4 pass threshold, which the full measured MoVi range [0.536, 0.720] clears); the resize to short side 600 is confirmed applied; processing time recorded against §5's re-estimated **~5.7 min for an 8 s window**; **this closes `docs/REVIEW.md` §7.5's substance** — the first real phone footage through this tool | **0.5 day** + filming |
@@ -1053,3 +1053,71 @@ with the ground-truth-free left/right agreement above as the independent
 criterion. `scripts/phase16a_strides.py` also prints a text trace of the mocap
 knee signal for each scored clip, so the cycles remain hand-countable from the
 log.
+
+
+---
+
+## M4 — complete, 2026-11-08
+
+`overstride/budget.py`, `tests/test_budget.py`. **25 tests passing; 260 in the
+suite.**
+
+### No number is written down
+
+Every cell carries its source file *and a JSON pointer into it*, and reads its
+value out of the committed result at load time. A figure therefore cannot
+drift away from the measurement that produced it: change the result file and
+the report changes with it.
+
+**Two tests, because one is not enough.** Resolving the pointer proves the path
+exists; it does not prove the module reads it. So a second test copies the
+three result files to a temp directory, adds 1.0° to the sealed knee figure,
+loads the budget from there, and asserts the rendered value moved. A hardcoded
+number would survive the first test and fail the second.
+
+| row | cells | source |
+|---|---|---|
+| **A** — best case, in-domain, 100 Hz `[A3]` | 6 | `results/phase15e.json` `pooled/coco_det\|native/…` |
+| **B** — held-out lab footage at 30 fps | 6 | `results/phase15_sealed.json` `pooled/detected/…` |
+| **C** — frame-rate penalties, tune set | 18 (3 rates × 3 quantities × 2 limbs) | `results/phase15e.json`, `results/phase15f.json` |
+
+A missing **file** now raises `MissingSource`; a missing **path inside** an
+existing file yields a missing cell that renders `UNMEASURED`. Those were the
+same code path until the test caught it — a deleted result file silently
+produced an *empty* budget rather than refusing.
+
+### `[A2]` B and C are never combined — enforced by provenance
+
+The first implementation checked this numerically: is the displayed value
+within 5e-3 of any Row B ± Row C sum? **That cannot work at this density.**
+6 Row B values × 18 Row C penalties × 6 multipliers is 648 candidate sums, and
+one of them lands on the legitimate thigh figure **5.4008°** by coincidence —
+a birthday-paradox false positive, not a combination.
+
+So the rule is **provenance, not arithmetic**: a displayed expected error must
+be **bit-identical** to exactly one Row B cell (`quoted_from`). Nothing added
+to, scaled or interpolated from Row B can satisfy that, and coincidence cannot
+trip it. The numeric check is kept as a secondary net, applied only after
+provenance. Both are asserted over every quote the report can make, at
+25/30/30.009/50/60/120 fps.
+
+A 60 fps clip therefore gets **Row B unchanged** plus the words *"your clip is
+faster than the footage this was measured on; the effect of that is
+UNMEASURED on new footage, and the number above is NOT adjusted downward."*
+A slower clip gets the mirror of it, also unadjusted.
+
+### What else is asserted
+
+* **`[M1]`** each leg gets its own column from `--near-side`: the near leg
+  Row B's near column, the far leg its far column — and that the gap the flag
+  buys back is the measured 36% on the thigh.
+* **`[A4]`** no cell, label or source path anywhere in the budget mentions the
+  hip.
+* **`[A3]`** Row A is labelled *"best case: in-domain lab data at 100 Hz"* and
+  every Row A cell's conditions say "fine-tuned".
+* Row C's conditions say **"IN-DOMAIN on the tune set"** on every cell.
+* The four unmeasured conditions print verbatim, carrying `UNMEASURED` and the
+  sentence *"Row C must not be used to adjust it."*
+* Row B's two measured caveats travel with it: the error is largely a
+  per-subject offset but **not a removable one** (17% / 11% under an oracle
+  correction), and the **shape** is tracked well (knee r +0.77 to +0.92).
