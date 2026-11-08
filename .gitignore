@@ -86,6 +86,9 @@ Thumbs.db
 !results/**
 !figures/**
 !docs/**
+# Project-wide Claude Code settings. Shared deliberately: it is what keeps
+# attribution trailers out of this repository's commit messages.
+!.claude/settings.json
 
 # Playwright MCP review artefacts -- screenshots taken while designing the
 # report. Not part of the project.

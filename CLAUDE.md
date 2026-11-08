@@ -562,6 +562,10 @@ For phases 12–16, the report replaces the classifier items above with:
 
 ## Conventions
 
+- **No Co-Authored-By or other attribution trailers in commit messages.**
+  Every commit here is authored by the repository owner alone. Enforced by
+  `.claude/settings.json`'s `attribution` block; this line is the statement
+  of intent the setting implements.
 - Python 3.11+, `uv` for dependency management
 - scikit-learn for phases 1–2. Do not reach for deep learning on ~1,400
   subjects with tabular-ish features; it will overfit and it will not be
