@@ -32,11 +32,23 @@ REPO = Path(__file__).resolve().parents[1]
 if str(REPO / "scripts") not in sys.path:
     sys.path.insert(0, str(REPO / "scripts"))
 
-from phase15b_conventions import lift_2d  # noqa: E402
 from phase15d_segments import segment_angles  # noqa: E402
 from phase3_angles import H36M  # noqa: E402
-from video_kinematics import (coco17_to_h36m17, detect_coco17,  # noqa: E402
-                              scores_to_train_scale)
+
+# `phase15b_conventions` and `video_kinematics` reach the AthleticsPose
+# package, which is vendored under the gitignored `data/` and so is absent
+# from a clean checkout. They are imported inside `analyze_frames` rather than
+# here, so that `AnalysisResult`, `EST_UP` and the constants below -- a
+# dataclass and some numbers -- do not require the lifter, torch or a
+# third-party checkout to import. The frozen scripts themselves are untouched:
+# they are pinned by content hash for the sealed test's provenance.
+
+
+def _pipeline():
+    from phase15b_conventions import lift_2d
+    from video_kinematics import (coco17_to_h36m17, detect_coco17,
+                                  scores_to_train_scale)
+    return lift_2d, coco17_to_h36m17, detect_coco17, scores_to_train_scale
 
 from overstride.nearside import (MIRRORING_NOTICE,  # noqa: E402
                                   TravelSuggestion, normalize_side,
@@ -153,6 +165,8 @@ def analyze_frames(frames, fps: float, lifter, near_side: str,
     (None lets `detect_coco17` build it). The two models are separate and are
     passed separately, deliberately.
     """
+    (lift_2d, coco17_to_h36m17, detect_coco17,
+     scores_to_train_scale) = _pipeline()
     near = normalize_side(near_side)
     frames = list(frames)
     if not frames:

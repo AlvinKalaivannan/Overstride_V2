@@ -38,9 +38,16 @@ sys.path.insert(0, str(AP / "repo"))
 sys.path.insert(0, str(REPO / "scripts"))
 
 from phase3_angles import H36M, sagittal_angles  # noqa: E402
-from phase3_infer import DATA, load_model  # noqa: E402
-from phase7_inference_fix import CKPT_FOR, clip_list, lift  # noqa: E402
-from phase12_scan import SEED, subject_bootstrap_ci  # noqa: E402
+# These three reach the AthleticsPose package, which is vendored under the
+# gitignored `data/` and so is absent from a clean checkout. Every name they
+# provide is used inside a function, never at module scope, so they are
+# imported there instead. `azimuth_proxy` and `R_POP` below then import with
+# nothing but numpy -- which is what lets the demo's viewpoint check, and its
+# tests, run in CI. No function body is changed and no number moves.
+#
+#   from phase3_infer import DATA, load_model
+#   from phase7_inference_fix import CKPT_FOR, clip_list, lift
+#   from phase12_scan import SEED, subject_bootstrap_ci
 
 FRAMES = REPO / "data" / "derived" / "phase14_frames.npz"
 OUT = REPO / "results" / "phase14_confidence.json"
@@ -227,6 +234,10 @@ def features_from_video(det2d: np.ndarray, est: np.ndarray,
 
 # ---------------------------------------------------------------- extraction --
 def extract(limit: int | None) -> dict:
+    from phase12_scan import SEED  # noqa: F401
+    from phase3_infer import DATA, load_model
+    from phase7_inference_fix import CKPT_FOR, clip_list, lift
+
     """One pass over the held-out clips, saving per-frame rows."""
     from phase11_viewpoint import view_ratio  # GT-based VALIDATOR, not an input
 
@@ -320,6 +331,7 @@ def fit_oof(X: np.ndarray, y: np.ndarray, groups: np.ndarray) -> np.ndarray:
 
 def spearman_by_subject(stated: np.ndarray, realized: np.ndarray,
                         subject: np.ndarray) -> dict:
+    from phase12_scan import subject_bootstrap_ci
     """Within subject, then averaged. Pooling would let between-subject
     differences in overall error pose as within-clip ranking skill."""
     from scipy.stats import spearmanr
@@ -371,6 +383,8 @@ def calibration(stated: np.ndarray, realized: np.ndarray,
 
 
 def fit_and_score() -> dict:
+    from phase12_scan import SEED
+
     if not FRAMES.exists():
         raise SystemExit(f"missing {FRAMES.relative_to(REPO)} -- run --stage extract")
     z = np.load(FRAMES, allow_pickle=False)

@@ -59,8 +59,15 @@ sys.path.insert(0, str(REPO / "data" / "athleticspose" / "repo"))
 sys.path.insert(0, str(REPO / "scripts"))
 
 from phase3_angles import H36M  # noqa: E402
-from phase3_infer import load_model  # noqa: E402
-from phase11_lifter_transfer import CKPT, JOINTS, clip_mae  # noqa: E402
+# These two reach the AthleticsPose package, which is vendored under the
+# gitignored `data/` and so is absent from a clean checkout. Every name they
+# provide is used only inside `main()`, so they are imported there. That keeps
+# `view_ratio` -- the metric `phase15_checks` imports, and therefore the whole
+# of phase 15's check suite -- importable with nothing but numpy. No function
+# body changes and no number moves.
+#
+#   from phase3_infer import load_model
+#   from phase11_lifter_transfer import CKPT, JOINTS, clip_mae
 
 AP3D_ZIP = REPO / "data" / "athletepose3d" / "pose_3d.zip"
 CLIP_INDEX = REPO / "data" / "derived" / "ap3d_clip_index.json"
@@ -90,6 +97,9 @@ def camera_azimuths() -> dict[str, float]:
 
 
 def main() -> int:
+    from phase11_lifter_transfer import CKPT, JOINTS, clip_mae
+    from phase3_infer import load_model
+
     for p in (AP3D_ZIP, CLIP_INDEX, CAM):
         if not p.exists():
             print(f"ERROR: {p} missing")
