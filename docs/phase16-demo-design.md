@@ -892,7 +892,7 @@ alone, and assume the measured pipeline is reused rather than reimplemented.
 | **M0** | **Design approved** | this document | approved by the operator; sections 2, 3, 5, 9 reviewed | done |
 | **M1** | **Processing path extracted — DONE** | `overstride/analyze.py` + `overstride/preprocess.py` — stages 1, 3, **3b**, 4–8 of §5, importing the frozen functions, no new maths | **the §6 regression test**: `Subject_17` reproduces knee 5.130°, thigh 3.274° on the **left leg**, 221/221 detected, `atol 1e-3`; plus `Subject_2` at the other extreme. *(The first draft said "near limb LEFT"; see the M1 results below — that assertion is wrong to make of the demo, which cannot determine the near limb.)* **`[A1]` plus two resize tests:** (a) the resize is applied and the detector's `min_size` is 600 for inputs at 800×600, 1280×720 and 1920×1080; (b) a 1080p clip completes within the §5 re-estimate — asserted as a per-frame ceiling of **900 ms/frame**, 1.3× the measured 680, so the test fails on a regression but not on machine noise | **1 day** |
 | **M2** | **Input checks — DONE** | `overstride/checks.py` — the five checks in §4 with their measured thresholds, returning pass/warn/refuse | unit tests per check with synthetic inputs at each threshold boundary; a frontal-view fixture (GT `view_ratio` ≈ 0.06, about 0.20 estimated) must **refuse**; a 30 fps clip must **warn** and still process; **`[M2]` and the bars must be in ESTIMATE units**, with a test that Row B's own footage (estimated [0.633, 0.887]) all passes | **0.5 day** |
-| **M3** | **Stride segmentation** | heel-strike detection → per-stride averages and a stride count | **this is new code and the only unmeasured component.** Test: on a sealed MoVi clip the detected stride count matches a manually counted ground truth within ±1, on 3 clips; and per-stride knee peaks have a CV below the across-subject spread. **If it fails, the demo ships per-frame traces only** — stride averaging is a convenience, not part of the budget | **1 day** |
+| **M3** | **Stride segmentation — DONE, and its count bar was NOT met** | `overstride/strides.py` — gait cycles bounded at **peak swing-phase knee flexion**, not heel strike `[M3]`; per-stride averages and a cycle count | **this is new code and the only unmeasured component.** Test: on a sealed MoVi clip the detected stride count matches a manually counted ground truth within ±1, on 3 clips; and per-stride knee peaks have a CV below the across-subject spread. **If it fails, the demo ships per-frame traces only** — stride averaging is a convenience, not part of the budget | **1 day** |
 | **M4** | **Error-budget renderer** | §3's three rows as data, not prose: a table keyed by quantity × limb × frame rate, with source file and conditions per cell. **`[M1]` the renderer must select the FAR column for both legs** | a test asserts every displayed number is present in the source JSON it cites (`phase15_sealed.json`, `phase15e.json`, `phase15f.json`) — **no number may be hardcoded without a matching source**; and that an unmeasured condition renders the word "UNMEASURED". **`[A2]` plus the no-combination test:** for a 60 fps clip the rendered expected error must equal a Row B value **exactly**, and must not equal any Row B ± Row C arithmetic combination; Row A must be labelled "best case, in-domain" `[A3]`; and the word UNMEASURED must appear for the above-30-fps case | **0.5 day** |
 | **M5** | **HTML report** | one self-contained `.html`: overlay strip, per-frame traces, stride table, budget, viewpoint-quality badge, attribution footer | the output contains no `http://` or `https://` resource reference except the attribution citations; it opens with JavaScript disabled; the file is under 25 MB for a 15 s clip | **1.5 days** |
 | **M6** | **Vocabulary and output guard** | CI check over UI strings, templates, exports and docstrings | greps for **"risk"**, **"predict"**, "injury", "diagnos", "abnormal", "asymmetry index", "normal range" and **fails the build** on a hit. **`[A4]` asserts `report.html` contains NO hip trace at all** — no hip series, no hip axis label, no hip summary cell — and that a hip trace appears only in a `--debug` file that a normal run does not produce | **0.5 day** |
@@ -936,3 +936,120 @@ near/far, mapping the sealed near/far columns through the sealed result's own
 `near_limb` field. The first draft of §6 specified "near limb LEFT" as an
 assertion; that assertion is **wrong to make of the demo**, because the demo
 cannot determine it.
+
+
+---
+
+## M3 — complete, 2026-11-08. **The count bar was NOT met.**
+
+`overstride/strides.py`, `scripts/phase16a_strides.py`,
+`results/phase16a_strides.json`, `tests/test_strides.py`. **36 tests passing;
+235 in the suite.**
+
+### `[M3]` The cycle boundary is peak swing-phase knee flexion, not heel strike
+
+The design asked for heel-strike detection. **It is not available on this
+pipeline**, and the attempt is recorded rather than deleted.
+
+* There is **no foot or heel keypoint**. H36M-17's most distal joint is the
+  ankle, the same limitation phase 14 recorded for the foot segment, so there
+  is no ground-contact signal to threshold.
+* The standard monocular substitute for a force plate is the coordinate-based
+  method of **Zeni et al. (2008)**: heel strike is the frame of maximum
+  *anterior* ankle offset from the pelvis. "Anterior" is a direction, so the
+  method needs to know which way the runner travels across the image.
+* **That direction is not readable on this footage.** `overstride.nearside`
+  abstains on 5 of 11 MoVi clips. Reading it instead from running's own duty
+  factor — stance is the shorter half-cycle, because running has a flight
+  phase — was measured and **failed**:
+
+| the rejected candidate, 11 spent MoVi PG1 subjects | result |
+|---|---|
+| duty-factor statistic, readable range | **4 of 11** clips readable |
+| measured range of the statistic | 0.28 – 5.11 (0.35 or 0.65 reads the direction; ~0.5 cannot, and **above 1 the pairing spans more than a whole cycle**, so the method is incoherent rather than merely ambiguous) |
+| pelvis excursion across the camera's x axis | **3.6 – 6.9 trunk lengths** |
+| its cycle count vs the shipped method | differs by **up to 8 strides** |
+
+**Why it fails is specific and was visible in the data:** MoVi subjects
+traverse the capture volume and **turn around inside the window**, so anterior
+reverses mid-clip. The design already suspected this in §2 — *"one can even
+reverse direction inside the window"* — and here it is measured.
+
+So the cycle is bounded at the **peak of knee flexion**, the sharpest,
+highest-amplitude event in the running cycle (39–95° of swing on the mocap),
+which needs no direction at all. **The report says so** — the stride axis reads
+*"% of stride cycle (0 = peak swing-phase knee flexion)"* — and the demo never
+claims a heel strike, a ground-contact time or a stance/swing split.
+
+### The detector: a hysteresis trigger
+
+Peak picking with a refractory period needs a period estimate, and the period
+is not constant when a runner decelerates and turns: at a refractory of half a
+period the spent subjects produced stride gaps of **0.33–1.97 s against a
+0.70 s period**, half of them impossible. A **Schmitt trigger** needs no period
+at all — one cycle per excursion above a high edge and back below a low edge,
+the event being that excursion's maximum.
+
+**A second bug the ground truth exposed:** a single NaN frame split the signal
+into two islands and re-armed the trigger mid-cycle, counting it twice. Runs
+shorter than 0.2 s are now interpolated across (`fill_short_gaps`), which at
+30 fps cannot hide a gait event.
+
+### Validated against the mocap, all 11 spent subjects
+
+The segmentation runs on the **mocap 3D in the PG1 camera frame** for ground
+truth, with a consistency check that needs no ground truth at all: **two legs
+necessarily take the same number of steps.**
+
+| | result |
+|---|---|
+| **left/right cycle counts agreeing within 1** | **11 of 11 subjects** |
+| cycles per leg | 5 – 14 |
+| mean stride duration | **0.75 – 0.95 s** (jogging, as expected) |
+| knee swing amplitude | 39 – 95° |
+| stride duration CV | 0.14 – 0.47 — **reported, never gated** |
+| subjects passing the self-check | **10 of 11** |
+
+**The one subject that failed its own check is `Subject_11`** — the subject
+phase 15 had already excluded by a pre-registered check, reached here by a
+completely different route.
+
+### The count bar: **2 of 3, recorded as FAILED**
+
+M3's test was *"the detected stride count matches ground truth within ±1, on
+3 clips"*. The demo path was run end to end on three spent subjects:
+
+| clip | ground truth | estimate | error | within ±1 | passed its own check |
+|---|---|---|---|---|---|
+| best-behaved sealed subject | L7 R7 | L6 R7 | −1 / 0 | **yes** | yes |
+| worst sealed subject | L5 R6 | L5 R6 | 0 / 0 | **yes** | no |
+| a diagnostic subject | L5 R6 | L5 R4 | 0 / **−2** | **no** | no |
+
+**The bar stands as written and is recorded as failed.** It is not lowered, not
+redefined, and not re-read as "2 of 3 is close". The design's stated
+consequence therefore applies: **the demo ships per-frame traces only**, and
+stride averaging is opt-in behind `--stride-average`.
+
+What can honestly be added is very little, and it is stated rather than
+implied: the clip whose count was wrong **also failed the module's own check**,
+so the fallback would have caught it — but **only 1 of the 3 clips passed that
+check**, so the check's screening value rests on a single clip and is not
+evidence of anything. `STRIDE_COUNT_BAR_MET = False` and
+`STRIDE_AVERAGING_IS_DEFAULT = False` are asserted in `tests/test_strides.py`,
+and the report prints the failed bar whenever stride averaging is used.
+
+### The second bar, which **was** met
+
+Per-stride knee peaks vary **less within a subject (median CV 0.282) than knee
+peaks vary across subjects (0.433)**. That is what makes a stride average worth
+showing at all: if the two were equal, the average would be averaging noise.
+
+### Deviation from the design, recorded
+
+The M3 test specified *"a manually counted ground truth"*. The count is taken
+instead from the **120 Hz Qualisys mocap** sampled at the video's own frame
+times — a stronger reference than a hand count, and one that can be re-run —
+with the ground-truth-free left/right agreement above as the independent
+criterion. `scripts/phase16a_strides.py` also prints a text trace of the mocap
+knee signal for each scored clip, so the cycles remain hand-countable from the
+log.

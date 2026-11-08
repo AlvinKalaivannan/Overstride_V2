@@ -1,0 +1,98 @@
+{
+  "what": "M3 stride segmentation, validated on the 11 SPENT MoVi PG1 subjects. Ground truth from the mocap 3D; the estimate path on 3 clips.",
+  "shipped_method": {
+    "cycle_signal": "knee_from_segments",
+    "boundary": "peak swing-phase knee flexion",
+    "detector": "hysteresis (Schmitt) trigger, band 0.25 of the 5-95 percentile amplitude; no period estimate, so a changing cadence cannot break it",
+    "why_not_heel_strike": "H36M-17 has no foot or heel keypoint, so there is no ground-contact signal; the standard substitute (Zeni et al. 2008, maximum anterior ankle offset) needs the direction of travel, and that direction is not readable on this footage -- see rejected_candidate below"
+  },
+  "rejected_candidate": {
+    "method": "Zeni et al. 2008: heel strike = maximum anterior ankle offset from the pelvis",
+    "needs": "the direction of travel across the image",
+    "direction_read_from": "running's duty factor -- stance is the shorter half-cycle, because running has a flight phase",
+    "duty_fraction_range": [
+      0.283,
+      5.111
+    ],
+    "duty_fraction_median": 1.333,
+    "readable_would_be": "about 0.35 or 0.65; ~0.5 is unreadable",
+    "n_readable": 4,
+    "n_subjects": 11,
+    "above_one_means": "the max->min pairing spans more than a whole cycle, so the method is incoherent on that clip rather than merely ambiguous",
+    "pelvis_excursion_trunk_lengths": [
+      3.56,
+      6.9
+    ],
+    "why_it_fails": "MoVi subjects traverse the capture volume and turn around inside the window, so anterior reverses mid-clip and the statistic collapses to ~0.5",
+    "max_cycle_count_difference_vs_shipped": 8
+  },
+  "diagnostic_only": "all 11 subjects are spent; this establishes no held-out claim",
+  "aggregate_only": "no per-subject MoVi value is written here, same standard as the scoping files",
+  "n_subjects": 11,
+  "ground_truth": {
+    "source": "120 Hz Qualisys mocap, sampled at the video frame times",
+    "consistency_check": "left/right cycle counts, which need no ground truth: two legs necessarily take the same number of steps",
+    "subjects_agreeing_within_1": 11,
+    "cycles_per_leg": [
+      5,
+      14
+    ],
+    "mean_stride_duration_s": [
+      0.754,
+      0.952
+    ],
+    "knee_swing_amplitude_deg": [
+      39.1,
+      95.1
+    ],
+    "duration_cv": [
+      0.144,
+      0.469
+    ],
+    "plausible_share": [
+      0.5,
+      1.0
+    ],
+    "cadence_spm": [
+      126.1,
+      159.1
+    ]
+  },
+  "bars_in_overstride_strides": {
+    "MIN_STRIDES": 3,
+    "MAX_COUNT_DIFF": 1,
+    "MIN_KNEE_SWING_DEG": 25.0,
+    "MIN_PLAUSIBLE_SHARE": 0.6,
+    "STRIDE_S_RANGE": [
+      0.4,
+      1.4
+    ],
+    "note": "each bar sits outside the measured spread above, so it rejects a mis-segmentation rather than normal stride variability. Duration CV is REPORTED, not gated: a runner who decelerates inside the clip has a high CV and nothing is wrong"
+  },
+  "knee_peak_spread": {
+    "within_subject_cv_median": 0.2822,
+    "within_subject_cv_range": [
+      0.0609,
+      1.3908
+    ],
+    "across_subject_cv": 0.4331,
+    "bar_met": true,
+    "why_it_matters": "if stride-to-stride spread were as large as between-subject spread, a stride average would be averaging noise"
+  },
+  "estimate_vs_ground_truth": {
+    "n_clips": 3,
+    "clips_within_1_stride": 2,
+    "bar": "+/-1 stride on 3 clips",
+    "bar_met": false,
+    "count_error_range": [
+      -2,
+      0
+    ],
+    "clips_passing_their_own_check": 1,
+    "knee_swing_amplitude_deg": [
+      39.3,
+      57.4
+    ]
+  },
+  "fallback": "when Strides.ok is False the report shows per-frame traces only and no stride table; stride averaging is a convenience, never part of the error budget"
+}
