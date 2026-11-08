@@ -894,7 +894,7 @@ alone, and assume the measured pipeline is reused rather than reimplemented.
 | **M2** | **Input checks — DONE** | `overstride/checks.py` — the five checks in §4 with their measured thresholds, returning pass/warn/refuse | unit tests per check with synthetic inputs at each threshold boundary; a frontal-view fixture (GT `view_ratio` ≈ 0.06, about 0.20 estimated) must **refuse**; a 30 fps clip must **warn** and still process; **`[M2]` and the bars must be in ESTIMATE units**, with a test that Row B's own footage (estimated [0.633, 0.887]) all passes | **0.5 day** |
 | **M3** | **Stride segmentation — DONE, and its count bar was NOT met** | `overstride/strides.py` — gait cycles bounded at **peak swing-phase knee flexion**, not heel strike `[M3]`; per-stride averages and a cycle count | **this is new code and the only unmeasured component.** Test: on a sealed MoVi clip the detected stride count matches a manually counted ground truth within ±1, on 3 clips; and per-stride knee peaks have a CV below the across-subject spread. **If it fails, the demo ships per-frame traces only** — stride averaging is a convenience, not part of the budget | **1 day** |
 | **M4** | **Error-budget renderer — DONE** | §3's three rows as data, not prose: a table keyed by quantity × limb × frame rate, with source file and conditions per cell. **`[M1]` the renderer must select the FAR column for both legs** | a test asserts every displayed number is present in the source JSON it cites (`phase15_sealed.json`, `phase15e.json`, `phase15f.json`) — **no number may be hardcoded without a matching source**; and that an unmeasured condition renders the word "UNMEASURED". **`[A2]` plus the no-combination test:** for a 60 fps clip the rendered expected error must equal a Row B value **exactly**, and must not equal any Row B ± Row C arithmetic combination; Row A must be labelled "best case, in-domain" `[A3]`; and the word UNMEASURED must appear for the above-30-fps case | **0.5 day** |
-| **M5** | **HTML report** | one self-contained `.html`: overlay strip, per-frame traces, stride table, budget, viewpoint-quality badge, attribution footer | the output contains no `http://` or `https://` resource reference except the attribution citations; it opens with JavaScript disabled; the file is under 25 MB for a 15 s clip | **1.5 days** |
+| **M5** | **HTML report — DONE** | one self-contained `.html`: overlay strip, per-frame traces, stride table, budget, viewpoint-quality badge, attribution footer | the output contains no `http://` or `https://` resource reference except the attribution citations; it opens with JavaScript disabled; the file is under 25 MB for a 15 s clip | **1.5 days** |
 | **M6** | **Vocabulary and output guard** | CI check over UI strings, templates, exports and docstrings | greps for **"risk"**, **"predict"**, "injury", "diagnos", "abnormal", "asymmetry index", "normal range" and **fails the build** on a hit. **`[A4]` asserts `report.html` contains NO hip trace at all** — no hip series, no hip axis label, no hip summary cell — and that a hip trace appears only in a `--debug` file that a normal run does not produce | **0.5 day** |
 | **M7** | **Film and run on own footage** | 2–3 consented clips per §7, processed end to end | **`[A5]`** the analyzer's checks pass on at least one clip with **`view_ratio` ≥ 0.50** (the §4 pass threshold, which the full measured MoVi range [0.536, 0.720] clears); the resize to short side 600 is confirmed applied; processing time recorded against §5's re-estimated **~5.7 min for an 8 s window**; **this closes `docs/REVIEW.md` §7.5's substance** — the first real phone footage through this tool | **0.5 day** + filming |
 | **M8** | **Write-up** | `results/phase16a.md`: what was measured, the 20 fps gate recorded as **NOT MET** with its ms/frame, the licence position from §8, and the §7.5 status change | the report's numbers match `results/phase16a.json`; the gate is recorded as failed, not redefined | **0.5 day** |
@@ -1121,3 +1121,82 @@ A slower clip gets the mirror of it, also unadjusted.
 * Row B's two measured caveats travel with it: the error is largely a
   per-subject offset but **not a removable one** (17% / 11% under an oracle
   correction), and the **shape** is tracked well (knee r +0.77 to +0.92).
+
+
+---
+
+## M5 — complete, 2026-11-08
+
+`overstride/report.py`, `scripts/overstride_analyze.py` (the CLI),
+`scripts/synthetic_clip.py`, `figures/example-report.html`,
+`tests/test_report.py`. **24 tests passing; 284 in the suite.**
+
+### What the document is
+
+Not a dashboard — **a calibration certificate for a video**. An instrument's
+certificate states its own uncertainty before it states a reading, which is
+the same discipline this project applies to every number it publishes. So the
+error is rendered at the same weight as the value it qualifies, on the same
+line, with a small inline SVG interval bar beneath it. It is not a footnote.
+
+The two uncertainties in play are kept visibly apart and **never added**:
+
+* **stride-to-stride spread** — how much this runner varied across the strides
+  in this clip. A property of the running.
+* **measurement error** — Row B, measured against mocap on five never-opened
+  subjects. A property of the pipeline.
+
+### The M5 bars
+
+| bar | result |
+|---|---|
+| no `http`/`https` resource reference except attribution | **met** — every `src` is a `data:` URI; the only links are four citations to arXiv and a DOI |
+| opens with JavaScript disabled | **met** — zero `<script>`, zero handlers, and no `<noscript>` fallback because nothing needs one |
+| under 25 MB for a 15 s clip | **met** — a 900-frame render is well inside it; the committed example is 357 KB |
+| one file | **met** — a test renders into an empty directory and asserts it holds exactly one file |
+
+Charts are inline `<svg>` drawn by the module — no chart library to pin and
+nothing to fetch. Type is a transitional serif for text and a monospace face
+with `tabular-nums` for the readings, both from system stacks, because the
+page may not fetch a font. Both themes are defined at token level for all
+three viewer states (explicit light, explicit dark, and the unstamped default).
+
+### The synthetic clip, so there is something to look at
+
+`scripts/synthetic_clip.py` builds a runner from nothing — joint-angle traces,
+forward kinematics, a pinhole projection and a drawn stick figure — so an
+example report can be committed and shown **without a single dataset pixel**,
+which §6 and §7 both require. Its angles are known by construction (knee peaks
+at 67°, thigh at 35°) and a test asserts the report reproduces them, so a
+renderer that silently changed a number would be caught.
+
+It drives stages 8–10 with the real `segment_angles`, the real segmentation
+and the real budget. It does **not** exercise the detector or the lifter: a
+stick figure is not a person. Those remain covered by
+`tests/test_demo_regression.py` on real footage.
+
+**Getting the synthetic camera wrong was instructive.** At a 3 m filming
+distance the runner crossed 23 m of ground in 9 s, left the frame immediately,
+and the two hips — separated only in *depth* — acquired a 193 px apparent
+separation purely from perspective. `check_viewpoint` **refused the clip as
+near-frontal**, which was the correct answer to the geometry it was given. A
+phone 3 m from a runner sees 2.7 m of ground, which a 2.6 m/s runner crosses
+in **one second**, so real side-on footage is filmed from further back and
+panned — which is what the generator now models.
+
+### The CLI, and one deviation
+
+`overstride-analyze clip.mp4 --near-side left --out report.html` runs stages
+1–10 with no sockets anywhere. `--debug` writes a **separate** file carrying
+the excluded trunk-referenced quantity, marked internal; a normal run never
+produces one, and M6 fails the build if one sits beside a published report.
+
+**Deviation from the design, recorded:** §5 specifies the analysis window as
+"the longest contiguous stretch in which the runner is fully in frame, capped
+at 8 s". Finding that stretch requires detection, which is ~95% of the
+runtime, so selecting the window from it means paying for the whole clip to
+decide which 8 s to pay for. The default is **the middle 8 seconds** — where a
+runner filmed crossing the frame is most likely to be fully in view — with
+`--window START END` to override. The budget is unaffected: the window has the
+clip's own frame rate and resolution, so it is the same measured condition,
+only shorter.
