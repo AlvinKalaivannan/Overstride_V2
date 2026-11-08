@@ -83,7 +83,7 @@ class AnalysisResult:
     detector_min_size: int
     near_side: str                       # "l"/"r" -- DECLARED by the user
     far_side: str                        # the other one
-    near_limb_from_depth: str            # diagnostic only, 9/11 -- never used
+    near_limb_from_depth: str            # internal only, 9/11 -- never used
     detected: np.ndarray                 # (T,) bool
     kp2d: np.ndarray | None = None       # detected 2D, H36M-17 order
     travel: dict = field(default_factory=dict)
@@ -127,7 +127,7 @@ class AnalysisResult:
 
     def mae_against(self, ref_angles: dict, side: str, quantity: str,
                     mask: np.ndarray | None = None) -> float:
-        """MAE against a reference. Tests and diagnostics only -- the demo has
+        """MAE against a reference. Tests and internal checks only -- the demo
         no ground truth."""
         est = self.series(side, quantity)
         ref = ref_angles[side][quantity]
@@ -174,7 +174,7 @@ def analyze_frames(frames, fps: float, lifter, near_side: str,
     # --- 7. lift ----------------------------------------------------------
     est = lift_2d(lifter, prepared, float(fps))
 
-    # The near limb from the ESTIMATE's own hip depth. DIAGNOSTIC ONLY --
+    # The near limb from the ESTIMATE's own hip depth. INTERNAL ONLY --
     # 9/11 against calibrated truth, with no signal separating the failures.
     # Nothing user-facing depends on it.
     near_depth = ("l" if np.nanmean(est[:, H36M["l_hip"], 2])

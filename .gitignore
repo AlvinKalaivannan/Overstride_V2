@@ -86,3 +86,7 @@ Thumbs.db
 !results/**
 !figures/**
 !docs/**
+
+# Playwright MCP review artefacts -- screenshots taken while designing the
+# report. Not part of the project.
+.playwright-mcp/

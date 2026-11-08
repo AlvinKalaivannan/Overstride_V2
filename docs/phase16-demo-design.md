@@ -895,7 +895,7 @@ alone, and assume the measured pipeline is reused rather than reimplemented.
 | **M3** | **Stride segmentation — DONE, and its count bar was NOT met** | `overstride/strides.py` — gait cycles bounded at **peak swing-phase knee flexion**, not heel strike `[M3]`; per-stride averages and a cycle count | **this is new code and the only unmeasured component.** Test: on a sealed MoVi clip the detected stride count matches a manually counted ground truth within ±1, on 3 clips; and per-stride knee peaks have a CV below the across-subject spread. **If it fails, the demo ships per-frame traces only** — stride averaging is a convenience, not part of the budget | **1 day** |
 | **M4** | **Error-budget renderer — DONE** | §3's three rows as data, not prose: a table keyed by quantity × limb × frame rate, with source file and conditions per cell. **`[M1]` the renderer must select the FAR column for both legs** | a test asserts every displayed number is present in the source JSON it cites (`phase15_sealed.json`, `phase15e.json`, `phase15f.json`) — **no number may be hardcoded without a matching source**; and that an unmeasured condition renders the word "UNMEASURED". **`[A2]` plus the no-combination test:** for a 60 fps clip the rendered expected error must equal a Row B value **exactly**, and must not equal any Row B ± Row C arithmetic combination; Row A must be labelled "best case, in-domain" `[A3]`; and the word UNMEASURED must appear for the above-30-fps case | **0.5 day** |
 | **M5** | **HTML report — DONE** | one self-contained `.html`: overlay strip, per-frame traces, stride table, budget, viewpoint-quality badge, attribution footer | the output contains no `http://` or `https://` resource reference except the attribution citations; it opens with JavaScript disabled; the file is under 25 MB for a 15 s clip | **1.5 days** |
-| **M6** | **Vocabulary and output guard** | CI check over UI strings, templates, exports and docstrings | greps for **"risk"**, **"predict"**, "injury", "diagnos", "abnormal", "asymmetry index", "normal range" and **fails the build** on a hit. **`[A4]` asserts `report.html` contains NO hip trace at all** — no hip series, no hip axis label, no hip summary cell — and that a hip trace appears only in a `--debug` file that a normal run does not produce | **0.5 day** |
+| **M6** | **Vocabulary and output guard — DONE** | CI check over UI strings, templates, exports and docstrings | greps for **"risk"**, **"predict"**, "injury", "diagnos", "abnormal", "asymmetry index", "normal range" and **fails the build** on a hit. **`[A4]` asserts `report.html` contains NO hip trace at all** — no hip series, no hip axis label, no hip summary cell — and that a hip trace appears only in a `--debug` file that a normal run does not produce | **0.5 day** |
 | **M7** | **Film and run on own footage** | 2–3 consented clips per §7, processed end to end | **`[A5]`** the analyzer's checks pass on at least one clip with **`view_ratio` ≥ 0.50** (the §4 pass threshold, which the full measured MoVi range [0.536, 0.720] clears); the resize to short side 600 is confirmed applied; processing time recorded against §5's re-estimated **~5.7 min for an 8 s window**; **this closes `docs/REVIEW.md` §7.5's substance** — the first real phone footage through this tool | **0.5 day** + filming |
 | **M8** | **Write-up** | `results/phase16a.md`: what was measured, the 20 fps gate recorded as **NOT MET** with its ms/frame, the licence position from §8, and the §7.5 status change | the report's numbers match `results/phase16a.json`; the gate is recorded as failed, not redefined | **0.5 day** |
 
@@ -1200,3 +1200,54 @@ runner filmed crossing the frame is most likely to be fully in view — with
 `--window START END` to override. The budget is unaffected: the window has the
 clip's own frame rate and resolution, so it is the same measured condition,
 only shorter.
+
+
+---
+
+## M6 — complete, 2026-11-08
+
+`scripts/check_vocabulary.py`, `.github/workflows/ci.yml`,
+`tests/test_vocabulary_guard.py`. **32 tests passing; 315 in the suite** (1
+deselected, the slow 1080p timing test).
+
+### What it guards
+
+Seven terms, each with the measured reason it is banned: **risk**, **predict**,
+**injur\***, **diagnos\***, **abnormal**, **asymmetry index**, **normal
+range**. The surface is everything a user can run, read or be shown —
+`overstride/*.py`, the CLI, the clip generator, and **every committed report**.
+
+**`[A4]` and the hip.** A report must contain no hip trace, no hip number and
+no hip axis — not collapsed, not greyed, not behind a toggle. Matched on a word
+boundary, so "ship" and "relationship" pass and a test asserts they do. A
+report must also contain no `<script>`, and no `--debug` file may sit beside a
+published one.
+
+### The `# vocab-ok:` pragma, and why reports get none
+
+A Python line may carry `# vocab-ok: <reason>` where a banned word is genuinely
+an engineering term. **The reason is required**, and a pragma on a line that
+needs no exception is itself an error — otherwise pragmas accumulate and nobody
+notices when one stops mattering.
+
+**A report gets no pragma.** It is the thing a reader sees, so the ban there is
+absolute, and a test plants `<!-- vocab-ok: please -->` beside a violation to
+prove the escape hatch does not reach it.
+
+### What the guard found on its first run
+
+Seven hits, all `diagnos*`, and **none of them were kept as exceptions**. Three
+were code comments and four were output strings — including the `--help` text
+and the debug file's own heading. Since "diagnostic" is jargon in a user-facing
+string regardless of the ban, all seven were reworded to "internal detail"
+rather than pragma'd. The pragma mechanism stays, documented and tested, for
+the case where a word is genuinely precise and no rewording is honest.
+
+### In CI
+
+Two jobs, deliberately separate. The guard needs **no dependencies at all**, so
+it runs in seconds and cannot be skipped because an install broke —
+`CLAUDE.md`'s rule that this track emits nothing about health is the one check
+that must never fail for an unrelated reason. The test job installs from the
+lockfile and runs `pytest -m "not slow"`; the dataset-backed tests skip
+themselves, since no dataset byte may enter this repository.

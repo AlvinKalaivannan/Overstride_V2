@@ -1,0 +1,40 @@
+# CI for the measurement and demo track.
+#
+# Two jobs, deliberately separate. The vocabulary guard needs no dependencies
+# at all, so it runs in seconds and cannot be broken by an install problem --
+# `CLAUDE.md`'s rule that this track emits nothing about health is the one
+# check that must never be skipped for an unrelated reason.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  vocabulary-guard:
+    name: vocabulary and output guard (M6)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      # stdlib only: no install step, nothing to fail but the guard itself
+      - name: Check the demo surface and every committed report
+        run: python scripts/check_vocabulary.py
+
+  tests:
+    name: pytest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: uv sync --frozen
+      # Dataset-backed tests skip themselves when data/ is absent, which it
+      # always is here: no dataset byte may enter this repository.
+      - name: Run the suite
+        run: uv run pytest -q -m "not slow"
