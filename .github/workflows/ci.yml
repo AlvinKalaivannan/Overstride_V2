@@ -32,9 +32,23 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.11"
+      # opencv-python links against libGL and libglib, which a runner image
+      # does not carry. Without them `import cv2` raises during COLLECTION --
+      # pytest exit code 2, not a test failure -- and every module touching
+      # the video path goes with it. pyproject pins the non-headless build for
+      # a documented Windows reason, so the libraries are installed here
+      # rather than the dependency swapped.
+      - name: Install the native libraries opencv-python links against
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libgl1 libglib2.0-0t64             || sudo apt-get install -y -qq libgl1 libglib2.0-0
       - name: Install
         run: uv sync --frozen
+      # A separate, legible signal: an import failure here is unmistakable,
+      # where the same failure inside pytest is just "exit code 2".
+      - name: Check the imports that are not pure Python
+        run: uv run python -c "import cv2, torch, scipy, numpy; print('cv2', cv2.__version__, '| torch', torch.__version__, '| scipy', scipy.__version__, '| numpy', numpy.__version__)"
       # Dataset-backed tests skip themselves when data/ is absent, which it
       # always is here: no dataset byte may enter this repository.
       - name: Run the suite
-        run: uv run pytest -q -m "not slow"
+        run: uv run pytest -q -m "not slow" --tb=short -rf
